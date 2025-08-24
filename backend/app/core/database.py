@@ -121,7 +121,7 @@ async def init_db():
         # This is just for any additional tables if needed
         async with engine.begin() as conn:
             # Import models here to ensure they're registered
-            from ..models import *  # noqa
+            from ..models.base import Base
             await conn.run_sync(Base.metadata.create_all)
             logger.info("Database tables initialized successfully")
             
