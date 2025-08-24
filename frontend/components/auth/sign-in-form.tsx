@@ -53,22 +53,22 @@ export function SignInForm({ onSuccess, onSwitchToSignUp, onForgotPassword }: Si
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md mx-auto bg-card border-border">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
+        <CardTitle className="text-2xl font-bold text-foreground">Welcome Back</CardTitle>
         <p className="text-muted-foreground">Sign in to your KSWiFi account</p>
       </CardHeader>
       
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           {error && (
-            <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+            <div className="p-3 text-sm text-red-400 bg-red-900/20 border border-red-800 rounded-md">
               {error}
             </div>
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-foreground">Email</Label>
             <Input
               id="email"
               type="email"
@@ -77,11 +77,12 @@ export function SignInForm({ onSuccess, onSwitchToSignUp, onForgotPassword }: Si
               onChange={(e) => handleInputChange('email', e.target.value)}
               required
               disabled={loading}
+              className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-primary"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password" className="text-foreground">Password</Label>
             <div className="relative">
               <Input
                 id="password"
@@ -91,13 +92,13 @@ export function SignInForm({ onSuccess, onSwitchToSignUp, onForgotPassword }: Si
                 onChange={(e) => handleInputChange('password', e.target.value)}
                 required
                 disabled={loading}
-                className="pr-10"
+                className="pr-10 bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-primary"
               />
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-muted text-muted-foreground hover:text-foreground"
                 onClick={() => setShowPassword(!showPassword)}
                 disabled={loading}
               >
@@ -117,7 +118,7 @@ export function SignInForm({ onSuccess, onSwitchToSignUp, onForgotPassword }: Si
               size="sm"
               onClick={onForgotPassword}
               disabled={loading}
-              className="px-0"
+              className="px-0 text-primary hover:text-primary/80"
             >
               Forgot password?
             </Button>
@@ -127,7 +128,7 @@ export function SignInForm({ onSuccess, onSwitchToSignUp, onForgotPassword }: Si
         <CardFooter className="flex flex-col space-y-4">
           <Button 
             type="submit" 
-            className="w-full" 
+            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary" 
             disabled={loading || !formData.email || !formData.password}
           >
             {loading ? (
@@ -148,7 +149,7 @@ export function SignInForm({ onSuccess, onSwitchToSignUp, onForgotPassword }: Si
               size="sm"
               onClick={onSwitchToSignUp}
               disabled={loading}
-              className="px-0"
+              className="px-0 text-primary hover:text-primary/80"
             >
               Sign up
             </Button>

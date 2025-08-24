@@ -86,30 +86,30 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
   }
 
   const RequirementItem = ({ met, text }: { met: boolean; text: string }) => (
-    <div className={`flex items-center text-xs ${met ? 'text-green-600' : 'text-gray-500'}`}>
+    <div className={`flex items-center text-xs ${met ? 'text-primary' : 'text-muted-foreground'}`}>
       {met ? <Check className="h-3 w-3 mr-1" /> : <X className="h-3 w-3 mr-1" />}
       {text}
     </div>
   )
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md mx-auto bg-card border-border">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-bold">Create Account</CardTitle>
+        <CardTitle className="text-2xl font-bold text-foreground">Create Account</CardTitle>
         <p className="text-muted-foreground">Sign up for your KSWiFi account</p>
       </CardHeader>
       
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           {error && (
-            <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+            <div className="p-3 text-sm text-red-400 bg-red-900/20 border border-red-800 rounded-md">
               {error}
             </div>
           )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="first_name">First Name</Label>
+              <Label htmlFor="first_name" className="text-foreground">First Name</Label>
               <Input
                 id="first_name"
                 type="text"
@@ -118,11 +118,12 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
                 onChange={(e) => handleInputChange('first_name', e.target.value)}
                 required
                 disabled={loading}
+                className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-primary"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="last_name">Last Name</Label>
+              <Label htmlFor="last_name" className="text-foreground">Last Name</Label>
               <Input
                 id="last_name"
                 type="text"
@@ -131,12 +132,13 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
                 onChange={(e) => handleInputChange('last_name', e.target.value)}
                 required
                 disabled={loading}
+                className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-primary"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-foreground">Email</Label>
             <Input
               id="email"
               type="email"
@@ -145,11 +147,12 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
               onChange={(e) => handleInputChange('email', e.target.value)}
               required
               disabled={loading}
+              className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-primary"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="phone_number">Phone Number (Optional)</Label>
+            <Label htmlFor="phone_number" className="text-foreground">Phone Number (Optional)</Label>
             <Input
               id="phone_number"
               type="tel"
@@ -157,11 +160,12 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
               value={formData.phone_number}
               onChange={(e) => handleInputChange('phone_number', e.target.value)}
               disabled={loading}
+              className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-primary"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password" className="text-foreground">Password</Label>
             <div className="relative">
               <Input
                 id="password"
@@ -171,13 +175,13 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
                 onChange={(e) => handleInputChange('password', e.target.value)}
                 required
                 disabled={loading}
-                className="pr-10"
+                className="pr-10 bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-primary"
               />
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-muted text-muted-foreground hover:text-foreground"
                 onClick={() => setShowPassword(!showPassword)}
                 disabled={loading}
               >
@@ -190,7 +194,7 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
             </div>
             
             {formData.password && (
-              <div className="space-y-1 p-2 bg-gray-50 rounded">
+              <div className="space-y-1 p-2 bg-muted/20 border border-border rounded">
                 <RequirementItem met={passwordRequirements.length} text="At least 8 characters" />
                 <RequirementItem met={passwordRequirements.uppercase} text="One uppercase letter" />
                 <RequirementItem met={passwordRequirements.lowercase} text="One lowercase letter" />
@@ -201,7 +205,7 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Label htmlFor="confirmPassword" className="text-foreground">Confirm Password</Label>
             <div className="relative">
               <Input
                 id="confirmPassword"
@@ -211,7 +215,7 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
                 onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                 required
                 disabled={loading}
-                className="pr-10"
+                className="pr-10 bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-primary"
               />
               <Button
                 type="button"
@@ -230,7 +234,7 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
             </div>
             
             {formData.confirmPassword && (
-              <div className={`text-xs ${doPasswordsMatch ? 'text-green-600' : 'text-red-600'}`}>
+              <div className={`text-xs ${doPasswordsMatch ? 'text-primary' : 'text-red-400'}`}>
                 {doPasswordsMatch ? (
                   <div className="flex items-center">
                     <Check className="h-3 w-3 mr-1" />
@@ -250,7 +254,7 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
         <CardFooter className="flex flex-col space-y-4">
           <Button 
             type="submit" 
-            className="w-full" 
+            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary" 
             disabled={loading || !isPasswordValid || !doPasswordsMatch || !formData.first_name || !formData.last_name || !formData.email}
           >
             {loading ? (
@@ -271,7 +275,7 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
               size="sm"
               onClick={onSwitchToSignIn}
               disabled={loading}
-              className="px-0"
+              className="px-0 text-primary hover:text-primary/80"
             >
               Sign in
             </Button>

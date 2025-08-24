@@ -42,12 +42,12 @@ export function PasswordResetForm({ onBack }: PasswordResetFormProps) {
 
   if (success) {
     return (
-      <Card className="w-full max-w-md mx-auto">
+      <Card className="w-full max-w-md mx-auto bg-card border-border">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-            <CheckCircle className="h-6 w-6 text-green-600" />
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/20">
+            <CheckCircle className="h-6 w-6 text-primary" />
           </div>
-          <CardTitle className="text-2xl font-bold">Check Your Email</CardTitle>
+          <CardTitle className="text-2xl font-bold text-foreground">Check Your Email</CardTitle>
           <p className="text-muted-foreground">
             We've sent a password reset link to <strong>{email}</strong>
           </p>
@@ -68,7 +68,7 @@ export function PasswordResetForm({ onBack }: PasswordResetFormProps) {
               setEmail('')
               setError(null)
             }}
-            className="w-full"
+            className="w-full border-border text-foreground hover:bg-muted"
           >
             Send Another Email
           </Button>
@@ -76,7 +76,7 @@ export function PasswordResetForm({ onBack }: PasswordResetFormProps) {
           <Button
             variant="link"
             onClick={onBack}
-            className="w-full"
+            className="w-full text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Sign In
@@ -87,9 +87,9 @@ export function PasswordResetForm({ onBack }: PasswordResetFormProps) {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md mx-auto bg-card border-border">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-bold">Reset Password</CardTitle>
+        <CardTitle className="text-2xl font-bold text-foreground">Reset Password</CardTitle>
         <p className="text-muted-foreground">
           Enter your email address and we'll send you a link to reset your password
         </p>
@@ -98,13 +98,13 @@ export function PasswordResetForm({ onBack }: PasswordResetFormProps) {
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           {error && (
-            <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+            <div className="p-3 text-sm text-red-400 bg-red-900/20 border border-red-800 rounded-md">
               {error}
             </div>
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email Address</Label>
+            <Label htmlFor="email" className="text-foreground">Email Address</Label>
             <Input
               id="email"
               type="email"
@@ -116,6 +116,7 @@ export function PasswordResetForm({ onBack }: PasswordResetFormProps) {
               }}
               required
               disabled={loading}
+              className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-primary"
             />
           </div>
         </CardContent>
@@ -123,7 +124,7 @@ export function PasswordResetForm({ onBack }: PasswordResetFormProps) {
         <CardFooter className="flex flex-col space-y-4">
           <Button 
             type="submit" 
-            className="w-full" 
+            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary" 
             disabled={loading || !email}
           >
             {loading ? (
@@ -141,7 +142,7 @@ export function PasswordResetForm({ onBack }: PasswordResetFormProps) {
             variant="link"
             onClick={onBack}
             disabled={loading}
-            className="w-full"
+            className="w-full text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Sign In

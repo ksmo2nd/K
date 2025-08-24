@@ -79,7 +79,7 @@ export function PasswordUpdateForm({ onSuccess }: PasswordUpdateFormProps) {
   }
 
   const RequirementItem = ({ met, text }: { met: boolean; text: string }) => (
-    <div className={`flex items-center text-xs ${met ? 'text-green-600' : 'text-gray-500'}`}>
+    <div className={`flex items-center text-xs ${met ? 'text-primary' : 'text-muted-foreground'}`}>
       {met ? <Check className="h-3 w-3 mr-1" /> : <X className="h-3 w-3 mr-1" />}
       {text}
     </div>
@@ -87,12 +87,12 @@ export function PasswordUpdateForm({ onSuccess }: PasswordUpdateFormProps) {
 
   if (success) {
     return (
-      <Card className="w-full max-w-md mx-auto">
+      <Card className="w-full max-w-md mx-auto bg-card border-border">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-            <CheckCircle className="h-6 w-6 text-green-600" />
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/20">
+            <CheckCircle className="h-6 w-6 text-primary" />
           </div>
-          <CardTitle className="text-2xl font-bold">Password Updated</CardTitle>
+          <CardTitle className="text-2xl font-bold text-foreground">Password Updated</CardTitle>
           <p className="text-muted-foreground">
             Your password has been successfully updated. You will be redirected shortly.
           </p>
@@ -102,16 +102,16 @@ export function PasswordUpdateForm({ onSuccess }: PasswordUpdateFormProps) {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md mx-auto bg-card border-border">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-bold">Update Password</CardTitle>
+        <CardTitle className="text-2xl font-bold text-foreground">Update Password</CardTitle>
         <p className="text-muted-foreground">Enter your new password</p>
       </CardHeader>
       
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           {error && (
-            <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+            <div className="p-3 text-sm text-red-400 bg-red-900/20 border border-red-800 rounded-md">
               {error}
             </div>
           )}

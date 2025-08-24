@@ -57,10 +57,10 @@ function ResetPasswordContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Verifying reset link...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Verifying reset link...</p>
         </div>
       </div>
     )
@@ -68,13 +68,13 @@ function ResetPasswordContent() {
 
   if (!isValidSession) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Invalid Reset Link</h1>
-          <p className="text-gray-600 mb-4">This password reset link is invalid or has expired.</p>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Invalid Reset Link</h1>
+          <p className="text-muted-foreground mb-4">This password reset link is invalid or has expired.</p>
           <button
             onClick={() => router.push('/')}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            className="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90"
           >
             Go Back
           </button>
@@ -84,7 +84,7 @@ function ResetPasswordContent() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <PasswordUpdateForm onSuccess={handleSuccess} />
     </div>
   )
@@ -94,10 +94,10 @@ export default function ResetPasswordPage() {
   return (
     <AuthProvider>
       <Suspense fallback={
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="min-h-screen flex items-center justify-center bg-background">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading...</p>
           </div>
         </div>
       }>

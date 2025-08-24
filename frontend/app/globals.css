@@ -3,76 +3,76 @@
 @tailwind utilities;
 
 :root {
-  /* Updated color tokens for futuristic KSWiFi design with dark navy background and neon blue accents */
-  --background: oklch(0.08 0.02 240); /* Dark navy #0a192f */
-  --foreground: oklch(1 0 0); /* Pure white */
-  --card: oklch(0.15 0.01 220); /* Dark gray #1f2937 */
-  --card-foreground: oklch(1 0 0); /* White text on cards */
-  --popover: oklch(0.15 0.01 220); /* Dark gray for popovers */
-  --popover-foreground: oklch(1 0 0); /* White text in popovers */
-  --primary: oklch(0.65 0.25 200); /* Neon blue #00bfff */
-  --primary-foreground: oklch(1 0 0); /* White text on primary */
-  --secondary: oklch(0.15 0.01 220); /* Dark gray for secondary */
-  --secondary-foreground: oklch(1 0 0); /* White text on secondary */
-  --muted: oklch(0.35 0.01 220); /* Muted gray #475569 */
-  --muted-foreground: oklch(0.8 0 0); /* Light gray text */
-  --accent: oklch(0.65 0.25 200); /* Neon blue accent */
-  --accent-foreground: oklch(1 0 0); /* White text on accent */
-  --destructive: oklch(0.55 0.22 25); /* Red for destructive actions */
-  --destructive-foreground: oklch(1 0 0); /* White text on destructive */
-  --border: oklch(0.25 0.01 220); /* Dark border #374151 */
-  --input: oklch(0.15 0.01 220); /* Input background */
-  --ring: oklch(0.65 0.25 200); /* Neon blue focus ring */
-  --chart-1: oklch(0.65 0.25 200); /* Neon blue for charts */
-  --chart-2: oklch(0.15 0.01 220); /* Dark gray for secondary chart */
-  --chart-3: oklch(0.25 0.01 220); /* Darker gray for tertiary chart */
-  --chart-4: oklch(0.65 0.25 200); /* Neon blue for chart highlights */
-  --chart-5: oklch(0.35 0.01 220); /* Muted gray for chart backgrounds */
+  /* KSWiFi color scheme: Black background with cyan/teal blue (#00CFE8) accents */
+  --background: 0 0% 0%; /* Pure black #000000 */
+  --foreground: 0 0% 100%; /* Pure white #ffffff */
+  --card: 0 0% 6%; /* Very dark gray #0f0f0f */
+  --card-foreground: 0 0% 100%; /* White text on cards */
+  --popover: 0 0% 6%; /* Very dark gray for popovers */
+  --popover-foreground: 0 0% 100%; /* White text in popovers */
+  --primary: 186 100% 47%; /* Cyan/Teal blue #00CFE8 */
+  --primary-foreground: 0 0% 0%; /* Black text on primary */
+  --secondary: 0 0% 12%; /* Dark gray for secondary */
+  --secondary-foreground: 0 0% 100%; /* White text on secondary */
+  --muted: 0 0% 18%; /* Muted dark gray */
+  --muted-foreground: 0 0% 70%; /* Light gray text */
+  --accent: 186 100% 47%; /* Cyan/Teal blue accent */
+  --accent-foreground: 0 0% 0%; /* Black text on accent */
+  --destructive: 0 84% 60%; /* Red for destructive actions */
+  --destructive-foreground: 0 0% 100%; /* White text on destructive */
+  --border: 0 0% 18%; /* Dark border */
+  --input: 0 0% 12%; /* Input background */
+  --ring: 186 100% 47%; /* Cyan/Teal blue focus ring */
   --radius: 0.5rem; /* Modern corner rounding */
-  --sidebar: oklch(0.15 0.01 220); /* Dark gray sidebar */
-  --sidebar-foreground: oklch(1 0 0); /* White sidebar text */
-  --sidebar-primary: oklch(0.65 0.25 200); /* Neon blue sidebar primary */
-  --sidebar-primary-foreground: oklch(1 0 0); /* White text on sidebar primary */
-  --sidebar-accent: oklch(0.65 0.25 200); /* Neon blue sidebar accent */
-  --sidebar-accent-foreground: oklch(1 0 0); /* White text on sidebar accent */
-  --sidebar-border: oklch(0.25 0.01 220); /* Dark sidebar border */
-  --sidebar-ring: oklch(0.65 0.25 200); /* Neon blue sidebar focus ring */
+  --chart-1: 186 100% 47%; /* Cyan/Teal blue for charts */
+  --chart-2: 0 0% 18%; /* Dark gray for secondary chart */
+  --chart-3: 0 0% 25%; /* Lighter gray for tertiary chart */
+  --chart-4: 186 80% 35%; /* Darker cyan for chart highlights */
+  --chart-5: 0 0% 30%; /* Light gray for additional charts */
+  --sidebar: 0 0% 6%; /* Dark gray sidebar */
+  --sidebar-foreground: 0 0% 100%; /* White sidebar text */
+  --sidebar-primary: 186 100% 47%; /* Cyan/Teal blue sidebar primary */
+  --sidebar-primary-foreground: 0 0% 0%; /* Black text on sidebar primary */
+  --sidebar-accent: 186 100% 47%; /* Cyan/Teal blue sidebar accent */
+  --sidebar-accent-foreground: 0 0% 0%; /* Black text on sidebar accent */
+  --sidebar-border: 0 0% 18%; /* Dark sidebar border */
+  --sidebar-ring: 186 100% 47%; /* Cyan/Teal blue sidebar focus ring */
 }
 
 .dark {
-  /* Dark mode uses same futuristic color scheme since the app is primarily dark-themed */
-  --background: oklch(0.08 0.02 240);
-  --foreground: oklch(1 0 0);
-  --card: oklch(0.15 0.01 220);
-  --card-foreground: oklch(1 0 0);
-  --popover: oklch(0.15 0.01 220);
-  --popover-foreground: oklch(1 0 0);
-  --primary: oklch(0.65 0.25 200);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.15 0.01 220);
-  --secondary-foreground: oklch(1 0 0);
-  --muted: oklch(0.35 0.01 220);
-  --muted-foreground: oklch(0.8 0 0);
-  --accent: oklch(0.65 0.25 200);
-  --accent-foreground: oklch(1 0 0);
-  --destructive: oklch(0.55 0.22 25);
-  --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.25 0.01 220);
-  --input: oklch(0.15 0.01 220);
-  --ring: oklch(0.65 0.25 200);
-  --chart-1: oklch(0.65 0.25 200);
-  --chart-2: oklch(0.15 0.01 220);
-  --chart-3: oklch(0.25 0.01 220);
-  --chart-4: oklch(0.65 0.25 200);
-  --chart-5: oklch(0.35 0.01 220);
-  --sidebar: oklch(0.15 0.01 220);
-  --sidebar-foreground: oklch(1 0 0);
-  --sidebar-primary: oklch(0.65 0.25 200);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.65 0.25 200);
-  --sidebar-accent-foreground: oklch(1 0 0);
-  --sidebar-border: oklch(0.25 0.01 220);
-  --sidebar-ring: oklch(0.65 0.25 200);
+  /* Dark mode uses same color scheme: Black background with cyan/teal blue accents */
+  --background: 0 0% 0%; /* Pure black #000000 */
+  --foreground: 0 0% 100%; /* Pure white #ffffff */
+  --card: 0 0% 6%; /* Very dark gray #0f0f0f */
+  --card-foreground: 0 0% 100%; /* White text on cards */
+  --popover: 0 0% 6%; /* Very dark gray for popovers */
+  --popover-foreground: 0 0% 100%; /* White text in popovers */
+  --primary: 186 100% 47%; /* Cyan/Teal blue #00CFE8 */
+  --primary-foreground: 0 0% 0%; /* Black text on primary */
+  --secondary: 0 0% 12%; /* Dark gray for secondary */
+  --secondary-foreground: 0 0% 100%; /* White text on secondary */
+  --muted: 0 0% 18%; /* Muted dark gray */
+  --muted-foreground: 0 0% 70%; /* Light gray text */
+  --accent: 186 100% 47%; /* Cyan/Teal blue accent */
+  --accent-foreground: 0 0% 0%; /* Black text on accent */
+  --destructive: 0 84% 60%; /* Red for destructive actions */
+  --destructive-foreground: 0 0% 100%; /* White text on destructive */
+  --border: 0 0% 18%; /* Dark border */
+  --input: 0 0% 12%; /* Input background */
+  --ring: 186 100% 47%; /* Cyan/Teal blue focus ring */
+  --chart-1: 186 100% 47%; /* Cyan/Teal blue for charts */
+  --chart-2: 0 0% 18%; /* Dark gray for secondary chart */
+  --chart-3: 0 0% 25%; /* Lighter gray for tertiary chart */
+  --chart-4: 186 80% 35%; /* Darker cyan for chart highlights */
+  --chart-5: 0 0% 30%; /* Light gray for additional charts */
+  --sidebar: 0 0% 6%; /* Dark gray sidebar */
+  --sidebar-foreground: 0 0% 100%; /* White sidebar text */
+  --sidebar-primary: 186 100% 47%; /* Cyan/Teal blue sidebar primary */
+  --sidebar-primary-foreground: 0 0% 0%; /* Black text on sidebar primary */
+  --sidebar-accent: 186 100% 47%; /* Cyan/Teal blue sidebar accent */
+  --sidebar-accent-foreground: 0 0% 0%; /* Black text on sidebar accent */
+  --sidebar-border: 0 0% 18%; /* Dark sidebar border */
+  --sidebar-ring: 186 100% 47%; /* Cyan/Teal blue sidebar focus ring */
 }
 
 @theme inline {

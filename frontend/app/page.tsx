@@ -203,22 +203,22 @@ export default function KSWiFiApp() {
 
   // Onboarding Screen
   const renderOnboarding = () => (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md text-center p-8">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <Card className="w-full max-w-md text-center p-8 bg-card border-border">
         <div className="mb-8">
-          <div className="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Smartphone className="w-10 h-10 text-white" />
+          <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse-cyan">
+            <Smartphone className="w-10 h-10 text-primary-foreground" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">KSWiFi</h1>
-          <p className="text-gray-600 mb-6">Virtual eSIM Data Manager</p>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-3xl font-bold text-foreground mb-2">KSWiFi</h1>
+          <p className="text-muted-foreground mb-6">Virtual eSIM Data Manager</p>
+          <p className="text-sm text-muted-foreground">
             Download data packs on WiFi, activate anywhere with eSIM
           </p>
         </div>
         
         <div className="space-y-3">
           <Button 
-            className="w-full" 
+            className="w-full bg-primary text-primary-foreground hover:bg-primary/90" 
             size="lg"
             onClick={() => setAuthScreen("signup")}
           >
@@ -226,7 +226,7 @@ export default function KSWiFiApp() {
           </Button>
           <Button 
             variant="outline" 
-            className="w-full" 
+            className="w-full border-border text-foreground hover:bg-muted" 
             size="lg"
             onClick={() => setAuthScreen("signin")}
           >
@@ -239,7 +239,7 @@ export default function KSWiFiApp() {
 
   // Authentication Screen
   const renderAuth = () => (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       {authScreen === "signin" && (
         <SignInForm
           onSuccess={handleAuthSuccess}
@@ -263,21 +263,21 @@ export default function KSWiFiApp() {
 
   // Dashboard Screen (protected)
   const renderDashboard = () => (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="max-w-md mx-auto bg-white shadow-2xl min-h-screen">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-md mx-auto bg-card shadow-2xl min-h-screen border-x border-border">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 rounded-b-3xl">
+        <div className="bg-gradient-to-r from-primary to-kswifi-cyan-dark text-primary-foreground p-6 rounded-b-3xl">
           <div className="flex justify-between items-center mb-4">
             <div>
               <h1 className="text-2xl font-bold">KSWiFi</h1>
-              <p className="text-blue-100">Welcome, {userData.name.split(' ')[0]}</p>
+              <p className="text-primary-foreground/80">Welcome, {userData.name.split(' ')[0]}</p>
             </div>
             <div className="flex space-x-2">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setCurrentScreen("settings")}
-                className="text-white hover:bg-white/20"
+                className="text-primary-foreground hover:bg-black/20"
               >
                 <Settings className="w-5 h-5" />
               </Button>
@@ -285,7 +285,7 @@ export default function KSWiFiApp() {
                 variant="ghost"
                 size="sm"
                 onClick={handleSignOut}
-                className="text-white hover:bg-white/20"
+                className="text-primary-foreground hover:bg-black/20"
               >
                 <LogOut className="w-5 h-5" />
               </Button>
@@ -327,8 +327,8 @@ export default function KSWiFiApp() {
         {/* Recent Activity */}
         <div className="px-6 pb-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
-            <Button variant="ghost" size="sm">
+            <h2 className="text-lg font-semibold text-foreground">Recent Activity</h2>
+            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
               <History className="w-4 h-4 mr-1" />
               View All
             </Button>
@@ -364,15 +364,15 @@ export default function KSWiFiApp() {
 
   // Settings Screen
   const renderSettings = () => (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="max-w-md mx-auto bg-white shadow-2xl min-h-screen">
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 rounded-b-3xl">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-md mx-auto bg-card shadow-2xl min-h-screen border-x border-border">
+        <div className="bg-gradient-to-r from-primary to-kswifi-cyan-dark text-primary-foreground p-6 rounded-b-3xl">
           <div className="flex items-center space-x-4">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setCurrentScreen("dashboard")}
-              className="text-white hover:bg-white/20"
+              className="text-primary-foreground hover:bg-black/20"
             >
               ←
             </Button>
@@ -383,14 +383,14 @@ export default function KSWiFiApp() {
         <div className="p-6 space-y-6">
           {/* Profile Section */}
           <div>
-            <h2 className="text-lg font-semibold mb-4">Profile</h2>
+            <h2 className="text-lg font-semibold mb-4 text-foreground">Profile</h2>
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-muted/20 border border-border rounded-lg">
                 <div className="flex items-center space-x-3">
-                  <User className="w-5 h-5 text-gray-600" />
+                  <User className="w-5 h-5 text-primary" />
                   <div>
-                    <p className="font-medium">{userData.name}</p>
-                    <p className="text-sm text-gray-600">{userData.email}</p>
+                    <p className="font-medium text-foreground">{userData.name}</p>
+                    <p className="text-sm text-muted-foreground">{userData.email}</p>
                   </div>
                 </div>
               </div>
@@ -399,17 +399,18 @@ export default function KSWiFiApp() {
 
           {/* Security Section */}
           <div>
-            <h2 className="text-lg font-semibold mb-4">Security</h2>
+            <h2 className="text-lg font-semibold mb-4 text-foreground">Security</h2>
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-muted/20 border border-border rounded-lg">
                 <div className="flex items-center space-x-3">
-                  <Shield className="w-5 h-5 text-gray-600" />
-                  <span>Enhanced Security</span>
+                  <Shield className="w-5 h-5 text-primary" />
+                  <span className="text-foreground">Enhanced Security</span>
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setSecurityEnabled(!securityEnabled)}
+                  className="border-border text-foreground hover:bg-muted"
                 >
                   {securityEnabled ? "Enabled" : "Enable"}
                 </Button>
@@ -419,24 +420,24 @@ export default function KSWiFiApp() {
 
           {/* Support Section */}
           <div>
-            <h2 className="text-lg font-semibold mb-4">Support</h2>
+            <h2 className="text-lg font-semibold mb-4 text-foreground">Support</h2>
             <div className="space-y-3">
-              <Button variant="ghost" className="w-full justify-start p-3">
-                <HelpCircle className="w-5 h-5 mr-3" />
+              <Button variant="ghost" className="w-full justify-start p-3 text-foreground hover:bg-muted">
+                <HelpCircle className="w-5 h-5 mr-3 text-primary" />
                 Help Center
               </Button>
-              <Button variant="ghost" className="w-full justify-start p-3">
-                <Info className="w-5 h-5 mr-3" />
+              <Button variant="ghost" className="w-full justify-start p-3 text-foreground hover:bg-muted">
+                <Info className="w-5 h-5 mr-3 text-primary" />
                 About KSWiFi
               </Button>
             </div>
           </div>
 
           {/* Sign Out */}
-          <div className="pt-6 border-t">
+          <div className="pt-6 border-t border-border">
             <Button 
               variant="destructive" 
-              className="w-full"
+              className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={handleSignOut}
             >
               <LogOut className="w-4 h-4 mr-2" />
@@ -451,10 +452,10 @@ export default function KSWiFiApp() {
   // Loading state
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     )
