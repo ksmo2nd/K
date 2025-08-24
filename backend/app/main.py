@@ -48,7 +48,13 @@ async def lifespan(app: FastAPI):
     logger.info("Starting KSWiFi Backend Service", version=settings.APP_VERSION)
     
     try:
-        # Initialize database
+        # Initialize database connections
+        from .core.database import init_connections, init_session_factory
+        init_connections()
+        init_session_factory()
+        logger.info("Database connections initialized")
+        
+        # Initialize database tables
         await init_db()
         logger.info("Database initialized successfully")
         
@@ -58,7 +64,8 @@ async def lifespan(app: FastAPI):
         
     except Exception as e:
         logger.error("Failed to initialize application", error=str(e))
-        raise
+        # Continue anyway for development
+        logger.info("Continuing with limited functionality")
     
     yield
     

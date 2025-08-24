@@ -1,0 +1,27 @@
+# Development Requirements (minimal for testing)
+# These can be installed with --break-system-packages if needed
+
+# Core FastAPI
+fastapi>=0.100.0
+uvicorn>=0.20.0
+python-multipart>=0.0.6
+
+# Pydantic (usually included with FastAPI)
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# Basic HTTP client
+httpx>=0.24.0
+
+# Environment variables
+python-dotenv>=1.0.0
+
+# For eSIM QR codes (optional for testing)
+qrcode>=7.4.0
+pillow>=10.0.0
+
+# For mock data generation
+uuid
+
+# Basic async support
+asyncio

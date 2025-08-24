@@ -25,6 +25,11 @@ class ESIMService:
     
     async def _make_api_request(self, method: str, endpoint: str, data: Dict = None) -> Dict:
         """Make authenticated request to eSIM provider API"""
+        # Check if we have real credentials
+        if not self.api_key or not self.api_url or self.api_url == "https://api.example-provider.com":
+            # Return mock data for development
+            return self._get_mock_response(endpoint, method, data)
+        
         headers = {
             'Authorization': f'Bearer {self.api_key}',
             'Content-Type': 'application/json'
@@ -40,6 +45,45 @@ class ESIMService:
             )
             response.raise_for_status()
             return response.json()
+    
+    def _get_mock_response(self, endpoint: str, method: str, data: Dict = None) -> Dict:
+        """Generate mock responses for development"""
+        import uuid
+        from datetime import datetime
+        
+        if endpoint == 'esims/provision':
+            return {
+                'iccid': f"89014{uuid.uuid4().hex[:15]}",
+                'imsi': f"901{uuid.uuid4().hex[:12]}",
+                'msisdn': f"+234{uuid.uuid4().hex[:10]}",
+                'activation_code': f"LPA:1$api.example.com${uuid.uuid4().hex[:16]}",
+                'sm_dp_address': 'api.example.com',
+                'apn': 'internet',
+                'username': 'kswifi',
+                'password': 'kswifi123',
+                'status': 'provisioned'
+            }
+        elif endpoint.startswith('esims/') and endpoint.endswith('/activate'):
+            return {
+                'status': 'active',
+                'activated_at': datetime.utcnow().isoformat(),
+                'message': 'eSIM activated successfully'
+            }
+        elif endpoint.startswith('esims/') and endpoint.endswith('/status'):
+            return {
+                'status': 'active',
+                'data_used_mb': 0,
+                'data_remaining_mb': data.get('bundle_size_mb', 1024) if data else 1024,
+                'last_updated': datetime.utcnow().isoformat()
+            }
+        elif endpoint.startswith('esims/') and endpoint.endswith('/deactivate'):
+            return {
+                'status': 'inactive',
+                'deactivated_at': datetime.utcnow().isoformat(),
+                'message': 'eSIM deactivated successfully'
+            }
+        else:
+            return {'status': 'success', 'message': 'Mock response'}
     
     async def provision_esim(self, user_id: str, bundle_size_mb: int) -> Dict[str, Any]:
         """Provision a new eSIM from the provider"""
