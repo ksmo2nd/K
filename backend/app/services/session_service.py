@@ -34,17 +34,7 @@ class SessionService:
         self.esim_service = ESIMService()
         self.pricing = settings.BUNDLE_PRICING
     
-    def _safe_db_operation(self, operation_func, fallback_data=None):
-        """Safely execute database operations with fallback"""
-        try:
-            return operation_func()
-        except Exception as e:
-            print(f"Database operation failed: {e}")
-            if fallback_data:
-                return fallback_data
-            else:
-                # Return mock response structure
-                return type('MockResponse', (), {'data': []})() 
+
     
     async def get_available_sessions(self) -> List[Dict[str, Any]]:
         """Get available session download options"""

@@ -20,16 +20,16 @@ class Settings(BaseSettings):
     HOST: str = Field(default="0.0.0.0", description="Server host")
     PORT: int = Field(default=8000, description="Server port")
     
-    # Supabase Configuration
-    SUPABASE_URL: str = Field(default="", description="Supabase project URL")
-    SUPABASE_KEY: str = Field(default="", description="Supabase service role key")
-    SUPABASE_ANON_KEY: str = Field(default="", description="Supabase anon key")
+    # Supabase Configuration - PUT YOUR REAL SUPABASE CREDENTIALS HERE
+    SUPABASE_URL: str = Field(..., description="Supabase project URL - Get from https://supabase.com/dashboard")
+    SUPABASE_KEY: str = Field(..., description="Supabase service role key - Get from project settings")
+    SUPABASE_ANON_KEY: str = Field(..., description="Supabase anon key - Get from project settings")
     
-    # Database (Supabase PostgreSQL)
-    DATABASE_URL: str = Field(default="postgresql://localhost:5432/kswifi", description="PostgreSQL connection string from Supabase")
+    # Database (Supabase PostgreSQL) - PUT YOUR REAL DATABASE URL HERE
+    DATABASE_URL: str = Field(..., description="PostgreSQL connection string from Supabase - Format: postgresql://postgres:[password]@[host]:5432/postgres")
     
-    # Security
-    SECRET_KEY: str = Field(default="dev-secret-key-change-in-production", description="Secret key for JWT")
+    # Security - PUT YOUR REAL SECRET KEY HERE
+    SECRET_KEY: str = Field(..., description="Secret key for JWT - Generate with: openssl rand -hex 32")
     JWT_ALGORITHM: str = Field(default="HS256", description="JWT algorithm")
     JWT_EXPIRATION_HOURS: int = Field(default=24, description="JWT expiration in hours")
     
@@ -48,11 +48,12 @@ class Settings(BaseSettings):
     # Redis for background tasks
     REDIS_URL: str = Field(default="redis://localhost:6379", description="Redis connection URL")
     
-    # eSIM Provider Configuration
-    ESIM_PROVIDER_API_URL: str = Field(default="https://api.example-provider.com", description="eSIM provider API URL")
-    ESIM_PROVIDER_API_KEY: str = Field(default="", description="eSIM provider API key")
-    ESIM_PROVIDER_USERNAME: str = Field(default="", description="eSIM provider username")
-    ESIM_PROVIDER_PASSWORD: str = Field(default="", description="eSIM provider password")
+    # eSIM Provider Configuration - PUT YOUR REAL ESIM PROVIDER CREDENTIALS HERE
+    # Choose provider: Truphone, GigSky, or Airalo
+    ESIM_PROVIDER_API_URL: str = Field(..., description="eSIM provider API URL - Example: https://api.truphone.com/v1")
+    ESIM_PROVIDER_API_KEY: str = Field(..., description="eSIM provider API key - Get from provider dashboard")
+    ESIM_PROVIDER_USERNAME: str = Field(..., description="eSIM provider username - Your account username")
+    ESIM_PROVIDER_PASSWORD: str = Field(..., description="eSIM provider password - Your account password")
     
     # Data monitoring
     DATA_CHECK_INTERVAL_MINUTES: int = Field(default=5, description="Data balance check interval")
