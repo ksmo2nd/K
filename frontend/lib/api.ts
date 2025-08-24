@@ -482,7 +482,7 @@ class ApiService {
   }
 
   // Health Check
-  async healthCheck(): Promise<{ status: string; service: string }> {
+  async healthCheck(): Promise<{ status: string; service: string; [key: string]: string }> {
     try {
       // Check both Supabase and backend
       const supabaseHealth = await supabase.from('users').select('id').limit(1);

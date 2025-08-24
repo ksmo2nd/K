@@ -316,7 +316,8 @@ export default function KSWiFiApp() {
         <div className="p-6">
           <DataMeter 
             currentData={userData.currentData} 
-            totalData={userData.totalData} 
+            totalData={userData.totalData}
+            unit="GB"
           />
         </div>
 
@@ -387,7 +388,7 @@ export default function KSWiFiApp() {
       {showDataPackSelector && (
         <DataPackSelector
           onSelect={handleDataPackSelect}
-          onClose={() => setShowDataPackSelector(false)}
+          onCancel={() => setShowDataPackSelector(false)}
         />
       )}
 
@@ -397,6 +398,7 @@ export default function KSWiFiApp() {
           type={notification.type}
           title={notification.title}
           message={notification.message}
+          isVisible={notification.isVisible}
           onClose={() => setNotification(prev => ({ ...prev, isVisible: false }))}
         />
       )}
