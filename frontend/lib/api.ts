@@ -1,9 +1,12 @@
 /**
- * API Service for KSWiFi App using Supabase
+ * API Service for KSWiFi App using Hybrid Supabase + FastAPI
  */
 
 import { supabase } from './supabase';
 import { User as SupabaseUser } from '@supabase/supabase-js';
+
+// Backend API URL
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
 
 export interface User {
   id: string;
@@ -79,6 +82,43 @@ class ApiService {
     return session.user.id;
   }
 
+  // Helper method to get auth token for backend calls
+  private async getAuthToken(): Promise<string> {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error) throw error;
+    if (!session?.access_token) throw new Error('No auth token available');
+    return session.access_token;
+  }
+
+  // Helper method to make authenticated requests to backend API
+  private async makeBackendRequest<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    try {
+      const token = await this.getAuthToken();
+      
+      const response = await fetch(`${BACKEND_URL}/api${endpoint}`, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          ...options.headers,
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Backend API request failed:', error);
+      throw error;
+    }
+  }
+
   // Authentication
   async signup(userData: {
     email: string;
@@ -116,6 +156,17 @@ class ApiService {
         });
 
       if (profileError) throw profileError;
+
+      // Trigger backend post-signup webhook
+      try {
+        await fetch(`${BACKEND_URL}/api/auth/webhook/signup`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: data.user.id })
+        });
+      } catch (e) {
+        console.warn('Backend signup webhook failed:', e);
+      }
     }
 
     return {
@@ -143,12 +194,17 @@ class ApiService {
 
     if (error) throw error;
 
-    // Update last login time
+    // Trigger backend post-login webhook
     if (data.user) {
-      await supabase
-        .from('users')
-        .update({ last_login: new Date().toISOString() })
-        .eq('id', data.user.id);
+      try {
+        await fetch(`${BACKEND_URL}/api/auth/webhook/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: data.user.id })
+        });
+      } catch (e) {
+        console.warn('Backend login webhook failed:', e);
+      }
     }
 
     const { data: userData, error: userError } = await supabase
@@ -207,259 +263,189 @@ class ApiService {
     };
   }
 
-  // Data Packs
+  // Data Packs - Now using backend API for complex logic
   async getDataPacks(statusFilter?: string): Promise<DataPack[]> {
     const userId = await this.getCurrentUserId();
-    let query = supabase.from('data_packs').select('*').eq('user_id', userId);
-    
-    if (statusFilter) {
-      query = query.eq('status', statusFilter);
-    }
-    
-    const { data, error } = await query;
-    if (error) throw error;
-    return data as DataPack[];
+    const response = await this.makeBackendRequest<{ packs: DataPack[]; count: number }>(`/bundles/user/${userId}/packs${statusFilter ? `?status=${statusFilter}` : ''}`);
+    return response.packs;
+  }
+
+  async getAvailableBundles(): Promise<any> {
+    const response = await this.makeBackendRequest<any>('/bundles/available');
+    return response;
+  }
+
+  async calculateBundlePrice(data_mb: number, validity_days: number = 30): Promise<any> {
+    const response = await this.makeBackendRequest<any>(`/bundles/calculate-price?data_mb=${data_mb}&validity_days=${validity_days}`, {
+      method: 'POST'
+    });
+    return response;
   }
 
   async createDataPack(packData: {
-    name: string;
-    total_data_mb: number;
-    price: number;
-    currency?: string;
-    expires_at: string;
-  }): Promise<DataPack> {
+    bundle_name?: string;
+    custom_mb?: number;
+    validity_days?: number;
+  }): Promise<any> {
     const userId = await this.getCurrentUserId();
     
-    const { data, error } = await supabase
-      .from('data_packs')
-      .insert({
+    const response = await this.makeBackendRequest<any>('/bundles/create', {
+      method: 'POST',
+      body: JSON.stringify({
         user_id: userId,
-        ...packData,
-        used_data_mb: 0,
-        remaining_data_mb: packData.total_data_mb,
-        status: 'active',
-        currency: packData.currency || 'USD',
+        ...packData
       })
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data as DataPack;
+    });
+    
+    return response;
   }
 
-  async recordDataUsage(packId: string, usageData: {
+  async recordDataUsage(usageData: {
     data_used_mb: number;
     session_duration?: number;
     location?: string;
     device_info?: string;
-  }): Promise<{ detail: string; remaining_data_mb: number; status: string }> {
+  }): Promise<any> {
     const userId = await this.getCurrentUserId();
     
-    const { data: pack, error: fetchError } = await supabase
-      .from('data_packs')
-      .select('*')
-      .eq('id', packId)
-      .eq('user_id', userId)
-      .single();
-
-    if (fetchError) throw fetchError;
-
-    const newUsed = (pack.used_data_mb || 0) + usageData.data_used_mb;
-    const remaining = pack.total_data_mb - newUsed;
-    const status = remaining <= 0 ? 'exhausted' : pack.status;
-
-    const { error } = await supabase
-      .from('data_packs')
-      .update({
-        used_data_mb: newUsed,
-        remaining_data_mb: Math.max(0, remaining),
-        status,
+    const response = await this.makeBackendRequest<any>('/bundles/usage/update', {
+      method: 'POST',
+      body: JSON.stringify({
+        user_id: userId,
+        ...usageData
       })
-      .eq('id', packId)
-      .eq('user_id', userId);
-
-    if (error) throw error;
-
-    // Record usage history
-    await supabase.from('usage_logs').insert({
-      user_id: userId,
-      data_pack_id: packId,
-      data_used_mb: usageData.data_used_mb,
-      session_duration: usageData.session_duration,
-      location: usageData.location,
-      device_info: usageData.device_info,
     });
-
-    return {
-      detail: 'Usage recorded successfully',
-      remaining_data_mb: Math.max(0, remaining),
-      status,
-    };
-  }
-
-  async getDataPackStats(): Promise<{
-    total_packs: number;
-    active_packs: number;
-    total_data_mb: number;
-    used_data_mb: number;
-    remaining_data_mb: number;
-    total_spent: number;
-  }> {
-    const userId = await this.getCurrentUserId();
     
-    const { data, error } = await supabase
-      .from('data_packs')
-      .select('*')
-      .eq('user_id', userId);
-
-    if (error) throw error;
-
-    const stats = data.reduce((acc, pack) => ({
-      total_packs: acc.total_packs + 1,
-      active_packs: acc.active_packs + (pack.status === 'active' ? 1 : 0),
-      total_data_mb: acc.total_data_mb + pack.total_data_mb,
-      used_data_mb: acc.used_data_mb + (pack.used_data_mb || 0),
-      remaining_data_mb: acc.remaining_data_mb + pack.remaining_data_mb,
-      total_spent: acc.total_spent + pack.price,
-    }), {
-      total_packs: 0,
-      active_packs: 0,
-      total_data_mb: 0,
-      used_data_mb: 0,
-      remaining_data_mb: 0,
-      total_spent: 0,
-    });
-
-    return stats;
+    return response;
   }
 
-  // eSIM Management
+  async getDataPackStats(): Promise<any> {
+    const userId = await this.getCurrentUserId();
+    const response = await this.makeBackendRequest<any>(`/bundles/user/${userId}/summary`);
+    return response;
+  }
+
+  // eSIM Management - Now using backend API for provider integration
   async getESIMs(): Promise<ESIM[]> {
     const userId = await this.getCurrentUserId();
-    
-    const { data, error } = await supabase
-      .from('esims')
-      .select('*')
-      .eq('user_id', userId);
-
-    if (error) throw error;
-    return data as ESIM[];
+    const response = await this.makeBackendRequest<{ esims: ESIM[]; count: number }>(`/esim/user/${userId}`);
+    return response.esims;
   }
 
-  async createESIM(esimData: {
-    apn?: string;
-    username?: string;
-    password?: string;
-  }): Promise<ESIM> {
+  async provisionESIM(bundle_size_mb: number): Promise<any> {
     const userId = await this.getCurrentUserId();
     
-    // Generate ICCID and IMSI (simplified for example)
-    const iccid = `8901240${Math.random().toString().substring(2, 15)}`;
-    const imsi = `901240${Math.random().toString().substring(2, 15)}`;
-    const activationCode = `LPA:1$sm-dp.kswifi.com$${Math.random().toString(36).substring(2, 10)}`;
-    
-    const { data, error } = await supabase
-      .from('esims')
-      .insert({
+    const response = await this.makeBackendRequest<any>('/esim/provision', {
+      method: 'POST',
+      body: JSON.stringify({
         user_id: userId,
-        iccid,
-        imsi,
-        status: 'pending',
-        apn: esimData.apn || 'internet',
-        username: esimData.username,
-        password: esimData.password,
-        activation_code: Math.random().toString(36).substring(2, 10),
-        qr_code_data: activationCode,
+        bundle_size_mb
       })
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data as ESIM;
+    });
+    
+    return response;
   }
 
   async getESIMQRCode(esimId: string): Promise<ESIMQRCode> {
-    const userId = await this.getCurrentUserId();
-    
-    const { data: esim, error } = await supabase
-      .from('esims')
-      .select('*')
-      .eq('id', esimId)
-      .eq('user_id', userId)
-      .single();
-
-    if (error) throw error;
-
-    // Generate QR code data using proper LPA format
-    const qrData = {
-      qr_code_data: esim.qr_code_data,
-      qr_code_image: `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="white"/><text x="100" y="100" text-anchor="middle" font-family="monospace" font-size="8">QR Code: ${esim.activation_code}</text></svg>`)}`,
-      activation_code: esim.activation_code,
-      manual_config: {
-        activation_code: esim.activation_code,
-        sm_dp_address: 'sm-dp.kswifi.com',
-        apn: esim.apn,
-        username: esim.username,
-        password: esim.password,
-        instructions: [
-          'Open Phone Settings',
-          'Go to Cellular/Mobile Data',
-          'Add eSIM',
-          'Scan QR Code or enter details manually',
-          'Follow the on-screen instructions',
-        ],
-      },
-    };
-
-    return qrData;
+    const response = await this.makeBackendRequest<ESIMQRCode>(`/esim/${esimId}/qr-code`);
+    return response;
   }
 
-  async activateESIM(esimId: string): Promise<ESIM> {
-    const userId = await this.getCurrentUserId();
-    
-    const { data, error } = await supabase
-      .from('esims')
-      .update({
-        status: 'active',
-        activated_at: new Date().toISOString(),
-      })
-      .eq('id', esimId)
-      .eq('user_id', userId)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data as ESIM;
+  async activateESIM(esimId: string): Promise<any> {
+    const response = await this.makeBackendRequest<any>(`/esim/${esimId}/activate`, {
+      method: 'POST'
+    });
+    return response;
   }
 
   async suspendESIM(esimId: string): Promise<{ detail: string }> {
-    const userId = await this.getCurrentUserId();
-    
-    const { error } = await supabase
-      .from('esims')
-      .update({
-        status: 'suspended',
-      })
-      .eq('id', esimId)
-      .eq('user_id', userId);
+    const response = await this.makeBackendRequest<{ detail: string }>(`/esim/${esimId}/suspend`, {
+      method: 'POST'
+    });
+    return response;
+  }
 
-    if (error) throw error;
-    return { detail: 'eSIM suspended successfully' };
+  async getESIMUsage(esimId: string): Promise<any> {
+    const response = await this.makeBackendRequest<any>(`/esim/${esimId}/usage`);
+    return response;
+  }
+
+  async getESIMStatus(esimId: string): Promise<any> {
+    const response = await this.makeBackendRequest<any>(`/esim/${esimId}/status`);
+    return response;
+  }
+
+  // Notifications
+  async getNotifications(limit: number = 50, unread_only: boolean = false): Promise<any> {
+    const userId = await this.getCurrentUserId();
+    const response = await this.makeBackendRequest<any>(`/notifications/user/${userId}?limit=${limit}&unread_only=${unread_only}`);
+    return response;
+  }
+
+  async markNotificationRead(notification_id: string): Promise<any> {
+    const userId = await this.getCurrentUserId();
+    const response = await this.makeBackendRequest<any>('/notifications/mark-read', {
+      method: 'POST',
+      body: JSON.stringify({
+        notification_id,
+        user_id: userId
+      })
+    });
+    return response;
+  }
+
+  async markAllNotificationsRead(): Promise<any> {
+    const userId = await this.getCurrentUserId();
+    const response = await this.makeBackendRequest<any>(`/notifications/user/${userId}/mark-all-read`, {
+      method: 'POST'
+    });
+    return response;
+  }
+
+  async getUnreadNotificationCount(): Promise<{ unread_count: number }> {
+    const userId = await this.getCurrentUserId();
+    const response = await this.makeBackendRequest<{ unread_count: number }>(`/notifications/user/${userId}/unread-count`);
+    return response;
+  }
+
+  // Device registration for push notifications
+  async registerDevice(push_token: string, device_type: 'ios' | 'android' | 'web'): Promise<any> {
+    const userId = await this.getCurrentUserId();
+    const response = await this.makeBackendRequest<any>('/auth/device/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        user_id: userId,
+        push_token,
+        device_type
+      })
+    });
+    return response;
+  }
+
+  // Monitoring
+  async getMonitoringStats(): Promise<any> {
+    const response = await this.makeBackendRequest<any>('/monitoring/stats');
+    return response;
   }
 
   // Health Check
   async healthCheck(): Promise<{ status: string; service: string }> {
     try {
-      const { data, error } = await supabase.from('users').select('id').limit(1);
-      if (error) throw error;
+      // Check both Supabase and backend
+      const supabaseHealth = await supabase.from('users').select('id').limit(1);
+      const backendHealth = await this.makeBackendRequest<any>('/monitoring/health');
+      
       return {
         status: 'healthy',
-        service: 'KSWiFi App (Supabase)',
+        service: 'KSWiFi App (Hybrid)',
+        supabase: supabaseHealth.error ? 'unhealthy' : 'healthy',
+        backend: backendHealth.status || 'healthy'
       };
     } catch (error) {
       return {
         status: 'unhealthy',
-        service: 'KSWiFi App (Supabase)',
+        service: 'KSWiFi App (Hybrid)',
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }

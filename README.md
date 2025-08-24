@@ -1,7 +1,7 @@
 # KSWiFi App
 
 ## Project Overview
-A modern mobile-first application for managing WiFi data packs and eSIM services, built with Next.js and powered by Supabase.
+A modern mobile-first application for managing WiFi data packs and eSIM services, built with Next.js frontend, FastAPI backend, and Supabase for database & auth.
 
 ## Quick Start
 
@@ -14,12 +14,21 @@ A modern mobile-first application for managing WiFi data packs and eSIM services
 
 2. **Install Dependencies**
    ```bash
+   # Install frontend dependencies
    npm install
+   
+   # Install backend dependencies
+   cd backend && pip install -r requirements.txt
    ```
 
-3. **Start Development Server**
+3. **Start Development Servers**
    ```bash
+   # Start both frontend and backend
    npm run dev
+   
+   # Or start individually:
+   npm run frontend:dev  # Frontend only
+   npm run backend:dev   # Backend only
    ```
 
 4. **Mobile Development**
@@ -42,21 +51,29 @@ A modern mobile-first application for managing WiFi data packs and eSIM services
 ## Tech Stack
 
 ### Backend
-- Supabase (Database, Auth, Real-time & API)
-- PostgreSQL (via Supabase)
-- Row Level Security (RLS)
+- **FastAPI** - High-performance Python web framework
+- **Supabase** - Database, Auth, and Real-time features
+- **PostgreSQL** - Primary database (via Supabase)
+- **Redis** - Background task queue and caching
+- **Async SQLAlchemy** - Database ORM
+- **Celery + APScheduler** - Background task processing
 
 ### Frontend
-- Next.js 15
-- React 19
-- TypeScript
-- Tailwind CSS
-- shadcn/ui components
-- Supabase JS Client
+- **Next.js 15** - React framework with App Router
+- **React 19** - UI library
+- **TypeScript** - Type safety
+- **Tailwind CSS** - Utility-first CSS framework
+- **shadcn/ui** - Modern component library
+- **Supabase JS Client** - Real-time auth and data
 
 ### Mobile
-- Capacitor
-- Native iOS/Android support
+- **Capacitor** - Cross-platform mobile runtime
+- **Native iOS/Android** - Platform-specific builds
+
+### Infrastructure
+- **Docker** - Containerization
+- **Row Level Security (RLS)** - Database security
+- **Structured Logging** - Observability
 
 ## Project Structure
 
@@ -65,21 +82,31 @@ A modern mobile-first application for managing WiFi data packs and eSIM services
 ├── frontend/            # Next.js web application
 │   ├── app/            # Next.js App Router pages
 │   ├── components/     # React components
-│   ├── lib/           # Utility functions and API client
+│   ├── lib/           # API client and utilities
 │   └── hooks/         # Custom React hooks
+├── backend/            # FastAPI backend service
+│   ├── app/           # Application code
+│   │   ├── core/      # Configuration and database
+│   │   ├── services/  # Business logic services
+│   │   ├── routes/    # API endpoints
+│   │   └── models/    # Data models and enums
+│   └── requirements.txt
 ├── android/            # Android platform files
 ├── ios/               # iOS platform files
 ├── supabase/          # Database migrations and config
-└── docker-compose.yml # Optional containerized development
+└── docker-compose.yml # Development environment
 ```
 
 ## Development
 
 ### Prerequisites
-- Node.js 18+
-- Supabase account
-- Xcode (for iOS development)
-- Android Studio (for Android development)
+- **Node.js 18+** - Frontend development
+- **Python 3.12+** - Backend development
+- **Supabase account** - Database and auth
+- **Redis** (optional, for background tasks)
+- **Xcode** (for iOS development)
+- **Android Studio** (for Android development)
+- **Docker** (optional, for containerized development)
 
 ### Environment Setup
 1. Create a Supabase project at [supabase.com](https://supabase.com)
@@ -124,17 +151,35 @@ Database is automatically managed by Supabase. No separate deployment needed.
 
 ## Features
 
-- User authentication via Supabase Auth
-- WiFi data pack management
-- eSIM provisioning and management
-- Mobile app support (iOS & Android)
-- Real-time data usage tracking
-- QR code generation for eSIM activation
-- Row Level Security (RLS) for data protection
+### Core Features
+- 🔐 **User Authentication** - Secure auth via Supabase
+- 📱 **Data Pack Management** - Purchase and manage data bundles
+- 🌐 **eSIM Integration** - Real eSIM provider integration
+- 📊 **Usage Monitoring** - Real-time data consumption tracking
+- 🔔 **Smart Notifications** - Low balance and usage alerts
+- 📱 **Mobile Apps** - Native iOS & Android support
+
+### Advanced Features
+- ⚡ **Background Monitoring** - Automatic data balance checks
+- 🧮 **Dynamic Pricing** - Smart bundle calculation
+- 📈 **Usage Analytics** - Detailed consumption insights
+- 🔒 **Row Level Security** - Database-level user isolation
+- 🔄 **Real-time Sync** - Live data updates
+- 🎯 **Push Notifications** - Cross-platform alerts
+- 📋 **QR Code Generation** - eSIM activation codes
 
 ## API Documentation
 
-The app uses Supabase's auto-generated API. You can view the API documentation in your Supabase dashboard under API section.
+### Backend API
+Once the backend server is running, visit:
+- **OpenAPI/Swagger**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+- **Health Check**: http://localhost:8000/health
+
+### Supabase API
+Database operations and real-time features are handled through Supabase:
+- **Supabase Dashboard**: [Your Project Dashboard](https://supabase.com/dashboard)
+- **Auto-generated API docs** available in your Supabase project
 
 ## Mobile App Building
 
