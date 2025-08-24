@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { DataMeter } from "@/components/data-meter"
@@ -9,6 +9,7 @@ import { ActionButton } from "@/components/action-button"
 import { HistoryItem } from "@/components/history-item"
 import { NotificationPopup } from "@/components/notification-popup"
 import { DataPackSelector } from "@/components/data-pack-selector"
+import { apiService } from "@/lib/api"
 import {
   Download,
   Power,
@@ -23,11 +24,28 @@ import {
   Info,
 } from "lucide-react"
 
+interface UserData {
+  id: number
+  email: string
+  first_name: string
+  last_name: string
+  phone_number?: string
+  data_packs?: Array<{
+    id: number
+    size_gb: number
+    used_gb: number
+    purchase_date: string
+    status: string
+  }>
+}
+
 export default function KSWiFiApp() {
   const [currentScreen, setCurrentScreen] = useState<"onboarding" | "signin" | "signup" | "dashboard" | "settings">(
     "onboarding",
   )
   const [isSignedIn, setIsSignedIn] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [currentUser, setCurrentUser] = useState<UserData | null>(null)
   const [showDataPackSelector, setShowDataPackSelector] = useState(false)
   const [notification, setNotification] = useState<{
     type: "success" | "warning" | "info"
@@ -37,24 +55,100 @@ export default function KSWiFiApp() {
   }>({ type: "info", title: "", message: "", isVisible: false })
   const [securityEnabled, setSecurityEnabled] = useState(false)
 
-  // Mock data
-  const userData = {
-    name: "Alex Johnson",
-    email: "alex@example.com",
-    currentData: 2.3,
-    totalData: 5.0,
+  // Check for existing auth token on mount
+  useEffect(() => {
+    checkAuthStatus()
+  }, [])
+
+  const checkAuthStatus = async () => {
+    const token = localStorage.getItem('access_token')
+    if (token) {
+      try {
+        const user = await apiService.getCurrentUser()
+        setCurrentUser(user)
+        setIsSignedIn(true)
+        setCurrentScreen("dashboard")
+      } catch (error) {
+        localStorage.removeItem('access_token')
+        setCurrentScreen("onboarding")
+      }
+    }
+  }
+
+  // Real user data from API (fallback to mock if not signed in)
+  const userData = currentUser ? {
+    name: `${currentUser.first_name} ${currentUser.last_name}`,
+    email: currentUser.email,
+    currentData: 0, // Will be populated from data packs
+    totalData: 0, // Will be populated from data packs
+    isWifiConnected: true,
+    networkName: "CoffeeShop_WiFi",
+  } : {
+    name: "Guest User",
+    email: "",
+    currentData: 0,
+    totalData: 0,
     isWifiConnected: true,
     networkName: "CoffeeShop_WiFi",
   }
 
+  // Real history data from API (fallback to mock if not signed in)  
   const recentHistory = [
-    { size: "2.5 GB", date: "Dec 15, 2024", used: "2.3 GB", status: "active" as const },
-    { size: "1.0 GB", date: "Dec 12, 2024", used: "1.0 GB", status: "completed" as const },
-    { size: "3.0 GB", date: "Dec 10, 2024", used: "2.8 GB", status: "completed" as const },
+    { size: "No data packs", date: "Sign in to view", used: "0 GB", status: "completed" as const },
   ]
 
   const showNotification = (type: "success" | "warning" | "info", title: string, message: string) => {
     setNotification({ type, title, message, isVisible: true })
+  }
+
+  const handleSignIn = async (email: string, password: string) => {
+    setIsLoading(true)
+    try {
+      const response = await apiService.login(email, password)
+      setCurrentUser(response.user)
+      setIsSignedIn(true)
+      setCurrentScreen("dashboard")
+      showNotification("success", "Welcome Back!", `Signed in as ${response.user.first_name}`)
+    } catch (error: any) {
+      showNotification("warning", "Sign In Failed", error.message || "Please check your credentials")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleSignUp = async (userData: {
+    email: string
+    password: string
+    first_name: string
+    last_name: string
+    phone_number?: string
+  }) => {
+    setIsLoading(true)
+    try {
+      const response = await apiService.signup(userData)
+      setCurrentUser(response.user)
+      setIsSignedIn(true)
+      setCurrentScreen("dashboard")
+      showNotification("success", "Account Created!", `Welcome ${response.user.first_name}!`)
+    } catch (error: any) {
+      showNotification("warning", "Sign Up Failed", error.message || "Please try again")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleSignOut = async () => {
+    try {
+      await apiService.logout()
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      setCurrentUser(null)
+      setIsSignedIn(false)
+      setCurrentScreen("onboarding")
+      localStorage.removeItem('access_token')
+      showNotification("info", "Signed Out", "Come back soon!")
+    }
   }
 
   const handleDataPackDownload = () => {
@@ -62,342 +156,489 @@ export default function KSWiFiApp() {
       showNotification("warning", "WiFi Required", "Connect to WiFi to download packs")
       return
     }
+    if (!isSignedIn) {
+      showNotification("warning", "Sign In Required", "Please sign in to purchase data packs")
+      setCurrentScreen("signin")
+      return
+    }
     setShowDataPackSelector(true)
   }
 
-  const handleDataPackSelect = (pack: { size: string; price: string }) => {
+  const handleDataPackSelect = async (pack: { size: string; price: string }) => {
     setShowDataPackSelector(false)
-    showNotification("success", "Download Started", `Downloading ${pack.size} data pack...`)
+    
+    if (!isSignedIn || !currentUser) {
+      showNotification("warning", "Sign In Required", "Please sign in to purchase data packs")
+      return
+    }
 
-    // Simulate download completion
-    setTimeout(() => {
-      showNotification("success", "Download Complete", `${pack.size} data pack ready to activate`)
-    }, 3000)
+    setIsLoading(true)
+    try {
+      // Extract size from string like "5 GB" -> 5
+      const sizeGB = parseFloat(pack.size.replace(/[^\d.]/g, ''))
+      
+      await apiService.createDataPack({
+        name: `${pack.size} Data Pack`,
+        total_data_mb: sizeGB * 1024, // Convert GB to MB
+        price: parseFloat(pack.price.replace(/[^\d.]/g, '')),
+        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
+      })
+      
+      showNotification("success", "Download Started", `Downloading ${pack.size} data pack...`)
+      
+      // Refresh user data to show new pack
+      const updatedUser = await apiService.getCurrentUser()
+      setCurrentUser(updatedUser)
+      
+      setTimeout(() => {
+        showNotification("success", "Download Complete", `${pack.size} data pack ready to activate`)
+      }, 3000)
+    } catch (error: any) {
+      showNotification("warning", "Purchase Failed", error.message || "Please try again")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  if (currentScreen === "onboarding") {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-        <div className="w-full max-w-sm space-y-8">
-          {/* Logo and branding */}
-          <div className="text-center space-y-4">
-            <div className="w-20 h-20 mx-auto bg-primary rounded-2xl flex items-center justify-center">
-              <Smartphone className="w-10 h-10 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">KSWiFi</h1>
-              <p className="text-muted-foreground mt-2">Download data packs on WiFi, activate anywhere with eSIM</p>
-            </div>
+  const renderOnboarding = () => (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md p-8 text-center">
+        <div className="mb-8">
+          <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Smartphone className="w-10 h-10 text-blue-600" />
           </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome to KSWiFi</h1>
+          <p className="text-gray-600">Download data packs on WiFi, activate anywhere with eSIM</p>
+        </div>
 
-          {/* Features */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-card">
-              <Download className="w-5 h-5 text-primary" />
-              <div className="text-sm">Download data while on free WiFi</div>
-            </div>
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-card">
-              <Power className="w-5 h-5 text-primary" />
-              <div className="text-sm">Activate instantly with virtual eSIM</div>
-            </div>
+        <div className="space-y-4 mb-8">
+          <div className="flex items-center space-x-3 text-left">
+            <Download className="w-5 h-5 text-blue-600 flex-shrink-0" />
+            <span className="text-sm text-gray-700">Download data packs over WiFi</span>
           </div>
+          <div className="flex items-center space-x-3 text-left">
+            <QrCode className="w-5 h-5 text-blue-600 flex-shrink-0" />
+            <span className="text-sm text-gray-700">Get instant eSIM activation codes</span>
+          </div>
+          <div className="flex items-center space-x-3 text-left">
+            <Shield className="w-5 h-5 text-blue-600 flex-shrink-0" />
+            <span className="text-sm text-gray-700">Secure, encrypted data management</span>
+          </div>
+        </div>
 
-          <Button onClick={() => setCurrentScreen("signin")} className="w-full" size="lg">
+        <div className="space-y-3">
+          <Button
+            onClick={() => setCurrentScreen("signup")}
+            className="w-full bg-blue-600 hover:bg-blue-700"
+            disabled={isLoading}
+          >
             Get Started
           </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => setCurrentScreen("signin")}
+            className="w-full"
+            disabled={isLoading}
+          >
+            I Already Have an Account
+          </Button>
         </div>
-      </div>
-    )
-  }
+      </Card>
+    </div>
+  )
 
-  if (currentScreen === "signin") {
+  const [signinFormData, setSigninFormData] = useState({ email: '', password: '' })
+  
+  const renderSignIn = () => {
+
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-        <div className="w-full max-w-sm space-y-6">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-foreground">Welcome Back</h2>
-            <p className="text-muted-foreground mt-2">Sign in to your KSWiFi account</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md p-8">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <User className="w-8 h-8 text-blue-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back</h2>
+            <p className="text-gray-600">Sign in to your KSWiFi account</p>
           </div>
 
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Email</label>
+          <form onSubmit={(e) => {
+            e.preventDefault()
+            handleSignIn(signinFormData.email, signinFormData.password)
+          }} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
               <input
                 type="email"
-                className="w-full p-3 rounded-lg bg-input border border-border text-foreground"
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={signinFormData.email}
+                onChange={(e) => setSigninFormData({...signinFormData, email: e.target.value})}
                 placeholder="Enter your email"
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Password</label>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
               <input
                 type="password"
-                className="w-full p-3 rounded-lg bg-input border border-border text-foreground"
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={signinFormData.password}
+                onChange={(e) => setSigninFormData({...signinFormData, password: e.target.value})}
                 placeholder="Enter your password"
               />
             </div>
-          </div>
-
-          <div className="space-y-3">
-            <Button
-              onClick={() => {
-                setIsSignedIn(true)
-                setCurrentScreen("dashboard")
-              }}
-              className="w-full"
-              size="lg"
+            <Button 
+              type="submit" 
+              className="w-full bg-blue-600 hover:bg-blue-700"
+              disabled={isLoading}
             >
-              Sign In
+              {isLoading ? "Signing In..." : "Sign In"}
             </Button>
+          </form>
 
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border"></div>
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <Button variant="outline" className="w-full bg-transparent">
-                Google
-              </Button>
-              <Button variant="outline" className="w-full bg-transparent">
-                Apple
-              </Button>
-            </div>
-          </div>
-
-          <div className="text-center text-sm">
-            <span className="text-muted-foreground">Don't have an account? </span>
-            <button className="text-primary hover:underline" onClick={() => setCurrentScreen("signup")}>
-              Sign up
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => setCurrentScreen("signup")}
+              className="text-blue-600 hover:text-blue-800 text-sm"
+              disabled={isLoading}
+            >
+              Don't have an account? Sign Up
             </button>
           </div>
-        </div>
+          <div className="mt-2 text-center">
+            <button
+              onClick={() => setCurrentScreen("onboarding")}
+              className="text-gray-500 hover:text-gray-700 text-sm"
+              disabled={isLoading}
+            >
+              ← Back
+            </button>
+          </div>
+        </Card>
       </div>
     )
   }
 
-  if (currentScreen === "signup") {
+  const [signupFormData, setSignupFormData] = useState({
+    email: '',
+    password: '',
+    first_name: '',
+    last_name: '',
+    phone_number: ''
+  })
+  
+  const renderSignUp = () => {
+
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-        <div className="w-full max-w-sm space-y-6">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-foreground">Create Account</h2>
-            <p className="text-muted-foreground mt-2">Join KSWiFi and start downloading data packs</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md p-8">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <User className="w-8 h-8 text-blue-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Create Account</h2>
+            <p className="text-gray-600">Join KSWiFi to get started</p>
           </div>
 
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Full Name</label>
-              <input
-                type="text"
-                className="w-full p-3 rounded-lg bg-input border border-border text-foreground"
-                placeholder="Enter your full name"
-              />
+          <form onSubmit={(e) => {
+            e.preventDefault()
+            handleSignUp(signupFormData)
+          }} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                <input
+                  type="text"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={signupFormData.first_name}
+                  onChange={(e) => setSignupFormData({...signupFormData, first_name: e.target.value})}
+                  placeholder="First name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                <input
+                  type="text"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={signupFormData.last_name}
+                  onChange={(e) => setSignupFormData({...signupFormData, last_name: e.target.value})}
+                  placeholder="Last name"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Email</label>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
               <input
                 type="email"
-                className="w-full p-3 rounded-lg bg-input border border-border text-foreground"
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={signupFormData.email}
+                onChange={(e) => setSignupFormData({...signupFormData, email: e.target.value})}
                 placeholder="Enter your email"
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Password</label>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Phone (Optional)</label>
+              <input
+                type="tel"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={signupFormData.phone_number}
+                onChange={(e) => setSignupFormData({...signupFormData, phone_number: e.target.value})}
+                placeholder="Phone number"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
               <input
                 type="password"
-                className="w-full p-3 rounded-lg bg-input border border-border text-foreground"
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={signupFormData.password}
+                onChange={(e) => setSignupFormData({...signupFormData, password: e.target.value})}
                 placeholder="Create a password"
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Confirm Password</label>
-              <input
-                type="password"
-                className="w-full p-3 rounded-lg bg-input border border-border text-foreground"
-                placeholder="Confirm your password"
-              />
-            </div>
-          </div>
-
-          {/* Terms and conditions */}
-          <div className="flex items-start gap-2">
-            <input type="checkbox" className="mt-1" />
-            <p className="text-xs text-muted-foreground">
-              I agree to the <span className="text-primary">Terms of Service</span> and{" "}
-              <span className="text-primary">Privacy Policy</span>
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            <Button
-              onClick={() => {
-                setIsSignedIn(true)
-                setCurrentScreen("dashboard")
-                showNotification(
-                  "success",
-                  "Account Created",
-                  "Welcome to KSWiFi! Your account has been created successfully.",
-                )
-              }}
-              className="w-full"
-              size="lg"
+            <Button 
+              type="submit" 
+              className="w-full bg-blue-600 hover:bg-blue-700"
+              disabled={isLoading}
             >
-              Create Account
+              {isLoading ? "Creating Account..." : "Create Account"}
             </Button>
+          </form>
 
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border"></div>
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">Or sign up with</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <Button variant="outline" className="w-full bg-transparent">
-                Google
-              </Button>
-              <Button variant="outline" className="w-full bg-transparent">
-                Apple
-              </Button>
-            </div>
-          </div>
-
-          <div className="text-center text-sm">
-            <span className="text-muted-foreground">Already have an account? </span>
-            <button className="text-primary hover:underline" onClick={() => setCurrentScreen("signin")}>
-              Sign in
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => setCurrentScreen("signin")}
+              className="text-blue-600 hover:text-blue-800 text-sm"
+              disabled={isLoading}
+            >
+              Already have an account? Sign In
             </button>
           </div>
-        </div>
+          <div className="mt-2 text-center">
+            <button
+              onClick={() => setCurrentScreen("onboarding")}
+              className="text-gray-500 hover:text-gray-700 text-sm"
+              disabled={isLoading}
+            >
+              ← Back
+            </button>
+          </div>
+        </Card>
       </div>
     )
   }
 
-  if (currentScreen === "settings") {
-    return (
-      <div className="min-h-screen bg-background">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border">
-          <Button variant="ghost" size="sm" onClick={() => setCurrentScreen("dashboard")}>
-            ← Back
-          </Button>
-          <h1 className="text-lg font-semibold text-foreground">Settings</h1>
-          <div className="w-16"></div>
-        </div>
-
-        <div className="p-4 space-y-6">
-          {/* eSIM Setup */}
-          <div className="space-y-3">
-            <h2 className="text-lg font-semibold text-foreground">eSIM Setup</h2>
-            <div className="space-y-2">
-              <ActionButton
-                icon={QrCode}
-                title="Get QR Code"
-                description="Scan to install eSIM profile"
-                onClick={() => {}}
-              />
-              <ActionButton
-                icon={Smartphone}
-                title="Add Manually"
-                description="Enter activation code"
-                onClick={() => {}}
-                variant="secondary"
-              />
+  const renderDashboard = () => (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b border-gray-200 p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+              <Smartphone className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <h1 className="text-lg font-semibold text-gray-900">KSWiFi</h1>
+              <p className="text-sm text-gray-500">Welcome, {userData.name}</p>
             </div>
           </div>
-
-          {/* Security Settings */}
-          <div className="space-y-3">
-            <h2 className="text-lg font-semibold text-foreground">Security</h2>
-            <Card className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Shield className="w-5 h-5 text-primary" />
-                  <div>
-                    <div className="text-sm font-medium text-foreground">Enable FaceID/PIN Lock</div>
-                    <div className="text-xs text-muted-foreground">Secure app access</div>
-                  </div>
-                </div>
-                <Button
-                  variant={securityEnabled ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setSecurityEnabled(!securityEnabled)
-                    showNotification(
-                      "success",
-                      securityEnabled ? "Security Disabled" : "Security Enabled",
-                      securityEnabled ? "App lock has been disabled" : "App is now secured with biometric lock",
-                    )
-                  }}
-                >
-                  {securityEnabled ? "ON" : "OFF"}
-                </Button>
-              </div>
-            </Card>
-          </div>
-
-          {/* Account Info */}
-          <div className="space-y-3">
-            <h2 className="text-lg font-semibold text-foreground">Account Info</h2>
-            <Card className="p-4 space-y-3">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Email</span>
-                <span className="text-foreground">{userData.email}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Last Login</span>
-                <span className="text-foreground">Dec 15, 2024</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Device ID</span>
-                <span className="text-foreground font-mono text-xs">KS-7F8A9B2C</span>
-              </div>
-            </Card>
-          </div>
-
-          {/* Usage History */}
-          <div className="space-y-3">
-            <h2 className="text-lg font-semibold text-foreground">Usage History</h2>
-            <Button variant="outline" className="w-full justify-start bg-transparent" onClick={() => {}}>
-              <History className="w-4 h-4 mr-2" />
-              View All Downloads
+          <div className="flex items-center space-x-2">
+            <Button variant="ghost" size="sm" onClick={() => setCurrentScreen("settings")}>
+              <Settings className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={handleSignOut}>
+              <LogOut className="w-4 h-4" />
             </Button>
           </div>
+        </div>
+      </div>
 
-          {/* Support */}
+      {/* Content */}
+      <div className="p-4 space-y-6">
+        {/* Data Usage */}
+        <DataMeter currentData={userData.currentData} totalData={userData.totalData} unit="GB" />
+
+        {/* WiFi Status */}
+        <WifiStatus isConnected={userData.isWifiConnected} networkName={userData.networkName} />
+
+        {/* Action Buttons */}
+        <div className="grid grid-cols-2 gap-4">
+          <ActionButton
+            icon={Download}
+            title="Download Data"
+            description="Get data packs"
+            onClick={handleDataPackDownload}
+            disabled={isLoading}
+          />
+          <ActionButton
+            icon={QrCode}
+            title="eSIM Setup"
+            description="QR & manual setup"
+            onClick={() => showNotification("info", "eSIM Setup", "Feature available after data pack purchase")}
+          />
+        </div>
+
+        {/* Recent Activity */}
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <History className="w-5 h-5 mr-2" />
+            Recent Activity
+          </h2>
           <div className="space-y-3">
-            <h2 className="text-lg font-semibold text-foreground">Support & Help</h2>
-            <div className="space-y-2">
-              <Button variant="outline" className="w-full justify-start bg-transparent" onClick={() => {}}>
-                <HelpCircle className="w-4 h-4 mr-2" />
-                Contact Support
-              </Button>
-              <Button variant="outline" className="w-full justify-start bg-transparent" onClick={() => {}}>
-                FAQ & Help
-              </Button>
-            </div>
-            {/* App version info with icon */}
-            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground mt-4">
-              <Info className="w-3 h-3" />
-              <span>KSWiFi v1.2.0</span>
-            </div>
+            {recentHistory.map((item, index) => (
+              <HistoryItem key={index} {...item} />
+            ))}
           </div>
         </div>
       </div>
-    )
-  }
 
-  // Dashboard
+      {/* Data Pack Selector Modal */}
+      {showDataPackSelector && (
+        <DataPackSelector
+          onCancel={() => setShowDataPackSelector(false)}
+          onSelect={handleDataPackSelect}
+        />
+      )}
+    </div>
+  )
+
+  const renderSettings = () => (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b border-gray-200 p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Button variant="ghost" size="sm" onClick={() => setCurrentScreen("dashboard")}>
+              ←
+            </Button>
+            <h1 className="text-lg font-semibold text-gray-900">Settings</h1>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="p-4 space-y-6">
+        {/* Account Info */}
+        <Card className="p-4">
+          <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+            <User className="w-5 h-5 mr-2" />
+            Account Information
+          </h3>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-600">Name:</span>
+              <span className="text-gray-900">{userData.name}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Email:</span>
+              <span className="text-gray-900">{userData.email}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Total Data:</span>
+              <span className="text-gray-900">{userData.totalData} GB</span>
+            </div>
+          </div>
+        </Card>
+
+        {/* Security */}
+        <Card className="p-4">
+          <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+            <Shield className="w-5 h-5 mr-2" />
+            Security & Privacy
+          </h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-medium text-gray-900">Enhanced Security</div>
+                <div className="text-xs text-gray-600">Additional protection for your account</div>
+              </div>
+              <Button
+                variant={securityEnabled ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setSecurityEnabled(!securityEnabled)
+                  showNotification(
+                    "success",
+                    securityEnabled ? "Security Disabled" : "Security Enabled",
+                    securityEnabled
+                      ? "Enhanced security has been turned off"
+                      : "Your account now has enhanced security protection",
+                  )
+                }}
+              >
+                {securityEnabled ? "Enabled" : "Enable"}
+              </Button>
+            </div>
+          </div>
+        </Card>
+
+        {/* Support */}
+        <Card className="p-4">
+          <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+            <HelpCircle className="w-5 h-5 mr-2" />
+            Help & Support
+          </h3>
+          <div className="space-y-3">
+            <button
+              onClick={() => showNotification("info", "Help Center", "Visit our help center for guides and FAQs")}
+              className="w-full text-left p-3 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <div className="text-sm font-medium text-gray-900">Help Center</div>
+              <div className="text-xs text-gray-600">Guides, FAQs, and tutorials</div>
+            </button>
+            <button
+              onClick={() =>
+                showNotification("info", "Contact Support", "Our support team will respond within 24 hours")
+              }
+              className="w-full text-left p-3 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <div className="text-sm font-medium text-gray-900">Contact Support</div>
+              <div className="text-xs text-gray-600">Get help from our team</div>
+            </button>
+          </div>
+        </Card>
+
+        {/* About */}
+        <Card className="p-4">
+          <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+            <Info className="w-5 h-5 mr-2" />
+            About KSWiFi
+          </h3>
+          <div className="space-y-2 text-sm text-gray-600">
+            <div>Version 1.0.0</div>
+            <div>© 2024 KSWiFi. All rights reserved.</div>
+            <div>Virtual eSIM data management platform</div>
+          </div>
+        </Card>
+
+        {/* Sign Out */}
+        <Button
+          variant="outline"
+          onClick={handleSignOut}
+          className="w-full text-red-600 border-red-300 hover:bg-red-50"
+          disabled={isLoading}
+        >
+          <LogOut className="w-4 h-4 mr-2" />
+          Sign Out
+        </Button>
+      </div>
+    </div>
+  )
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Notification popup */}
+    <div className="relative">
+      {currentScreen === "onboarding" && renderOnboarding()}
+      {currentScreen === "signin" && renderSignIn()}
+      {currentScreen === "signup" && renderSignUp()}
+      {currentScreen === "dashboard" && renderDashboard()}
+      {currentScreen === "settings" && renderSettings()}
+
+      {/* Notification */}
       <NotificationPopup
         type={notification.type}
         title={notification.title}
@@ -405,83 +646,6 @@ export default function KSWiFiApp() {
         isVisible={notification.isVisible}
         onClose={() => setNotification((prev) => ({ ...prev, isVisible: false }))}
       />
-
-      {/* Data pack selector modal */}
-      {showDataPackSelector && (
-        <DataPackSelector onSelect={handleDataPackSelect} onCancel={() => setShowDataPackSelector(false)} />
-      )}
-
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-            <User className="w-4 h-4 text-primary-foreground" />
-          </div>
-          <div>
-            <div className="text-sm font-medium text-foreground">{userData.name}</div>
-            <div className="text-xs text-muted-foreground">{userData.email}</div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => setCurrentScreen("settings")}>
-            <Settings className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setIsSignedIn(false)
-              setCurrentScreen("onboarding")
-            }}
-          >
-            <LogOut className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
-
-      <div className="p-4 space-y-6">
-        {/* WiFi Status */}
-        <WifiStatus isConnected={userData.isWifiConnected} networkName={userData.networkName} />
-
-        {/* Data Meter */}
-        <div className="text-center space-y-4">
-          <h2 className="text-xl font-semibold text-foreground">Current Balance</h2>
-          <DataMeter currentData={userData.currentData} totalData={userData.totalData} unit="GB" />
-        </div>
-
-        {/* Action Buttons */}
-        <div className="grid grid-cols-1 gap-3">
-          <ActionButton
-            icon={Download}
-            title="Download Data Pack"
-            description={userData.isWifiConnected ? "Ready to download" : "Connect to WiFi first"}
-            onClick={handleDataPackDownload}
-            disabled={!userData.isWifiConnected}
-          />
-          <ActionButton
-            icon={Power}
-            title="Activate Data Pack"
-            description="Switch to KSWiFi eSIM"
-            onClick={() => showNotification("info", "Activating eSIM", "Switching to KSWiFi network...")}
-            variant="secondary"
-          />
-        </div>
-
-        {/* Recent History */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-foreground">Recent Downloads</h3>
-            <Button variant="ghost" size="sm" onClick={() => setCurrentScreen("settings")}>
-              View All
-            </Button>
-          </div>
-          <div className="space-y-2">
-            {recentHistory.map((item, index) => (
-              <HistoryItem key={index} {...item} />
-            ))}
-          </div>
-        </div>
-      </div>
     </div>
   )
 }
