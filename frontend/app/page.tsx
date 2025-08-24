@@ -9,6 +9,8 @@ import { ActionButton } from "@/components/action-button"
 import { HistoryItem } from "@/components/history-item"
 import { NotificationPopup } from "@/components/notification-popup"
 import { DataPackSelector } from "@/components/data-pack-selector"
+import { SessionSelector } from "@/components/session-selector"
+import { MySessions } from "@/components/my-sessions"
 import { SignInForm, SignUpForm, PasswordResetForm } from "@/components/auth"
 import { ProtectedRoute } from "@/components/auth/protected-route"
 import { useAuth } from "@/lib/auth-context"
@@ -53,6 +55,10 @@ export default function KSWiFiApp() {
   const [dataPacks, setDataPacks] = useState<any[]>([])
   const [esims, setEsims] = useState<any[]>([])
   const [dataPackStats, setDataPackStats] = useState<any>(null)
+  
+  // Session state
+  const [showSessionSelector, setShowSessionSelector] = useState(false)
+  const [sessionsRefreshTrigger, setSessionsRefreshTrigger] = useState(0)
 
   // Check for URL messages (like password reset success)
   useEffect(() => {
@@ -158,16 +164,24 @@ export default function KSWiFiApp() {
     }
   }
 
-  const handleDataPackPurchase = () => {
+  const handleSessionDownload = () => {
     if (!userData.isWifiConnected) {
-      showNotification("warning", "WiFi Required", "Connect to WiFi to buy data credits")
+      showNotification("warning", "WiFi Required", "Connect to WiFi to download internet sessions")
       return
     }
     if (!user) {
-      showNotification("warning", "Sign In Required", "Please sign in to buy data credits")
+      showNotification("warning", "Sign In Required", "Please sign in to download sessions")
       return
     }
-    setShowDataPackSelector(true)
+    setShowSessionSelector(true)
+  }
+
+  const handleSessionDownloadComplete = (sessionId: string) => {
+    setShowSessionSelector(false)
+    setSessionsRefreshTrigger(prev => prev + 1)
+    toast.success("Session download started!", {
+      description: "Your internet session is being prepared"
+    })
   }
 
   const handleDataPackSelect = async (pack: { size: string; price: string }) => {
@@ -212,7 +226,7 @@ export default function KSWiFiApp() {
           <h1 className="text-3xl font-bold text-foreground mb-2">KSWiFi</h1>
           <p className="text-muted-foreground mb-6">Virtual eSIM Data Manager</p>
           <p className="text-sm text-muted-foreground">
-            Buy data credits on WiFi, activate anywhere with eSIM
+            Download internet sessions on WiFi, use offline via eSIM
           </p>
         </div>
         
@@ -311,9 +325,9 @@ export default function KSWiFiApp() {
           <div className="grid grid-cols-2 gap-4">
             <ActionButton
               icon={Download}
-              label="Buy Credits"
+              label="Download Session"
               description="On WiFi"
-              onClick={handleDataPackPurchase}
+              onClick={handleSessionDownload}
             />
             <ActionButton
               icon={QrCode}
@@ -340,9 +354,36 @@ export default function KSWiFiApp() {
             ))}
           </div>
         </div>
+
+        {/* My Sessions */}
+        <div className="px-6 pb-6">
+          <MySessions refreshTrigger={sessionsRefreshTrigger} />
+        </div>
       </div>
 
-      {/* Data Pack Selector Modal */}
+      {/* Session Selector Modal */}
+      {showSessionSelector && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-background rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-4 border-b border-border flex justify-between items-center">
+              <h2 className="text-lg font-semibold text-foreground">Download Internet Session</h2>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowSessionSelector(false)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                ✕
+              </Button>
+            </div>
+            <div className="p-4">
+              <SessionSelector onSessionDownload={handleSessionDownloadComplete} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Data Pack Selector Modal - Legacy */}
       {showDataPackSelector && (
         <DataPackSelector
           onSelect={handleDataPackSelect}

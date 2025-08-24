@@ -263,7 +263,60 @@ class ApiService {
     };
   }
 
-  // Data Packs - Now using backend API for complex logic
+  // Internet Sessions - Core KSWiFi functionality
+  async getAvailableSessions(): Promise<any[]> {
+    const response = await this.makeBackendRequest<any[]>('/sessions/available');
+    return response;
+  }
+
+  async startSessionDownload(sessionId: string, esimId?: string): Promise<any> {
+    const response = await this.makeBackendRequest<any>('/sessions/download', {
+      method: 'POST',
+      body: JSON.stringify({
+        session_id: sessionId,
+        esim_id: esimId
+      })
+    });
+    return response;
+  }
+
+  async activateSession(sessionId: string): Promise<any> {
+    const response = await this.makeBackendRequest<any>('/sessions/activate', {
+      method: 'POST',
+      body: JSON.stringify({
+        session_id: sessionId
+      })
+    });
+    return response;
+  }
+
+  async getMySessions(): Promise<any[]> {
+    const response = await this.makeBackendRequest<any[]>('/sessions/my-sessions');
+    return response;
+  }
+
+  async getSessionStatus(sessionId: string): Promise<any> {
+    const response = await this.makeBackendRequest<any>(`/sessions/${sessionId}/status`);
+    return response;
+  }
+
+  async trackSessionUsage(sessionId: string, dataUsedMb: number): Promise<any> {
+    const response = await this.makeBackendRequest<any>('/sessions/track-usage', {
+      method: 'POST',
+      body: JSON.stringify({
+        session_id: sessionId,
+        data_used_mb: dataUsedMb
+      })
+    });
+    return response;
+  }
+
+  async getFreeQuotaUsage(): Promise<any> {
+    const response = await this.makeBackendRequest<any>('/sessions/quota/free');
+    return response;
+  }
+
+  // Data Packs - Legacy support for backward compatibility
   async getDataPacks(statusFilter?: string): Promise<DataPack[]> {
     const userId = await this.getCurrentUserId();
     const response = await this.makeBackendRequest<{ packs: DataPack[]; count: number }>(`/bundles/user/${userId}/packs${statusFilter ? `?status=${statusFilter}` : ''}`);
@@ -452,4 +505,5 @@ class ApiService {
 }
 
 export const apiService = new ApiService();
+export const api = apiService; // Alias for compatibility
 export default apiService;

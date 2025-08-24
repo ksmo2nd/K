@@ -19,7 +19,8 @@ from .routes import (
     esim_router,
     monitoring_router,
     notifications_router,
-    activation_router
+    activation_router,
+    sessions_router
 )
 from .services.monitoring_service import MonitoringService
 
@@ -122,6 +123,7 @@ app.include_router(esim_router, prefix="/api/esim", tags=["eSIM Management"])
 app.include_router(monitoring_router, prefix="/api/monitoring", tags=["Monitoring"])
 app.include_router(notifications_router, prefix="/api/notifications", tags=["Notifications"])
 app.include_router(activation_router, tags=["Data Pack Activation"])
+app.include_router(sessions_router, prefix="/api", tags=["Internet Sessions"])
 
 # Health check endpoints
 @app.get("/health")
