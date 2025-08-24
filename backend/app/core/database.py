@@ -1,15 +1,21 @@
 """
 Database configuration and Supabase integration
+Connects to Supabase PostgreSQL using DATABASE_URL environment variable
 """
 
 import asyncpg
+import logging
+from urllib.parse import urlparse
 from supabase import create_client, Client
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.pool import NullPool
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from .config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class Base(DeclarativeBase):
@@ -17,16 +23,50 @@ class Base(DeclarativeBase):
     pass
 
 
-# Production database connections - PUT YOUR REAL CREDENTIALS IN .env FILE
+def create_database_url() -> str:
+    """
+    Create database URL compatible with asyncpg from Supabase DATABASE_URL
+    Converts postgresql:// to postgresql+asyncpg:// for SQLAlchemy async support
+    """
+    db_url = settings.DATABASE_URL
+    
+    # Parse the URL to validate format
+    parsed = urlparse(db_url)
+    
+    if not parsed.scheme.startswith('postgresql'):
+        raise ValueError(f"Invalid DATABASE_URL scheme: {parsed.scheme}. Must start with 'postgresql'")
+    
+    # Convert to asyncpg driver for SQLAlchemy async support
+    if not db_url.startswith('postgresql+asyncpg://'):
+        db_url = db_url.replace('postgresql://', 'postgresql+asyncpg://')
+    
+    logger.info(f"Database connection: {parsed.hostname}:{parsed.port}/{parsed.path.lstrip('/')}")
+    return db_url
+
+
+# Production database connections - PUT YOUR REAL SUPABASE CREDENTIALS IN .env FILE
 # Supabase client for auth and real-time features
+logger.info("Initializing Supabase client...")
 supabase: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
 
-# Async SQLAlchemy engine for direct database operations
+# Async SQLAlchemy engine for Supabase PostgreSQL operations
+logger.info("Creating database engine...")
 engine = create_async_engine(
-    settings.DATABASE_URL,
+    create_database_url(),
     echo=settings.DEBUG,
+    # Supabase connection settings
     pool_pre_ping=True,
     pool_recycle=300,
+    pool_size=10,
+    max_overflow=20,
+    # Use NullPool for serverless environments
+    poolclass=NullPool if settings.DEBUG else None,
+    # Connection arguments for Supabase
+    connect_args={
+        "server_settings": {
+            "application_name": "KSWiFi_FastAPI",
+        }
+    }
 )
 
 # Async session factory
@@ -35,6 +75,7 @@ AsyncSessionLocal = async_sessionmaker(
     autoflush=False,
     bind=engine,
     class_=AsyncSession,
+    expire_on_commit=False,  # Important for async usage
 )
 
 
@@ -53,19 +94,83 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             await session.close()
 
 
+async def test_database_connection():
+    """
+    Test database connection to Supabase PostgreSQL
+    """
+    try:
+        logger.info("Testing database connection...")
+        async with engine.begin() as conn:
+            result = await conn.execute("SELECT version(), current_database(), current_user")
+            row = result.fetchone()
+            logger.info(f"Connected to PostgreSQL: {row[0]}")
+            logger.info(f"Database: {row[1]}, User: {row[2]}")
+            return True
+    except Exception as e:
+        logger.error(f"Database connection failed: {e}")
+        raise
+
+
 async def init_db():
-    """Initialize database tables (if needed)"""
-    # Note: We'll primarily use Supabase migrations
-    # This is just for any additional tables if needed
-    async with engine.begin() as conn:
-        # Import models here to ensure they're registered
-        from ..models import *  # noqa
-        await conn.run_sync(Base.metadata.create_all)
+    """Initialize database tables and test connection"""
+    try:
+        # Test connection first
+        await test_database_connection()
+        
+        # Note: We'll primarily use Supabase migrations for schema
+        # This is just for any additional tables if needed
+        async with engine.begin() as conn:
+            # Import models here to ensure they're registered
+            from ..models import *  # noqa
+            await conn.run_sync(Base.metadata.create_all)
+            logger.info("Database tables initialized successfully")
+            
+    except Exception as e:
+        logger.error(f"Database initialization failed: {e}")
+        raise
+
+
+async def get_database_health():
+    """
+    Get database health status for monitoring
+    """
+    try:
+        async with engine.begin() as conn:
+            result = await conn.execute("""
+                SELECT 
+                    version() as postgres_version,
+                    current_database() as database_name,
+                    current_user as connected_user,
+                    now() as server_time,
+                    (SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public') as table_count
+            """)
+            row = result.fetchone()
+            
+            return {
+                "status": "healthy",
+                "postgres_version": row[0],
+                "database": row[1],
+                "user": row[2],
+                "server_time": row[3].isoformat(),
+                "tables": row[4],
+                "connection_pool": {
+                    "size": engine.pool.size(),
+                    "checked_in": engine.pool.checkedin(),
+                    "checked_out": engine.pool.checkedout(),
+                }
+            }
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "error": str(e)
+        }
 
 
 async def close_db():
     """Close database connections"""
+    logger.info("Closing database connections...")
     await engine.dispose()
+    logger.info("Database connections closed")
 
 
 # Direct Supabase operations for convenience

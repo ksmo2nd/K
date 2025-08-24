@@ -128,20 +128,20 @@ app.include_router(sessions_router, prefix="/api", tags=["Internet Sessions"])
 # Health check endpoints
 @app.get("/health")
 async def health_check():
-    """Health check endpoint"""
+    """Health check endpoint with Supabase PostgreSQL connection test"""
     try:
-        # Check database connectivity
-        from .core.database import supabase_client
-        test_response = supabase_client.client.table('users').select('id').limit(1).execute()
+        # Check Supabase PostgreSQL database connectivity
+        from .core.database import get_database_health
+        db_health = await get_database_health()
         
         # Check monitoring service
         monitoring_stats = await monitoring_service.get_monitoring_stats()
         
         return {
-            "status": "healthy",
+            "status": "healthy" if db_health["status"] == "healthy" else "unhealthy",
             "service": settings.APP_NAME,
             "version": settings.APP_VERSION,
-            "database": "connected",
+            "database": db_health,
             "monitoring": "running" if monitoring_stats.get('service_running') else "stopped",
             "timestamp": monitoring_stats.get('last_check')
         }
@@ -153,6 +153,34 @@ async def health_check():
                 "status": "unhealthy",
                 "service": settings.APP_NAME,
                 "version": settings.APP_VERSION,
+                "error": str(e)
+            }
+        )
+
+@app.get("/health/database")
+async def database_health_check():
+    """Dedicated Supabase PostgreSQL database health check"""
+    try:
+        from .core.database import get_database_health, test_database_connection
+        
+        # Test basic connection
+        await test_database_connection()
+        
+        # Get detailed health info
+        db_health = await get_database_health()
+        
+        return {
+            "status": "success",
+            "message": "Database connection successful",
+            "database_info": db_health
+        }
+    except Exception as e:
+        logger.error("Database health check failed", error=str(e))
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "error",
+                "message": "Database connection failed",
                 "error": str(e)
             }
         )
