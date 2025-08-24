@@ -57,8 +57,8 @@ async def init_db():
     # Note: We'll primarily use Supabase migrations
     # This is just for any additional tables if needed
     async with engine.begin() as conn:
-        # Import models here to ensure they're registered
-        from ..models import *  # noqa
+        # Models would be imported here if we had local models
+        # For now, we rely on Supabase migrations
         await conn.run_sync(Base.metadata.create_all)
 
 
