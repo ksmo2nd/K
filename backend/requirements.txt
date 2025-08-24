@@ -1,12 +1,46 @@
+# FastAPI and server
 fastapi>=0.116.1
-passlib>=1.7.4
-pillow>=11.3.0
-psycopg2-binary>=2.9.10
-pydantic-settings>=2.10.1
-pydantic>=2.11.7
-pyjwt>=2.10.1
-python-jose[cryptography]>=3.5.0
+uvicorn[standard]>=0.35.0
 python-multipart>=0.0.20
+
+# Supabase integration
+supabase>=2.10.0
+postgrest>=0.16.11
+
+# Database
+asyncpg>=0.29.0
+sqlalchemy[asyncio]>=2.0.43
+
+# Authentication and security
+python-jose[cryptography]>=3.5.0
+passlib[bcrypt]>=1.7.4
+pyjwt>=2.10.1
+
+# Background tasks and scheduling
+celery>=5.4.0
+redis>=5.2.0
+APScheduler>=3.11.0
+
+# HTTP client for external APIs
+httpx>=0.28.1
+aiohttp>=3.11.10
+
+# eSIM and telecom
 qrcode[pil]>=8.2
-sqlalchemy>=2.0.43
-uvicorn>=0.35.0
+pillow>=11.3.0
+
+# Configuration and environment
+pydantic>=2.11.7
+pydantic-settings>=2.10.1
+python-dotenv>=1.0.1
+
+# Monitoring and logging
+structlog>=24.4.0
+sentry-sdk[fastapi]>=2.19.0
+
+# Development and testing
+pytest>=8.3.4
+pytest-asyncio>=0.25.0
+pytest-cov>=6.0.0
+black>=24.10.0
+ruff>=0.8.4

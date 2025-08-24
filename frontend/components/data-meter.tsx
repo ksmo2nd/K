@@ -38,7 +38,7 @@ export function DataMeter({ currentData, totalData, unit }: DataMeterProps) {
           strokeDashoffset={strokeDashoffset}
           className="text-primary transition-all duration-1000 ease-out"
           style={{
-            filter: "drop-shadow(0 0 8px oklch(0.65 0.25 200))",
+            filter: "drop-shadow(0 0 8px #00CFE8)",
           }}
         />
       </svg>

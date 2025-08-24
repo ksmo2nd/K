@@ -1,7 +1,7 @@
 # KSWiFi App
 
 ## Project Overview
-Full-stack application for managing WiFi data packs and eSIM services.
+A modern mobile-first application for managing WiFi data packs and eSIM services, built with Next.js frontend, FastAPI backend, and Supabase for database & auth.
 
 ## Quick Start
 
@@ -9,29 +9,35 @@ Full-stack application for managing WiFi data packs and eSIM services.
    ```bash
    # Copy environment file
    cp .env.example .env.local
+   # Add your Supabase project URL and anon key
    ```
 
-2. **Start Backend**
+2. **Install Dependencies**
    ```bash
-   cd backend
-   pip install -r requirements.txt
-   uvicorn app.main:app --reload
-   ```
-
-3. **Start Frontend**
-   ```bash
-   cd frontend
+   # Install frontend dependencies
    npm install
+   
+   # Install backend dependencies
+   cd backend && pip install -r requirements.txt
+   ```
+
+3. **Start Development Servers**
+   ```bash
+   # Start both frontend and backend
    npm run dev
+   
+   # Or start individually:
+   npm run frontend:dev  # Frontend only
+   npm run backend:dev   # Backend only
    ```
 
 4. **Mobile Development**
    ```bash
    # iOS
-   npm run ios
+   npm run mobile:ios
 
    # Android
-   npm run android
+   npm run mobile:android
    ```
 
 ## Features
@@ -45,62 +51,96 @@ Full-stack application for managing WiFi data packs and eSIM services.
 ## Tech Stack
 
 ### Backend
-- FastAPI
-- Supabase (Database & Auth)
-- Python 3.12+
+- **FastAPI** - High-performance Python web framework
+- **Supabase** - Database, Auth, and Real-time features
+- **PostgreSQL** - Primary database (via Supabase)
+- **Redis** - Background task queue and caching
+- **Async SQLAlchemy** - Database ORM
+- **Celery + APScheduler** - Background task processing
 
 ### Frontend
-- Next.js 14
-- TypeScript
-- Tailwind CSS
-- shadcn/ui components
+- **Next.js 15** - React framework with App Router
+- **React 19** - UI library
+- **TypeScript** - Type safety
+- **Tailwind CSS** - Utility-first CSS framework
+- **shadcn/ui** - Modern component library
+- **Supabase JS Client** - Real-time auth and data
 
 ### Mobile
-- Capacitor
-- Native iOS/Android support
+- **Capacitor** - Cross-platform mobile runtime
+- **Native iOS/Android** - Platform-specific builds
+
+### Infrastructure
+- **Docker** - Containerization
+- **Row Level Security (RLS)** - Database security
+- **Structured Logging** - Observability
 
 ## Project Structure
 
 ```
 .
-├── backend/              # FastAPI server
 ├── frontend/            # Next.js web application
-├── android/             # Android platform files
-├── ios/                 # iOS platform files
-├── supabase/           # Database migrations
-└── docker-compose.yml  # Development environment
+│   ├── app/            # Next.js App Router pages
+│   ├── components/     # React components
+│   ├── lib/           # API client and utilities
+│   └── hooks/         # Custom React hooks
+├── backend/            # FastAPI backend service
+│   ├── app/           # Application code
+│   │   ├── core/      # Configuration and database
+│   │   ├── services/  # Business logic services
+│   │   ├── routes/    # API endpoints
+│   │   └── models/    # Data models and enums
+│   └── requirements.txt
+├── android/            # Android platform files
+├── ios/               # iOS platform files
+├── supabase/          # Database migrations and config
+└── docker-compose.yml # Development environment
 ```
 
 ## Development
 
 ### Prerequisites
-- Node.js 18+
-- Python 3.12+
-- Docker & Docker Compose
-- Xcode (for iOS)
-- Android Studio (for Android)
+- **Node.js 18+** - Frontend development
+- **Python 3.12+** - Backend development
+- **Supabase account** - Database and auth
+- **Redis** (optional, for background tasks)
+- **Xcode** (for iOS development)
+- **Android Studio** (for Android development)
+- **Docker** (optional, for containerized development)
 
 ### Environment Setup
-1. Configure Supabase credentials
-2. Set up environment variables
-3. Install dependencies for both frontend and backend
+1. Create a Supabase project at [supabase.com](https://supabase.com)
+2. Copy `.env.example` to `.env.local`
+3. Add your Supabase project URL and anon key
+4. Install dependencies: `npm install`
 
-### Database Migrations
+### Database Setup
 ```bash
+# Install Supabase CLI
+npm install -g supabase
+
+# Login to Supabase
+supabase login
+
+# Link to your project
+supabase link --project-ref your-project-ref
+
+# Push database migrations
 supabase db push
 ```
 
 ## Deployment
 
-### Backend
+### Frontend (Vercel)
 ```bash
-docker-compose up backend
+# Deploy to Vercel
+vercel
+
+# Or connect your GitHub repo to Vercel for auto-deployment
 ```
 
-### Frontend
-```bash
-docker-compose up frontend
-```
+### Database
+Database is automatically managed by Supabase. No separate deployment needed.
 
 ## Contributing
 1. Fork the repository
@@ -109,169 +149,49 @@ docker-compose up frontend
 4. Push to the branch
 5. Open a Pull Request
 
-## License
-This project is licensed under the MIT License.
+## Features
 
-- User aut## Project Structure
+### Core Features
+- 🔐 **User Authentication** - Secure auth via Supabase
+- 📱 **Data Pack Management** - Purchase and manage data bundles
+- 🌐 **eSIM Integration** - Real eSIM provider integration
+- 📊 **Usage Monitoring** - Real-time data consumption tracking
+- 🔔 **Smart Notifications** - Low balance and usage alerts
+- 📱 **Mobile Apps** - Native iOS & Android support
 
-```
-K/
-├── frontend/           # Next.js Web Application
-│   ├── app/           # Pages and routing
-│   ├── components/    # React components
-│   ├── lib/          # Frontend utilities
-│   ├── public/       # Static assets
-│   ├── styles/       # Global styles
-│   └── hooks/        # React hooks
-├── backend/           # FastAPI Backend
-│   ├── app/          # Application code
-│   │   ├── routes/   # API endpoints
-│   │   ├── models/   # Database models
-│   │   └── utils/    # Backend utilities
-│   └── tests/        # Backend tests
-├── android/          # Android application
-├── ios/             # iOS application
-├── supabase/        # Database migrations
-└── docker-compose.yml # Container configuration
-```authorization
-- Data pack management
-- eSIM provisioning and management
-- Mobile app support (iOS & Android)
-- Real-time data usage tracking
-- QR code generation for eSIM activation
-
-## Tech Stack
-
-### Backend
-- FastAPI (Python)
-- SQLAlchemy ORM
-- Supabase (Database & Authentication)
-- JWT Authentication
-- OpenAPI Documentation
-
-### Frontend
-- Next.js
-- React
-- Tailwind CSS
-- shadcn/ui Components
-- Supabase Client
-
-### Mobile
-- Capacitor
-- iOS & Android Support
-
-## Prerequisites
-
-- Node.js 18+
-- Python 3.11+
-- Supabase Account
-- (Optional) Xcode for iOS development
-- (Optional) Android Studio for Android development
-
-## Getting Started
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/ksmo2nd/K.git
-   cd K
-   ```
-
-2. **Install dependencies**
-   ```bash
-   # Install frontend dependencies
-   npm install
-
-   # Install backend dependencies
-   pip install -r requirements.txt
-   ```
-
-3. **Environment Setup**
-   
-   Create `.env.local` file:
-   ```env
-   NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-   ```
-
-   Create `.env.backend` file:
-   ```env
-   DATABASE_URL=your-database-url
-   JWT_SECRET_KEY=your-secret-key
-   JWT_ALGORITHM=HS256
-   ACCESS_TOKEN_EXPIRE_MINUTES=30
-   ```
-
-4. **Database Setup**
-   
-   Run the SQL migrations in your Supabase project:
-   ```sql
-   -- Run the contents of supabase/migrations/00000000000000_initial_schema.sql
-   ```
-
-5. **Start the Development Servers**
-
-   Backend:
-   ```bash
-   uvicorn main:app --reload --host 0.0.0.0 --port 8000
-   ```
-
-   Frontend:
-   ```bash
-   npm run dev
-   ```
-
-6. **Mobile Development**
-
-   Build the web app:
-   ```bash
-   npm run build
-   npx cap sync
-   ```
-
-   iOS:
-   ```bash
-   npx cap open ios
-   ```
-
-   Android:
-   ```bash
-   npx cap open android
-   ```
-
-## Project Structure
-
-```
-K/
-├── app/                  # Next.js pages
-├── components/           # React components
-├── lib/                  # Shared utilities
-├── public/              # Static assets
-├── styles/              # Global styles
-├── routes/              # Backend API routes
-├── models.py            # Database models
-├── database.py          # Database configuration
-├── auth.py              # Authentication logic
-├── main.py             # FastAPI application
-└── supabase/           # Database migrations
-```
+### Advanced Features
+- ⚡ **Background Monitoring** - Automatic data balance checks
+- 🧮 **Dynamic Pricing** - Smart bundle calculation
+- 📈 **Usage Analytics** - Detailed consumption insights
+- 🔒 **Row Level Security** - Database-level user isolation
+- 🔄 **Real-time Sync** - Live data updates
+- 🎯 **Push Notifications** - Cross-platform alerts
+- 📋 **QR Code Generation** - eSIM activation codes
 
 ## API Documentation
 
+### Backend API
 Once the backend server is running, visit:
-- OpenAPI documentation: http://localhost:8000/docs
-- ReDoc documentation: http://localhost:8000/redoc
+- **OpenAPI/Swagger**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+- **Health Check**: http://localhost:8000/health
+
+### Supabase API
+Database operations and real-time features are handled through Supabase:
+- **Supabase Dashboard**: [Your Project Dashboard](https://supabase.com/dashboard)
+- **Auto-generated API docs** available in your Supabase project
 
 ## Mobile App Building
 
 ### iOS
 1. Open Xcode workspace in `ios/App`
-2. Configure signing
-3. Build and run
+2. Configure signing and provisioning profiles
+3. Build and run on device or simulator
 
 ### Android
 1. Open Android project in `android/`
-2. Configure signing
-3. Build and run
+2. Configure signing certificates
+3. Build and run on device or emulator
 
 ## Contributing
 
@@ -283,4 +203,4 @@ Once the backend server is running, visit:
 
 ## License
 
-[MIT License](LICENSE)
+This project is licensed under the MIT License.
