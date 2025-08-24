@@ -21,13 +21,25 @@ class BundleService:
         """Get all available bundle options with pricing"""
         bundles = []
         for bundle_name, details in self.pricing.items():
-            bundles.append({
+            bundle = {
                 'name': bundle_name,
                 'data_mb': details['data_mb'],
                 'price_usd': details['price_usd'],
+                'price_ngn': details.get('price_ngn', 0),
                 'validity_days': details['validity_days'],
-                'price_per_mb': round(details['price_usd'] / details['data_mb'], 4)
-            })
+                'plan_type': details.get('plan_type', 'standard'),
+                'is_unlimited': details['data_mb'] == -1
+            }
+            
+            # Calculate price per MB for standard plans only
+            if details['data_mb'] > 0:
+                bundle['price_per_mb_usd'] = round(details['price_usd'] / details['data_mb'], 4)
+                bundle['price_per_mb_ngn'] = round(details.get('price_ngn', 0) / details['data_mb'], 4)
+            else:
+                bundle['price_per_mb_usd'] = 0
+                bundle['price_per_mb_ngn'] = 0
+                
+            bundles.append(bundle)
         return bundles
     
     async def calculate_bundle_price(self, data_mb: int, validity_days: int = 30) -> Dict[str, Any]:
@@ -65,37 +77,54 @@ class BundleService:
             'markup_applied': markup > 1.0
         }
     
-    async def create_data_pack(self, user_id: str, bundle_name: str = None, custom_mb: int = None, validity_days: int = 30) -> Dict[str, Any]:
+    async def create_data_pack(self, user_id: str, bundle_name: str = None, custom_mb: int = None, validity_days: int = 30, currency: str = 'NGN') -> Dict[str, Any]:
         """Create a new data pack for user"""
         try:
             # Determine bundle details
             if bundle_name and bundle_name in self.pricing:
                 bundle_info = self.pricing[bundle_name]
                 data_mb = bundle_info['data_mb']
-                price = bundle_info['price_usd']
+                price_usd = bundle_info['price_usd']
+                price_ngn = bundle_info.get('price_ngn', 0)
                 validity_days = bundle_info['validity_days']
+                plan_type = bundle_info.get('plan_type', 'standard')
                 pack_name = bundle_name
+                is_unlimited = data_mb == -1
             elif custom_mb:
                 pricing_info = await self.calculate_bundle_price(custom_mb, validity_days)
                 data_mb = custom_mb
-                price = pricing_info['price_usd']
+                price_usd = pricing_info['price_usd']
+                price_ngn = pricing_info.get('price_ngn', price_usd * 416)  # Approximate NGN rate
+                plan_type = 'standard'
                 pack_name = f"Custom {data_mb}MB"
+                is_unlimited = False
             else:
                 raise ValueError("Either bundle_name or custom_mb must be provided")
             
             # Calculate expiry date
             expires_at = datetime.utcnow() + timedelta(days=validity_days)
             
+            # For unlimited plans, set data_mb to a large number for tracking
+            if is_unlimited:
+                total_data_mb = 999999999  # Very large number for unlimited
+                remaining_data_mb = 999999999
+            else:
+                total_data_mb = data_mb
+                remaining_data_mb = data_mb
+            
             # Create data pack in Supabase
             pack_data = {
                 'user_id': user_id,
                 'name': pack_name,
-                'total_data_mb': data_mb,
+                'total_data_mb': total_data_mb,
                 'used_data_mb': 0,
-                'remaining_data_mb': data_mb,
-                'price': price,
-                'currency': 'USD',
+                'remaining_data_mb': remaining_data_mb,
+                'price': price_ngn if currency == 'NGN' else price_usd,
+                'price_ngn': price_ngn,
+                'currency': currency,
+                'plan_type': plan_type,
                 'status': DataPackStatus.ACTIVE.value,
+                'is_active': False,  # Purchased but not activated yet
                 'expires_at': expires_at.isoformat()
             }
             
@@ -106,9 +135,14 @@ class BundleService:
                 'pack_id': pack_record['id'],
                 'name': pack_name,
                 'data_mb': data_mb,
-                'price_usd': price,
+                'price_usd': price_usd,
+                'price_ngn': price_ngn,
+                'currency': currency,
+                'plan_type': plan_type,
+                'is_unlimited': is_unlimited,
                 'expires_at': expires_at.isoformat(),
-                'status': DataPackStatus.ACTIVE.value
+                'status': DataPackStatus.ACTIVE.value,
+                'requires_activation': True
             }
             
         except Exception as e:
@@ -264,3 +298,106 @@ class BundleService:
             
         except Exception as e:
             raise Exception(f"Failed to get bundle summary: {str(e)}")
+    
+    async def activate_data_pack(self, user_id: str, pack_id: str, esim_id: str = None) -> Dict[str, Any]:
+        """Activate a purchased data pack for use"""
+        try:
+            # Verify pack belongs to user
+            pack_response = supabase_client.client.table('data_packs').select('*').eq('id', pack_id).eq('user_id', user_id).execute()
+            if not pack_response.data:
+                raise Exception("Data pack not found or doesn't belong to user")
+            
+            pack = pack_response.data[0]
+            
+            # Check if pack is still valid
+            expires_at = datetime.fromisoformat(pack['expires_at'].replace('Z', '+00:00'))
+            if expires_at <= datetime.now(expires_at.tzinfo):
+                raise Exception("Data pack has expired")
+            
+            # Use database function to activate pack
+            if esim_id:
+                supabase_client.client.rpc('activate_data_pack', {'pack_id': pack_id, 'esim_id': esim_id}).execute()
+            else:
+                supabase_client.client.rpc('activate_data_pack', {'pack_id': pack_id}).execute()
+            
+            return {
+                'success': True,
+                'pack_id': pack_id,
+                'pack_name': pack['name'],
+                'plan_type': pack.get('plan_type', 'standard'),
+                'activated_at': datetime.utcnow().isoformat(),
+                'esim_linked': esim_id is not None
+            }
+            
+        except Exception as e:
+            raise Exception(f"Failed to activate data pack: {str(e)}")
+    
+    async def deactivate_data_pack(self, user_id: str, pack_id: str) -> Dict[str, Any]:
+        """Deactivate a data pack"""
+        try:
+            # Verify pack belongs to user
+            pack_response = supabase_client.client.table('data_packs').select('*').eq('id', pack_id).eq('user_id', user_id).execute()
+            if not pack_response.data:
+                raise Exception("Data pack not found or doesn't belong to user")
+            
+            # Use database function to deactivate pack
+            supabase_client.client.rpc('deactivate_data_pack', {'pack_id': pack_id}).execute()
+            
+            return {
+                'success': True,
+                'pack_id': pack_id,
+                'deactivated_at': datetime.utcnow().isoformat()
+            }
+            
+        except Exception as e:
+            raise Exception(f"Failed to deactivate data pack: {str(e)}")
+    
+    async def get_activatable_packs(self, user_id: str) -> List[Dict[str, Any]]:
+        """Get data packs that can be activated"""
+        try:
+            # Get purchased but inactive packs that haven't expired
+            current_time = datetime.utcnow().isoformat()
+            response = supabase_client.client.table('data_packs').select('*').eq('user_id', user_id).eq('is_active', False).gt('expires_at', current_time).execute()
+            
+            activatable_packs = []
+            for pack in response.data:
+                activatable_packs.append({
+                    'pack_id': pack['id'],
+                    'name': pack['name'],
+                    'plan_type': pack.get('plan_type', 'standard'),
+                    'data_mb': pack['total_data_mb'],
+                    'is_unlimited': pack.get('plan_type') == 'unlimited',
+                    'price': pack['price'],
+                    'currency': pack['currency'],
+                    'expires_at': pack['expires_at'],
+                    'validity_days': (datetime.fromisoformat(pack['expires_at'].replace('Z', '+00:00')) - datetime.now(datetime.fromisoformat(pack['expires_at'].replace('Z', '+00:00')).tzinfo)).days
+                })
+            
+            return activatable_packs
+            
+        except Exception as e:
+            raise Exception(f"Failed to get activatable packs: {str(e)}")
+    
+    async def get_active_pack(self, user_id: str) -> Dict[str, Any]:
+        """Get currently active data pack for user"""
+        try:
+            response = supabase_client.client.table('data_packs').select('*').eq('user_id', user_id).eq('is_active', True).execute()
+            
+            if not response.data:
+                return None
+            
+            pack = response.data[0]
+            return {
+                'pack_id': pack['id'],
+                'name': pack['name'],
+                'plan_type': pack.get('plan_type', 'standard'),
+                'data_mb': pack['total_data_mb'],
+                'used_mb': pack['used_data_mb'],
+                'remaining_mb': pack['remaining_data_mb'],
+                'is_unlimited': pack.get('plan_type') == 'unlimited',
+                'activated_at': pack.get('activated_at'),
+                'expires_at': pack['expires_at']
+            }
+            
+        except Exception as e:
+            raise Exception(f"Failed to get active pack: {str(e)}")

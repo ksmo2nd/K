@@ -58,13 +58,14 @@ class Settings(BaseSettings):
     DATA_CHECK_INTERVAL_MINUTES: int = Field(default=5, description="Data balance check interval")
     LOW_DATA_THRESHOLD_MB: float = Field(default=100.0, description="Low data warning threshold")
     
-    # Bundle pricing (you can move this to database later)
+    # Bundle pricing - Nigerian Naira (NGN) pricing
     BUNDLE_PRICING: dict = Field(
         default={
-            "1GB": {"data_mb": 1024, "price_usd": 5.99, "validity_days": 30},
-            "5GB": {"data_mb": 5120, "price_usd": 19.99, "validity_days": 30},
-            "10GB": {"data_mb": 10240, "price_usd": 34.99, "validity_days": 30},
-            "20GB": {"data_mb": 20480, "price_usd": 59.99, "validity_days": 30},
+            "1GB": {"data_mb": 1024, "price_ngn": 500, "price_usd": 1.20, "validity_days": 30, "plan_type": "standard"},
+            "5GB": {"data_mb": 5120, "price_ngn": 2000, "price_usd": 4.80, "validity_days": 30, "plan_type": "standard"},
+            "10GB": {"data_mb": 10240, "price_ngn": 3500, "price_usd": 8.40, "validity_days": 30, "plan_type": "standard"},
+            "20GB": {"data_mb": 20480, "price_ngn": 6000, "price_usd": 14.40, "validity_days": 30, "plan_type": "standard"},
+            "Unlimited": {"data_mb": -1, "price_ngn": 800, "price_usd": 1.92, "validity_days": 7, "plan_type": "unlimited"},
         }
     )
     

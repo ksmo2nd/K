@@ -158,13 +158,13 @@ export default function KSWiFiApp() {
     }
   }
 
-  const handleDataPackDownload = () => {
+  const handleDataPackPurchase = () => {
     if (!userData.isWifiConnected) {
-      showNotification("warning", "WiFi Required", "Connect to WiFi to download packs")
+      showNotification("warning", "WiFi Required", "Connect to WiFi to buy data credits")
       return
     }
     if (!user) {
-      showNotification("warning", "Sign In Required", "Please sign in to purchase data packs")
+      showNotification("warning", "Sign In Required", "Please sign in to buy data credits")
       return
     }
     setShowDataPackSelector(true)
@@ -185,13 +185,13 @@ export default function KSWiFiApp() {
         validity_days: 30
       })
 
-      showNotification("success", "Data Pack Purchased!", `${pack.size} pack added to your account`)
+      showNotification("success", "Data Credits Purchased!", `${pack.size} credits added to your account`)
       
       // Reload user data
       await loadUserData()
     } catch (error: any) {
       console.error('Error purchasing data pack:', error)
-      showNotification("warning", "Purchase Failed", error.message || "Failed to purchase data pack")
+      showNotification("warning", "Purchase Failed", error.message || "Failed to purchase data credits")
     }
   }
 
@@ -212,7 +212,7 @@ export default function KSWiFiApp() {
           <h1 className="text-3xl font-bold text-foreground mb-2">KSWiFi</h1>
           <p className="text-muted-foreground mb-6">Virtual eSIM Data Manager</p>
           <p className="text-sm text-muted-foreground">
-            Download data packs on WiFi, activate anywhere with eSIM
+            Buy data credits on WiFi, activate anywhere with eSIM
           </p>
         </div>
         
@@ -311,9 +311,9 @@ export default function KSWiFiApp() {
           <div className="grid grid-cols-2 gap-4">
             <ActionButton
               icon={Download}
-              label="Download Packs"
+              label="Buy Credits"
               description="On WiFi"
-              onClick={handleDataPackDownload}
+              onClick={handleDataPackPurchase}
             />
             <ActionButton
               icon={QrCode}
