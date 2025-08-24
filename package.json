@@ -6,14 +6,16 @@
     "frontend"
   ],
   "scripts": {
-    "dev": "docker-compose up",
-    "build": "docker-compose build",
-    "start": "docker-compose up -d",
-    "stop": "docker-compose down",
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "start": "cd frontend && npm start",
     "frontend": "cd frontend && npm run dev",
-    "backend": "cd backend && uvicorn app.main:app --reload",
     "mobile:ios": "cd frontend && npm run build && npx cap sync && npx cap open ios",
     "mobile:android": "cd frontend && npm run build && npx cap sync && npx cap open android",
-    "test": "cd frontend && npm test && cd ../backend && pytest"
+    "test": "cd frontend && npm test",
+    "docker:dev": "docker-compose up",
+    "docker:build": "docker-compose build",
+    "docker:start": "docker-compose up -d",
+    "docker:stop": "docker-compose down"
   }
 }

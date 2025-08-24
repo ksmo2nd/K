@@ -1,39 +1,4 @@
 services:
-  db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: kswifi
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  services:
-  db:
-    image: postgres:15
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
-    ports:
-      - "54322:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  backend:
-    build: ./backend
-    ports:
-      - "8000:8000"
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/postgres
-      - JWT_SECRET_KEY=dev-secret-key-change-in-production
-    volumes:
-      - ./backend:/app
-    depends_on:
-      - db
-
   frontend:
     build: ./frontend
     ports:
@@ -43,11 +8,3 @@ services:
       - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
     volumes:
       - ./frontend:/app
-    depends_on:
-      - backend
-
-volumes:
-  postgres_data:
-
-volumes:
-  postgres_data:
