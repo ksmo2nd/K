@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">KSWiFi</string>
+    <string name="title_activity_main">KSWiFi</string>
+    <string name="package_name">com.kswifi.app</string>
+    <string name="custom_url_scheme">com.kswifi.app</string>
+</resources>
