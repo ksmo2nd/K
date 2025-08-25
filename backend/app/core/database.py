@@ -41,14 +41,36 @@ def create_database_url() -> str:
     if not db_url.startswith('postgresql+asyncpg://'):
         db_url = db_url.replace('postgresql://', 'postgresql+asyncpg://', 1)
     
-    # Remove sslmode query parameter since we handle SSL via connect_args
-    if '?sslmode=' in db_url:
-        db_url = db_url.split('?sslmode=')[0]
-        logger.info("SSL mode detected in DATABASE_URL - handling via connect_args")
+    # Handle Supabase-specific query parameters
+    # Keep pgbouncer=true but remove sslmode (handled via connect_args)
+    if '?' in db_url:
+        base_url, query_string = db_url.split('?', 1)
+        query_params = []
+        
+        # Parse existing query parameters
+        for param in query_string.split('&'):
+            if param.startswith('sslmode='):
+                # Skip sslmode - handled via connect_args
+                logger.info("SSL mode detected in DATABASE_URL - handling via connect_args")
+                continue
+            elif param.startswith('pgbouncer='):
+                # Keep pgbouncer parameter for Supabase
+                query_params.append(param)
+                logger.info(f"Supabase parameter preserved: {param}")
+            else:
+                # Keep other parameters
+                query_params.append(param)
+        
+        # Reconstruct URL with filtered parameters
+        if query_params:
+            db_url = base_url + '?' + '&'.join(query_params)
+        else:
+            db_url = base_url
     
     # Log connection details (without exposing password)
     ssl_info = " (SSL required)" if "sslmode=require" in settings.DATABASE_URL else ""
-    logger.info(f"Database connection: {parsed.hostname}:{parsed.port}/{parsed.path.lstrip('/')}{ssl_info}")
+    pgbouncer_info = " (pgbouncer)" if "pgbouncer=true" in settings.DATABASE_URL else ""
+    logger.info(f"Database connection: {parsed.hostname}:{parsed.port}/{parsed.path.lstrip('/')}{ssl_info}{pgbouncer_info}")
     return db_url
 
 

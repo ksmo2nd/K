@@ -17,8 +17,8 @@ def check_database_url():
     if not db_url:
         print("❌ DATABASE_URL environment variable is NOT SET")
         print()
-        print("📋 REQUIRED FORMAT:")
-        print("DATABASE_URL=postgresql://postgres:PASSWORD@db.PROJECT.supabase.co:5432/postgres")
+            print("📋 REQUIRED FORMAT:")
+    print("DATABASE_URL=postgresql://postgres:PASSWORD@db.PROJECT.supabase.co:5432/postgres?sslmode=require&pgbouncer=true")
         print()
         print("📍 HOW TO GET IT:")
         print("1. Go to Supabase Dashboard")
@@ -42,7 +42,7 @@ def check_database_url():
         print(f"   Password: {'*' * len(parsed.password) if parsed.password else 'NOT SET'}")
         print(f"   Query params: {parsed.query}")
         
-        # Check for SSL mode
+        # Check for SSL mode and pgbouncer
         if 'sslmode=require' in db_url:
             print("✅ SSL mode is set to 'require' (good for Supabase)")
             print("   Note: SSL handled via SQLAlchemy connect_args, not query params")
@@ -50,6 +50,12 @@ def check_database_url():
             print(f"⚠️  SSL mode is set but not 'require': {parsed.query}")
         else:
             print("❌ SSL mode not set - Supabase external connections need ?sslmode=require")
+        
+        # Check for pgbouncer
+        if 'pgbouncer=true' in db_url:
+            print("✅ pgbouncer=true is set (good for Supabase)")
+        else:
+            print("❌ pgbouncer=true not set - Supabase may need this for connection pooling")
         
         # Validate components
         issues = []
