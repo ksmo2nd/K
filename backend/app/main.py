@@ -6,12 +6,22 @@ FastAPI application with Supabase integration
 import asyncio
 import logging
 from contextlib import asynccontextmanager
+from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import structlog
 
-from .core.config import settings
+# Import settings with error handling
+try:
+    from .core.config import settings
+    print(f"✅ Configuration loaded successfully: {settings.APP_NAME} v{settings.APP_VERSION}")
+except Exception as e:
+    print(f"❌ CRITICAL: Failed to load configuration: {e}")
+    print(f"❌ Error type: {type(e).__name__}")
+    print("❌ This usually means missing environment variables")
+    print("❌ Check your deployment platform environment variables")
+    raise
 from .core.database import init_db, close_db
 from .routes import (
     auth_router,
@@ -43,39 +53,94 @@ monitoring_service = MonitoringService()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan events"""
-    # Startup
-    logger.info("Starting KSWiFi Backend Service", version=settings.APP_VERSION)
+    """Application lifespan events with robust debugging"""
     
+    # === STARTUP DEBUGGING ===
+    logger.info("🚀 Starting KSWiFi Backend Service", 
+                version=settings.APP_VERSION, 
+                host=settings.HOST, 
+                port=settings.PORT)
+    
+    # Environment validation
     try:
-        # Initialize database tables
-        await init_db()
-        logger.info("Database initialized successfully")
+        logger.info("🔧 Environment Check:", 
+                   supabase_url_set=bool(settings.SUPABASE_URL),
+                   database_url_set=bool(settings.DATABASE_URL),
+                   secret_key_set=bool(settings.SECRET_KEY))
         
-        # Start monitoring service
-        asyncio.create_task(monitoring_service.start_monitoring())
-        logger.info("Background monitoring service started")
+        # Test critical settings
+        if not settings.SUPABASE_URL or settings.SUPABASE_URL.startswith('https://placeholder'):
+            logger.warning("⚠️  SUPABASE_URL appears to be placeholder")
+        if not settings.DATABASE_URL or 'localhost' in settings.DATABASE_URL:
+            logger.warning("⚠️  DATABASE_URL appears to be localhost/placeholder")
+        if not settings.SECRET_KEY or len(settings.SECRET_KEY) < 32:
+            logger.warning("⚠️  SECRET_KEY appears to be weak or placeholder")
+            
+        logger.info("✅ Configuration validation complete")
         
     except Exception as e:
-        logger.error("Failed to initialize application", error=str(e))
+        logger.error("❌ Environment validation failed", 
+                    error=str(e), 
+                    error_type=type(e).__name__)
         raise
+    
+    # Database initialization
+    try:
+        logger.info("🗄️  Initializing database connection...")
+        await init_db()
+        logger.info("✅ Database initialized successfully")
+        
+    except Exception as e:
+        logger.error("❌ Database initialization failed", 
+                    error=str(e), 
+                    error_type=type(e).__name__,
+                    database_url_preview=settings.DATABASE_URL[:50] + "..." if len(settings.DATABASE_URL) > 50 else settings.DATABASE_URL)
+        # Continue anyway - some services might work without DB
+        logger.warning("⚠️  Continuing without database - some features may not work")
+    
+    # Monitoring service
+    try:
+        logger.info("📊 Starting background monitoring service...")
+        asyncio.create_task(monitoring_service.start_monitoring())
+        logger.info("✅ Background monitoring service started")
+        
+    except Exception as e:
+        logger.error("❌ Monitoring service failed to start", 
+                    error=str(e), 
+                    error_type=type(e).__name__)
+        # Continue anyway - monitoring is not critical
+        logger.warning("⚠️  Continuing without monitoring service")
+    
+    logger.info("🎉 KSWiFi Backend Service startup complete!")
     
     yield
     
-    # Shutdown
-    logger.info("Shutting down KSWiFi Backend Service")
+    # === SHUTDOWN DEBUGGING ===
+    logger.info("🔄 Shutting down KSWiFi Backend Service...")
     
     try:
         # Stop monitoring service
+        logger.info("📊 Stopping monitoring service...")
         await monitoring_service.stop_monitoring()
-        logger.info("Monitoring service stopped")
-        
-        # Close database connections
-        await close_db()
-        logger.info("Database connections closed")
+        logger.info("✅ Monitoring service stopped")
         
     except Exception as e:
-        logger.error("Error during shutdown", error=str(e))
+        logger.error("❌ Error stopping monitoring service", 
+                    error=str(e), 
+                    error_type=type(e).__name__)
+    
+    try:
+        # Close database connections
+        logger.info("🗄️  Closing database connections...")
+        await close_db()
+        logger.info("✅ Database connections closed")
+        
+    except Exception as e:
+        logger.error("❌ Error closing database connections", 
+                    error=str(e), 
+                    error_type=type(e).__name__)
+    
+    logger.info("👋 KSWiFi Backend Service shutdown complete")
 
 
 # Create FastAPI application
@@ -157,6 +222,86 @@ async def health_check():
             }
         )
 
+@app.get("/debug")
+async def debug_info():
+    """Comprehensive debug information for deployment troubleshooting"""
+    import os
+    import sys
+    import platform
+    from datetime import datetime
+    
+    try:
+        # Environment information
+        env_info = {
+            "python_version": sys.version,
+            "platform": platform.platform(),
+            "architecture": platform.architecture(),
+            "hostname": platform.node(),
+            "current_directory": os.getcwd(),
+            "python_path": sys.path[:3],  # First 3 entries only
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+        # Configuration status
+        config_status = {
+            "app_name": settings.APP_NAME,
+            "app_version": settings.APP_VERSION,
+            "debug_mode": settings.DEBUG,
+            "host": settings.HOST,
+            "port": settings.PORT,
+            "supabase_url_configured": bool(settings.SUPABASE_URL and not settings.SUPABASE_URL.startswith('https://placeholder')),
+            "database_url_configured": bool(settings.DATABASE_URL and 'localhost' not in settings.DATABASE_URL),
+            "secret_key_configured": bool(settings.SECRET_KEY and len(settings.SECRET_KEY) >= 32),
+            "cors_origins": settings.ALLOWED_ORIGINS
+        }
+        
+        # Environment variables check (without exposing values)
+        env_vars_status = {
+            "SUPABASE_URL": "SET" if os.getenv("SUPABASE_URL") else "MISSING",
+            "SUPABASE_KEY": "SET" if os.getenv("SUPABASE_KEY") else "MISSING", 
+            "SUPABASE_ANON_KEY": "SET" if os.getenv("SUPABASE_ANON_KEY") else "MISSING",
+            "DATABASE_URL": "SET" if os.getenv("DATABASE_URL") else "MISSING",
+            "SECRET_KEY": "SET" if os.getenv("SECRET_KEY") else "MISSING",
+            "PORT": os.getenv("PORT", "8000")
+        }
+        
+        # Import test
+        import_status = {}
+        critical_imports = [
+            "fastapi", "uvicorn", "supabase", "sqlalchemy", 
+            "pydantic", "pydantic_settings", "structlog"
+        ]
+        
+        for module in critical_imports:
+            try:
+                __import__(module)
+                import_status[module] = "✅ OK"
+            except ImportError as e:
+                import_status[module] = f"❌ FAILED: {str(e)}"
+        
+        return {
+            "status": "debug_info_collected",
+            "service": settings.APP_NAME,
+            "version": settings.APP_VERSION,
+            "environment": env_info,
+            "configuration": config_status,
+            "environment_variables": env_vars_status,
+            "imports": import_status,
+            "message": "Debug information collected successfully"
+        }
+        
+    except Exception as e:
+        logger.error("Debug endpoint failed", error=str(e))
+        return JSONResponse(
+            status_code=500,
+            content={
+                "status": "debug_failed",
+                "error": str(e),
+                "error_type": type(e).__name__,
+                "message": "Failed to collect debug information"
+            }
+        )
+
 @app.get("/cors-test")
 async def cors_test():
     """CORS test endpoint to verify cross-origin requests work"""
@@ -164,7 +309,7 @@ async def cors_test():
         "message": "CORS is working!",
         "cors_enabled": True,
         "allowed_origins": settings.ALLOWED_ORIGINS,
-        "timestamp": "2025-01-25T05:20:00Z"
+        "timestamp": datetime.utcnow().isoformat()
     }
 
 @app.get("/health/database")
