@@ -101,7 +101,6 @@ export function SecurityProvider({ children }: { children: React.ReactNode }) {
     let dataUsagePercentage = 0
     try {
       if (user) {
-        const userProfile = await apiService.getUserProfile()
         const dataPacks = await apiService.getDataPacks()
         if (dataPacks.length > 0) {
           const totalData = dataPacks.reduce((sum, pack) => sum + pack.total_data_mb, 0)
