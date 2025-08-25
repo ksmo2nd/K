@@ -302,7 +302,7 @@ export function MySessions({ refreshTrigger = 0 }: MySessionsProps) {
                         <Button 
                           onClick={() => handleActivate(session.id)}
                           disabled={activating === session.id}
-                          className="bg-kswifi-cyan hover:bg-kswifi-cyan-dark text-black font-medium min-w-[100px] flex-1 sm:flex-none"
+                          className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium min-w-[100px] flex-1 sm:flex-none"
                           size="sm"
                         >
                           {activating === session.id ? (

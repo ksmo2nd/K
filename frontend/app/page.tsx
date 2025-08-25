@@ -126,14 +126,14 @@ export default function KSWiFiApp() {
     currentData: dataPackStats?.used_data_mb || 0,
     totalData: dataPackStats?.total_data_mb || 0,
     isWifiConnected: true,
-    networkName: "CoffeeShop_WiFi",
+    networkName: "WiFi Network",
   } : {
     name: "Guest User",
     email: "",
     currentData: 0,
     totalData: 0,
     isWifiConnected: true,
-    networkName: "CoffeeShop_WiFi",
+    networkName: "WiFi Network",
   }
 
   // Recent history from actual data or mock
@@ -303,18 +303,18 @@ export default function KSWiFiApp() {
     <div className="min-h-screen bg-background">
       <div className="max-w-md mx-auto bg-card shadow-2xl min-h-screen border-x border-border">
         {/* Header */}
-        <div className="bg-gradient-to-r from-primary to-kswifi-cyan-dark text-primary-foreground p-6 rounded-b-3xl">
+        <div className="bg-gradient-to-r from-card to-muted text-foreground p-6 rounded-b-lg border-b border-border">
           <div className="flex justify-between items-center mb-4">
             <div>
               <h1 className="text-2xl font-bold">KSWiFi</h1>
-              <p className="text-primary-foreground/80">Welcome, {userData.name.split(' ')[0]}</p>
+              <p className="text-muted-foreground">Welcome, {userData.name.split(' ')[0]}</p>
             </div>
             <div className="flex space-x-2">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setCurrentScreen("settings")}
-                className="text-primary-foreground hover:bg-black/20"
+                className="text-muted-foreground hover:bg-muted/50 hover:text-foreground"
               >
                 <Settings className="w-5 h-5" />
               </Button>
@@ -322,7 +322,7 @@ export default function KSWiFiApp() {
                 variant="ghost"
                 size="sm"
                 onClick={handleSignOut}
-                className="text-primary-foreground hover:bg-black/20"
+                className="text-muted-foreground hover:bg-muted/50 hover:text-foreground"
               >
                 <LogOut className="w-5 h-5" />
               </Button>

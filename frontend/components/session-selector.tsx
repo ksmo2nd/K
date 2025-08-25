@@ -302,9 +302,9 @@ export function SessionSelector({ onSessionDownload }: SessionSelectorProps) {
                       disabled={isDownloading || (currentDownloadId === session.id)}
                       className={`${
                         session.is_free 
-                          ? 'bg-green-600 hover:bg-green-700 text-white'
+                          ? 'bg-primary hover:bg-primary/90 text-primary-foreground'
                           : session.is_unlimited
-                          ? 'bg-kswifi-cyan hover:bg-kswifi-cyan-dark text-black'
+                          ? 'bg-primary hover:bg-primary/90 text-primary-foreground'
                           : 'bg-primary hover:bg-primary/90 text-primary-foreground'
                       } transition-all duration-200 font-medium min-w-[120px] sm:min-w-[140px]`}
                       size="sm"

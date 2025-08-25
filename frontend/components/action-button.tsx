@@ -24,8 +24,8 @@ export function ActionButton({
     <Button
       onClick={onClick}
       disabled={disabled}
-      variant={variant === "default" ? "default" : "secondary"}
-      className="w-full h-auto p-4 flex flex-col items-center gap-2 text-left bg-primary text-primary-foreground hover:bg-primary/90"
+      variant="outline"
+      className="w-full h-auto p-4 flex flex-col items-center gap-2 text-left bg-card border-border text-foreground hover:bg-muted/50 transition-colors"
     >
       <Icon className="w-8 h-8" />
       <div className="space-y-1">
