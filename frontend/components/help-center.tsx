@@ -110,36 +110,48 @@ const faqData: FAQItem[] = [
     id: '10',
     category: 'billing',
     question: 'What data pack sizes are available?',
-    answer: 'We offer flexible data pack options: 1GB ($1.20), 5GB ($4.80), 10GB ($8.40), 20GB ($14.40), and Unlimited 7-day plans ($1.92). All packs include 30-day validity except the unlimited plan which is valid for 7 days. Prices are shown in both USD and Nigerian Naira (NGN).'
+    answer: 'You can download free data packs up to 5GB at no cost. For anything exceeding 5GB, you pay ₦800 (Nigerian Naira). All data packs expire after 7 days from purchase, but your active sessions won\'t expire unless you exhaust the data you\'ve downloaded.'
   },
   {
     id: '11',
     category: 'billing',
     question: 'When do my data packs expire?',
-    answer: 'Your session expires only when you\'ve exhausted the data you downloaded, not after a specific time period. This means you have full control over your data usage and won\'t lose unused data due to time limits. However, purchased data packs have validity periods as mentioned in their descriptions.'
+    answer: 'Data packs expire 7 days after purchase, but your active internet sessions won\'t expire unless you completely exhaust the data you\'ve downloaded. This means once you download a session, you have full control over when to use it - it won\'t disappear due to time limits.'
   },
   {
     id: '12',
     category: 'billing',
+    question: 'Is there free data available?',
+    answer: 'Yes! You can download up to 5GB of data completely free. This is perfect for basic browsing, messaging, and light usage. If you need more than 5GB, you can purchase additional data for ₦800.'
+  },
+  {
+    id: '13',
+    category: 'billing',
+    question: 'How much does additional data cost?',
+    answer: 'Additional data beyond the free 5GB costs ₦800 (Nigerian Naira). This gives you access to larger data packs for heavy usage, streaming, or extended internet sessions. Payment is processed securely through our payment system.'
+  },
+  {
+    id: '14',
+    category: 'billing',
     question: 'How do I purchase additional data?',
-    answer: 'To purchase additional data: 1) Go to the main dashboard, 2) Tap "Activate Data Pack", 3) Choose from available pack sizes, 4) Complete the secure payment process, 5) Your new data pack will be available for download immediately after payment confirmation.'
+    answer: 'To purchase additional data: 1) Go to the main dashboard, 2) Tap "Activate Data Pack", 3) Choose from available pack sizes, 4) Complete the secure payment process with ₦800, 5) Your new data pack will be available for download immediately after payment confirmation.'
   },
   
   // Security & Privacy
   {
-    id: '13',
+    id: '15',
     category: 'security',
     question: 'How do I enable Face ID or Touch ID?',
     answer: 'To enable biometric authentication: 1) Sign in with your email and password, 2) Check the "Enable Face ID/Touch ID for future sign-ins" option, 3) Complete your sign-in, 4) Your biometric data will be securely saved for future logins. You can disable this feature anytime in your device settings.'
   },
   {
-    id: '14',
+    id: '16',
     category: 'security',
     question: 'Is my data secure?',
     answer: 'Yes! We use industry-standard security measures including HTTPS encryption, secure authentication via Supabase, Row Level Security (RLS) for database protection, and biometric authentication support. Your personal data and usage information are protected with enterprise-grade security.'
   },
   {
-    id: '15',
+    id: '17',
     category: 'security',
     question: 'What information do you collect?',
     answer: 'We only collect essential information needed to provide our service: your email address, name, data usage statistics, and device information for eSIM provisioning. We never sell your personal data and only use it to improve your KSWiFi experience.'
@@ -147,19 +159,19 @@ const faqData: FAQItem[] = [
   
   // Troubleshooting
   {
-    id: '16',
+    id: '18',
     category: 'troubleshooting',
     question: 'My app shows "No Internet Connection" but I\'m connected',
     answer: 'This usually indicates a connectivity issue. Try: 1) Check if you\'re connected to a working WiFi network, 2) Restart the app, 3) Check your device\'s internet settings, 4) Try connecting to a different WiFi network, 5) Contact support if the issue persists.'
   },
   {
-    id: '17',
+    id: '19',
     category: 'troubleshooting',
     question: 'My eSIM QR code won\'t scan',
     answer: 'If your QR code won\'t scan: 1) Ensure your device camera has permission to access the camera, 2) Clean your camera lens, 3) Make sure you\'re in good lighting, 4) Try generating a new QR code from the app, 5) You can also manually enter the activation code if scanning fails.'
   },
   {
-    id: '18',
+    id: '20',
     category: 'troubleshooting',
     question: 'I can\'t download internet sessions',
     answer: 'If you can\'t download sessions: 1) Ensure you\'re connected to WiFi (cellular connections won\'t work), 2) Check that you have sufficient storage space, 3) Verify your account has active data packs, 4) Try restarting the app, 5) Contact support if downloads continue to fail.'
