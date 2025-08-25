@@ -37,9 +37,10 @@ class SessionService:
 
     
     async def get_available_sessions(self) -> List[Dict[str, Any]]:
-        """Get available session download options"""
+        """Get available session download options (1GB-100GB range)"""
         sessions = []
         
+        # Add predefined free sessions (1GB-5GB)
         for session_name, details in self.pricing.items():
             session = {
                 'id': session_name.lower().replace(' ', '_'),
@@ -57,34 +58,51 @@ class SessionService:
             }
             sessions.append(session)
         
-        # Sort: Free sessions first, then by size
-        sessions.sort(key=lambda x: (not x['is_free'], x['price_ngn']))
+        # Add custom size options for unlimited users (6GB-100GB)
+        custom_sizes = [6, 7, 8, 9, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100]
+        for size_gb in custom_sizes:
+            sessions.append({
+                'id': f'{size_gb}gb',
+                'name': f'{size_gb}GB',
+                'size': f'{size_gb}GB',
+                'data_mb': size_gb * 1024,
+                'price_ngn': 0,  # Free for unlimited users
+                'price_usd': 0,
+                'validity_days': None,
+                'plan_type': 'unlimited_required',
+                'is_unlimited': False,
+                'is_free': False,  # Requires unlimited subscription
+                'description': f'Download {size_gb}GB internet session (requires unlimited access)',
+                'features': [f'{size_gb}GB internet session', 'No expiry - only when exhausted', 'Requires ₦800 unlimited access']
+            })
+        
         return sessions
     
     def _get_session_description(self, name: str, details: Dict) -> str:
         """Get user-friendly session description"""
         if details['data_mb'] == -1:
-            return f"Download unlimited internet sessions for {details['validity_days']} days"
+            return "Download up to 100GB sessions - no expiry, only when exhausted"
         else:
             size_gb = details['data_mb'] / 1024
             if size_gb >= 1:
-                return f"Download {size_gb:.0f}GB internet session - use offline for {details['validity_days']} days"
+                return f"Download {size_gb:.0f}GB internet session - no expiry, only when exhausted"
             else:
-                return f"Download {details['data_mb']}MB internet session - use offline for {details['validity_days']} days"
+                return f"Download {details['data_mb']}MB internet session - no expiry, only when exhausted"
     
     def _get_session_features(self, details: Dict) -> List[str]:
         """Get session features list"""
         features = []
         
         if details['data_mb'] == -1:
-            features.append("Unlimited session downloads")
-            features.append("No download size limits")
+            features.append("Download up to 100GB sessions")
+            features.append("No size limits per download")
         else:
             size_gb = details['data_mb'] / 1024
             features.append(f"{size_gb:.0f}GB internet session")
             features.append("Full browsing capability")
         
-        features.append(f"Valid for {details['validity_days']} days")
+        features.append("No expiry - only when exhausted")
+        features.append("Download from connected WiFi")
         features.append("Works offline via eSIM")
         features.append("Activate with QR code")
         
@@ -96,52 +114,102 @@ class SessionService:
         session_id: str,
         esim_id: Optional[str] = None
     ) -> Dict[str, Any]:
-        """Start downloading an internet session"""
+        """Start downloading an internet session from connected WiFi"""
         try:
-            # Get session details
-            session_details = None
-            for name, details in self.pricing.items():
-                if name.lower().replace(' ', '_') == session_id:
-                    session_details = details
-                    break
+            # Parse session details
+            session_details = await self._get_session_details(session_id, user_id)
             
-            if not session_details:
-                raise ValueError(f"Session {session_id} not found")
-            
-            # Check user's download quota (for free users)
-            if session_details.get('price_ngn', 0) == 0:
-                await self._check_free_quota(user_id)
+            # Check quota and permissions
+            await self._check_download_permissions(user_id, session_details)
             
             # Create session record
             session_data = {
                 'user_id': user_id,
                 'session_id': session_id,
-                'session_name': session_id.replace('_', ' ').title(),
+                'session_name': session_details['name'],
                 'data_mb': session_details['data_mb'],
                 'price_ngn': session_details.get('price_ngn', 0),
-                'validity_days': session_details['validity_days'],
+                'validity_days': None,  # No expiry - only when exhausted
                 'plan_type': session_details.get('plan_type', 'standard'),
                 'status': SessionStatus.DOWNLOADING.value,
                 'download_started_at': datetime.utcnow().isoformat(),
                 'progress_percent': 0,
-                'esim_id': esim_id
+                'esim_id': esim_id,
+                'data_used_mb': 0,  # Track usage, not time
+                'expires_at': None  # No expiry date
             }
             
             response = supabase_client.client.table('internet_sessions').insert(session_data).execute()
             session_record = response.data[0] if response.data else None
             
-            # Start background download process
-            asyncio.create_task(self._download_session_background(session_record['id']))
+            # Start background download process from WiFi
+            asyncio.create_task(self._download_session_from_wifi(session_record['id']))
             
             return {
                 'session_id': session_record['id'],
                 'status': SessionStatus.DOWNLOADING.value,
-                'message': 'Session download started',
-                'estimated_time_minutes': self._estimate_download_time(session_details['data_mb'])
+                'message': f'Downloading {session_details["name"]} from connected WiFi',
+                'estimated_time_minutes': self._estimate_download_time(session_details['data_mb']),
+                'no_expiry': True,
+                'expires_when': 'data_exhausted'
             }
             
         except Exception as e:
             raise Exception(f"Failed to start session download: {str(e)}")
+    
+    async def _get_session_details(self, session_id: str, user_id: str) -> Dict[str, Any]:
+        """Get session details from predefined or custom sizes"""
+        # Check predefined sessions first
+        for name, details in self.pricing.items():
+            if name.lower().replace(' ', '_') == session_id:
+                return {
+                    'name': name,
+                    'data_mb': details['data_mb'],
+                    'price_ngn': details.get('price_ngn', 0),
+                    'plan_type': details.get('plan_type', 'standard')
+                }
+        
+        # Check custom GB sizes (6gb-100gb)
+        if session_id.endswith('gb'):
+            size_str = session_id.replace('gb', '')
+            try:
+                size_gb = int(size_str)
+                if 6 <= size_gb <= 100:
+                    return {
+                        'name': f'{size_gb}GB',
+                        'data_mb': size_gb * 1024,
+                        'price_ngn': 0,
+                        'plan_type': 'unlimited_required'
+                    }
+            except ValueError:
+                pass
+        
+        raise ValueError(f"Session {session_id} not found")
+    
+    async def _check_download_permissions(self, user_id: str, session_details: Dict) -> None:
+        """Check if user can download this session"""
+        plan_type = session_details.get('plan_type', 'standard')
+        
+        if plan_type == 'free':
+            # Check free quota (up to 5GB total)
+            await self._check_free_quota(user_id)
+            
+        elif plan_type == 'unlimited_required':
+            # Check if user has unlimited access (₦800 payment)
+            await self._check_unlimited_access(user_id)
+    
+    async def _check_unlimited_access(self, user_id: str) -> None:
+        """Check if user has paid for unlimited access"""
+        # Check for unlimited subscription
+        response = supabase_client.client.table('user_subscriptions')\
+            .select('*')\
+            .eq('user_id', user_id)\
+            .eq('plan_type', 'unlimited')\
+            .eq('status', 'active')\
+            .execute()
+        
+        if not response.data:
+            raise Exception("Unlimited access required. Pay ₦800 to download sessions above 5GB")
     
     async def _check_free_quota(self, user_id: str) -> None:
         """Check if user has exceeded free session quota"""
@@ -171,8 +239,8 @@ class SessionService:
         estimated_seconds = data_mb / 0.625  # MB per second
         return max(1, int(estimated_seconds / 60))  # Convert to minutes, minimum 1
     
-    async def _download_session_background(self, session_record_id: str) -> None:
-        """Background process to simulate session download"""
+    async def _download_session_from_wifi(self, session_record_id: str) -> None:
+        """Background process to download session from connected WiFi"""
         try:
             # Get session record
             response = supabase_client.client.table('internet_sessions')\
@@ -184,22 +252,38 @@ class SessionService:
             session = response.data
             data_mb = session['data_mb']
             
-            # Simulate download progress
-            for progress in [10, 25, 40, 60, 75, 90, 100]:
-                await asyncio.sleep(1)  # Simulate download time
+            # Check WiFi connection
+            await self._verify_wifi_connection()
+            
+            # Simulate real WiFi download progress (faster than before)
+            download_steps = [15, 35, 55, 70, 85, 95, 100]
+            for i, progress in enumerate(download_steps):
+                # Simulate download time based on session size
+                if data_mb == -1:  # Unlimited
+                    await asyncio.sleep(0.5)  # Quick setup
+                else:
+                    # Scale download time with size (larger = longer)
+                    sleep_time = min(2, max(0.3, data_mb / 5120))  # 0.3-2 seconds
+                    await asyncio.sleep(sleep_time)
                 
                 # Update progress
                 await self._update_session_progress(session_record_id, progress)
                 
-                if progress == 50:
-                    # Start eSIM provisioning/transfer
+                if progress == 35:
+                    # Start transferring to eSIM
                     await self._update_session_status(session_record_id, SessionStatus.TRANSFERRING)
                 elif progress == 100:
-                    # Complete download
+                    # Complete download and store on eSIM
                     await self._complete_session_download(session_record_id)
             
         except Exception as e:
             await self._update_session_status(session_record_id, SessionStatus.FAILED, str(e))
+    
+    async def _verify_wifi_connection(self) -> None:
+        """Verify WiFi connection is available for download"""
+        # In a real implementation, this would check actual WiFi connectivity
+        # For now, we'll assume connection is available
+        await asyncio.sleep(0.1)  # Simulate connection check
     
     async def _update_session_progress(self, session_id: str, progress: int) -> None:
         """Update session download progress"""
@@ -241,13 +325,14 @@ class SessionService:
             else:
                 esim_id = session['esim_id']
             
-            # Update session record with completion
+            # Update session record with completion (no expiry date)
             update_data = {
                 'status': SessionStatus.STORED.value,
                 'progress_percent': 100,
                 'download_completed_at': datetime.utcnow().isoformat(),
                 'esim_id': esim_id,
-                'expires_at': (datetime.utcnow() + timedelta(days=session['validity_days'])).isoformat()
+                'expires_at': None,  # No expiry - only when data is exhausted
+                'data_remaining_mb': session['data_mb'] if session['data_mb'] != -1 else 100 * 1024  # 100GB for unlimited
             }
             
             supabase_client.client.table('internet_sessions')\
@@ -274,9 +359,10 @@ class SessionService:
             if session['status'] != SessionStatus.STORED.value:
                 raise ValueError("Session must be downloaded before activation")
             
-            # Check if session has expired
-            if datetime.fromisoformat(session['expires_at'].replace('Z', '+00:00')) < datetime.utcnow():
-                raise ValueError("Session has expired")
+            # Check if session data is exhausted
+            data_remaining = session.get('data_remaining_mb', session.get('data_mb', 0))
+            if data_remaining <= 0:
+                raise ValueError("Session data has been exhausted")
             
             # Activate eSIM
             esim_activation = await self.esim_service.activate_esim(
