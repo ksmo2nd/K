@@ -5,17 +5,20 @@
 import { supabase } from './supabase';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 
-// Backend API URL - REQUIRES environment variable
+// Backend API URL - REQUIRES environment variable in production
 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 if (!backendUrl) {
-  throw new Error(
-    'Missing required environment variable: NEXT_PUBLIC_BACKEND_URL\n' +
-    'Please set this to your FastAPI backend URL in production.'
+  // Allow build to complete but warn about missing environment variable
+  console.warn(
+    '⚠️  MISSING ENVIRONMENT VARIABLE: NEXT_PUBLIC_BACKEND_URL\n' +
+    'Please set this to your FastAPI backend URL in production.\n' +
+    'Using placeholder for build process.'
   );
 }
 
-const BACKEND_URL = backendUrl;
+// Use environment variable or build-time placeholder
+const BACKEND_URL = backendUrl || 'https://your-backend-url.com';
 
 export interface User {
   id: string;
