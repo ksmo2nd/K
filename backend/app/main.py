@@ -157,6 +157,16 @@ async def health_check():
             }
         )
 
+@app.get("/cors-test")
+async def cors_test():
+    """CORS test endpoint to verify cross-origin requests work"""
+    return {
+        "message": "CORS is working!",
+        "cors_enabled": True,
+        "allowed_origins": settings.ALLOWED_ORIGINS,
+        "timestamp": "2025-01-25T05:20:00Z"
+    }
+
 @app.get("/health/database")
 async def database_health_check():
     """Dedicated Supabase PostgreSQL database health check"""
