@@ -1,6 +1,4 @@
 {
-  "buildStage": "static-generation",
-  "buildOptions": {
-    "useBuildWorker": "false"
-  }
+  "buildStage": "start",
+  "buildOptions": {}
 }
