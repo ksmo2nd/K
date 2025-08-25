@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     
     # Application
     APP_NAME: str = "KSWiFi Backend Service"
-    APP_VERSION: str = "2.0.0"
+    APP_VERSION: str = "1.0"
     DEBUG: bool = Field(default=False, description="Debug mode")
     
     # Server
