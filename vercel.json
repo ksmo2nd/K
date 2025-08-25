@@ -1,15 +1,9 @@
 {
-  "analyticsId": null,
-  "speedInsights": {
-    "enabled": false
-  },
-  "webAnalytics": {
-    "enabled": false
-  },
-  "functions": {},
+  "framework": "nextjs",
+  "buildCommand": "cd frontend && npm run build",
+  "outputDirectory": "frontend/out",
+  "installCommand": "cd frontend && npm install",
   "rewrites": [],
   "redirects": [],
-  "headers": [],
-  "framework": "nextjs",
-  "outputDirectory": "frontend/out"
+  "headers": []
 }
