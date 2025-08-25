@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { useAuth } from '@/lib/auth-context'
-import { Eye, EyeOff, Loader2 } from 'lucide-react'
+import { useBiometricAuth } from '@/hooks/use-biometric-auth'
+import { Eye, EyeOff, Loader2, Fingerprint } from 'lucide-react'
 
 interface SignInFormProps {
   onSuccess?: () => void
@@ -16,6 +17,16 @@ interface SignInFormProps {
 
 export function SignInForm({ onSuccess, onSwitchToSignUp, onForgotPassword }: SignInFormProps) {
   const { signIn } = useAuth()
+  const { 
+    capabilities, 
+    isLoading: biometricLoading, 
+    authenticateWithBiometrics, 
+    getBiometricCredentials,
+    saveBiometricCredentials,
+    getBiometricTypeIcon,
+    getBiometricTypeName 
+  } = useBiometricAuth()
+  
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -23,6 +34,15 @@ export function SignInForm({ onSuccess, onSwitchToSignUp, onForgotPassword }: Si
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showBiometricOption, setShowBiometricOption] = useState(false)
+  const [rememberCredentials, setRememberCredentials] = useState(false)
+
+  useEffect(() => {
+    // Show biometric option if available and user has saved credentials
+    if (capabilities.isAvailable && capabilities.hasEnrolledCredentials) {
+      setShowBiometricOption(true)
+    }
+  }, [capabilities])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -37,11 +57,59 @@ export function SignInForm({ onSuccess, onSwitchToSignUp, onForgotPassword }: Si
       }
 
       if (data?.user) {
+        // Save credentials for biometric auth if user opted in
+        if (rememberCredentials && capabilities.isAvailable) {
+          await saveBiometricCredentials(formData.email, formData.password)
+        }
         onSuccess?.()
       }
     } catch (err: any) {
       console.error('Sign in error:', err)
       setError(err.message || 'Failed to sign in. Please check your credentials.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleBiometricAuth = async () => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      // First authenticate with biometrics
+      const authResult = await authenticateWithBiometrics(
+        "Sign in to your KSWiFi account"
+      )
+
+      if (!authResult.success) {
+        if (authResult.cancelled) {
+          setError(null) // Don't show error for user cancellation
+        } else {
+          setError(authResult.error || 'Biometric authentication failed')
+        }
+        return
+      }
+
+      // Get saved credentials
+      const credentials = await getBiometricCredentials()
+      if (!credentials) {
+        setError('No saved credentials found. Please sign in manually.')
+        return
+      }
+
+      // Sign in with saved credentials
+      const { data, error } = await signIn(credentials.username, credentials.password)
+      
+      if (error) {
+        throw error
+      }
+
+      if (data?.user) {
+        onSuccess?.()
+      }
+    } catch (err: any) {
+      console.error('Biometric sign in error:', err)
+      setError(err.message || 'Failed to sign in with biometrics.')
     } finally {
       setLoading(false)
     }
@@ -126,6 +194,60 @@ export function SignInForm({ onSuccess, onSwitchToSignUp, onForgotPassword }: Si
         </CardContent>
 
         <CardFooter className="flex flex-col space-y-4">
+          {/* Biometric Authentication Button */}
+          {showBiometricOption && (
+            <Button 
+              type="button"
+              variant="outline"
+              className="w-full border-primary text-primary hover:bg-primary/10"
+              onClick={handleBiometricAuth}
+              disabled={loading || biometricLoading}
+            >
+              {loading || biometricLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Authenticating...
+                </>
+              ) : (
+                <>
+                  <span className="mr-2 text-lg">{getBiometricTypeIcon()}</span>
+                  Sign in with {getBiometricTypeName()}
+                </>
+              )}
+            </Button>
+          )}
+
+          {/* Biometric Setup Option */}
+          {capabilities.isAvailable && !showBiometricOption && (
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="remember-credentials"
+                checked={rememberCredentials}
+                onChange={(e) => setRememberCredentials(e.target.checked)}
+                className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary"
+              />
+              <Label 
+                htmlFor="remember-credentials" 
+                className="text-sm text-muted-foreground cursor-pointer"
+              >
+                Enable {getBiometricTypeName()} for future sign-ins
+              </Label>
+            </div>
+          )}
+
+          {/* Divider */}
+          {(showBiometricOption || (capabilities.isAvailable && !showBiometricOption)) && (
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">Or continue with email</span>
+              </div>
+            </div>
+          )}
+
           <Button 
             type="submit" 
             className="w-full bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary" 

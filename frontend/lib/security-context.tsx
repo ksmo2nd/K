@@ -7,7 +7,8 @@ import { apiService } from './api'
 interface SecurityState {
   isSecure: boolean
   hasValidSession: boolean
-  sessionExpiry: Date | null
+  sessionExpiryType: 'data-based' | 'never'
+  dataUsagePercentage: number
   lastActivity: Date
   securityLevel: 'low' | 'medium' | 'high'
   warnings: string[]
@@ -36,7 +37,8 @@ export function SecurityProvider({ children }: { children: React.ReactNode }) {
   const [security, setSecurity] = useState<SecurityState>({
     isSecure: false,
     hasValidSession: false,
-    sessionExpiry: null,
+    sessionExpiryType: 'data-based',
+    dataUsagePercentage: 0,
     lastActivity: new Date(),
     securityLevel: 'low',
     warnings: []
@@ -95,13 +97,30 @@ export function SecurityProvider({ children }: { children: React.ReactNode }) {
     const securityLevel = assessSecurityLevel(currentTime)
     const warnings = getSecurityRecommendations()
     
+    // Get data usage percentage for session expiry calculation
+    let dataUsagePercentage = 0
+    try {
+      if (user) {
+        const userProfile = await apiService.getUserProfile()
+        const dataPacks = await apiService.getDataPacks()
+        if (dataPacks.length > 0) {
+          const totalData = dataPacks.reduce((sum, pack) => sum + pack.total_data_mb, 0)
+          const usedData = dataPacks.reduce((sum, pack) => sum + pack.used_data_mb, 0)
+          dataUsagePercentage = totalData > 0 ? (usedData / totalData) * 100 : 0
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to get data usage for security context:', error)
+    }
+
     setSecurity(prev => ({
       ...prev,
       isSecure: hasValidSession && securityLevel !== 'low',
       hasValidSession,
       securityLevel,
       warnings,
-      sessionExpiry: user ? new Date(Date.now() + 24 * 60 * 60 * 1000) : null,
+      sessionExpiryType: 'data-based',
+      dataUsagePercentage,
       lastActivity: currentTime
     }))
   }

@@ -18,6 +18,8 @@ import { useUserProfile } from "@/hooks/use-user-profile"
 import { useWiFiStatus } from "@/hooks/use-wifi-status"
 import { SecurityProvider, useAppSecurity } from "@/lib/security-context"
 import { SecurityIndicator } from "@/components/security-indicator"
+import { HelpCenter } from "@/components/help-center"
+import { AboutApp } from "@/components/about-app"
 import { apiService } from "@/lib/api"
 import { toast } from "sonner"
 import {
@@ -36,7 +38,7 @@ import {
 } from "lucide-react"
 
 type AuthScreen = "signin" | "signup" | "reset-password"
-type AppScreen = "onboarding" | "dashboard" | "settings"
+type AppScreen = "onboarding" | "dashboard" | "settings" | "help" | "about"
 
 export default function KSWiFiApp() {
   // Auth state
@@ -66,6 +68,7 @@ export default function KSWiFiApp() {
   // Session state
   const [showSessionSelector, setShowSessionSelector] = useState(false)
   const [sessionsRefreshTrigger, setSessionsRefreshTrigger] = useState(0)
+  const [securityEnabled, setSecurityEnabled] = useState(true)
 
   // Check for URL messages (like password reset success)
   useEffect(() => {
@@ -132,8 +135,15 @@ export default function KSWiFiApp() {
     email: profile.email,
     currentData: dataPackStats?.used_data_mb || 0,
     totalData: dataPackStats?.total_data_mb || 0,
+  } : user ? {
+    name: user.user_metadata?.first_name && user.user_metadata?.last_name 
+      ? `${user.user_metadata.first_name} ${user.user_metadata.last_name}`
+      : user.email?.split('@')[0] || 'User',
+    email: user.email || "",
+    currentData: 0,
+    totalData: 0,
   } : {
-    name: "Guest User",
+    name: "Sign in to continue",
     email: "",
     currentData: 0,
     totalData: 0,
@@ -557,11 +567,19 @@ export default function KSWiFiApp() {
           <div>
             <h2 className="text-lg font-semibold mb-4 text-foreground">Support</h2>
             <div className="space-y-3">
-              <Button variant="ghost" className="w-full justify-start p-3 text-foreground hover:bg-muted">
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start p-3 text-foreground hover:bg-muted"
+                onClick={() => setCurrentScreen("help")}
+              >
                 <HelpCircle className="w-5 h-5 mr-3 text-primary" />
                 Help Center
               </Button>
-              <Button variant="ghost" className="w-full justify-start p-3 text-foreground hover:bg-muted">
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start p-3 text-foreground hover:bg-muted"
+                onClick={() => setCurrentScreen("about")}
+              >
                 <Info className="w-5 h-5 mr-3 text-primary" />
                 About KSWiFi
               </Button>
@@ -579,6 +597,54 @@ export default function KSWiFiApp() {
               Sign Out
             </Button>
           </div>
+        </div>
+      </div>
+    </div>
+  )
+
+  // Help Center Screen
+  const renderHelpCenter = () => (
+    <div className="min-h-screen bg-background">
+      <div className="max-w-md mx-auto bg-card shadow-2xl min-h-screen border-x border-border">
+        <div className="bg-gradient-to-r from-primary to-kswifi-cyan-dark text-primary-foreground p-6 rounded-b-3xl">
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setCurrentScreen("settings")}
+              className="text-primary-foreground hover:bg-black/20"
+            >
+              ←
+            </Button>
+            <h1 className="text-2xl font-bold">Help Center</h1>
+          </div>
+        </div>
+        <div className="p-4">
+          <HelpCenter />
+        </div>
+      </div>
+    </div>
+  )
+
+  // About App Screen
+  const renderAboutApp = () => (
+    <div className="min-h-screen bg-background">
+      <div className="max-w-md mx-auto bg-card shadow-2xl min-h-screen border-x border-border">
+        <div className="bg-gradient-to-r from-primary to-kswifi-cyan-dark text-primary-foreground p-6 rounded-b-3xl">
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setCurrentScreen("settings")}
+              className="text-primary-foreground hover:bg-black/20"
+            >
+              ←
+            </Button>
+            <h1 className="text-2xl font-bold">About KSWiFi</h1>
+          </div>
+        </div>
+        <div className="p-4">
+          <AboutApp />
         </div>
       </div>
     </div>
@@ -612,6 +678,8 @@ export default function KSWiFiApp() {
       <ProtectedRoute fallback={renderAuth()}>
         {currentScreen === "dashboard" && renderDashboard()}
         {currentScreen === "settings" && renderSettings()}
+        {currentScreen === "help" && renderHelpCenter()}
+        {currentScreen === "about" && renderAboutApp()}
       </ProtectedRoute>
     </SecurityProvider>
   )

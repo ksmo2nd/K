@@ -81,11 +81,20 @@ export function SecurityIndicator() {
             ))}
           </ul>
           
-          {security.sessionExpiry && (
-            <div className="mt-2 text-xs text-muted-foreground">
-              Session expires: {security.sessionExpiry.toLocaleString()}
-            </div>
-          )}
+          <div className="mt-2 text-xs text-muted-foreground">
+            {security.sessionExpiryType === 'data-based' ? (
+              <div>
+                Session expires when data is exhausted
+                {security.dataUsagePercentage > 0 && (
+                  <div className="mt-1">
+                    Data used: {security.dataUsagePercentage.toFixed(1)}%
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div>Session active until data exhausted</div>
+            )}
+          </div>
         </div>
       )}
     </div>
