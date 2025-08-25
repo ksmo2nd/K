@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     
     # Server
     HOST: str = Field(default="0.0.0.0", description="Server host")
-    PORT: int = Field(default=8000, description="Server port")
+    PORT: int = Field(default=int(os.getenv("PORT", 8000)), description="Server port (uses Render's $PORT env var)")
     
     # Supabase Configuration - PUT YOUR REAL SUPABASE CREDENTIALS HERE
     SUPABASE_URL: str = Field(..., description="Supabase project URL - Get from https://supabase.com/dashboard")
