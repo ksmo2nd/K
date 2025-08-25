@@ -1,5 +1,5 @@
 {
   "version": 1,
-  "outDirectory": "/workspace/frontend/.next/export",
+  "outDirectory": "/workspace/frontend/out",
   "success": true
 }
