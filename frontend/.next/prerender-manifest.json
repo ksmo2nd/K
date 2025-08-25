@@ -1,30 +1,6 @@
 {
   "version": 4,
   "routes": {
-    "/reset-password": {
-      "experimentalBypassFor": [
-        {
-          "type": "header",
-          "key": "Next-Action"
-        },
-        {
-          "type": "header",
-          "key": "content-type",
-          "value": "multipart/form-data;.*"
-        }
-      ],
-      "initialRevalidateSeconds": false,
-      "srcRoute": "/reset-password",
-      "dataRoute": "/reset-password.rsc",
-      "allowHeader": [
-        "host",
-        "x-matched-path",
-        "x-prerender-revalidate",
-        "x-prerender-revalidate-if-generated",
-        "x-next-revalidated-tags",
-        "x-next-revalidate-tag-token"
-      ]
-    },
     "/": {
       "experimentalBypassFor": [
         {
@@ -48,13 +24,37 @@
         "x-next-revalidated-tags",
         "x-next-revalidate-tag-token"
       ]
+    },
+    "/reset-password": {
+      "experimentalBypassFor": [
+        {
+          "type": "header",
+          "key": "Next-Action"
+        },
+        {
+          "type": "header",
+          "key": "content-type",
+          "value": "multipart/form-data;.*"
+        }
+      ],
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/reset-password",
+      "dataRoute": "/reset-password.rsc",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
     }
   },
   "dynamicRoutes": {},
   "notFoundRoutes": [],
   "preview": {
-    "previewModeId": "5bc79e6f04e51d1a528527c4cd529e4d",
-    "previewModeSigningKey": "be1b6b48319876a1a012ae56686d26636e208833368d575d9e74b3f16169988e",
-    "previewModeEncryptionKey": "0fa61ec5e6f1d12cc49f07bcc41a8cac59f20b05536988c12c3b503fa8f9b056"
+    "previewModeId": "b2c2d9b2447287f87d9774355493ef5b",
+    "previewModeSigningKey": "9acb78fbd589dc477726ac9248af2727bec41c8cb90c65c65d1c817d6863ed2a",
+    "previewModeEncryptionKey": "466d06927f6199b9d6f668bf08ea1b2f00f587c5f79193b9ca0884751c8f1c88"
   }
 }

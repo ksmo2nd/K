@@ -20,6 +20,7 @@ import { toast } from "sonner"
 import {
   Download,
   Power,
+  Play,
   Settings,
   User,
   LogOut,
@@ -182,6 +183,38 @@ export default function KSWiFiApp() {
     toast.success("Session download started!", {
       description: "Your internet session is being prepared"
     })
+  }
+
+  const handleDataPackActivation = async () => {
+    if (!user) {
+      showNotification("warning", "Sign In Required", "Please sign in to activate data packs")
+      return
+    }
+
+    try {
+      // Get user's downloaded sessions
+      const sessions = await apiService.getMySessions()
+      const availableSessions = sessions.filter(session => session.can_activate)
+
+      if (availableSessions.length === 0) {
+        showNotification("info", "No Data Packs Available", "Download a session first, then activate it here")
+        return
+      }
+
+      // If only one session available, activate it directly
+      if (availableSessions.length === 1) {
+        const session = availableSessions[0]
+        await apiService.activateSession(session.id)
+        setSessionsRefreshTrigger(prev => prev + 1)
+        showNotification("success", "Data Pack Activated!", `${session.size} session is now active`)
+      } else {
+        // If multiple sessions, show a selection
+        showNotification("info", "Multiple Sessions Available", "Check 'My Sessions' below to choose which one to activate")
+      }
+    } catch (error: any) {
+      console.error('Error activating data pack:', error)
+      showNotification("warning", "Activation Failed", error.message || "Failed to activate data pack")
+    }
   }
 
   const handleDataPackSelect = async (pack: { size: string; price: string }) => {
@@ -354,10 +387,21 @@ export default function KSWiFiApp() {
               onClick={handleSessionDownload}
             />
             <ActionButton
+              icon={Play}
+              label="Activate Data Pack"
+              description="Use Downloaded"
+              onClick={handleDataPackActivation}
+            />
+          </div>
+          
+          {/* Secondary Actions */}
+          <div className="mt-4">
+            <ActionButton
               icon={QrCode}
-              label="Scan QR"
-              description="Activate eSIM"
+              label="Setup eSIM"
+              description="Scan QR Code"
               onClick={() => showNotification("info", "QR Scanner", "QR scanner feature coming soon!")}
+              variant="secondary"
             />
           </div>
         </div>
