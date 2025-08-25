@@ -109,15 +109,24 @@ export function useWiFiStatus(): WiFiStatus {
       }
     }
 
-    // Test actual connectivity with a lightweight request
+    // Test actual connectivity with a lightweight external request
     try {
-      const response = await fetch('/api/ping', { 
+      // Use a reliable external service for connectivity test
+      // Create AbortController for timeout (better browser compatibility)
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000)
+      
+      const response = await fetch('https://www.google.com/favicon.ico', { 
         method: 'HEAD',
         cache: 'no-cache',
-        signal: AbortSignal.timeout(5000)
+        signal: controller.signal,
+        mode: 'no-cors' // Prevent CORS issues
       })
       
-      const isReallyConnected = response.ok
+      clearTimeout(timeoutId)
+      
+      // For no-cors mode, we just check if the request completed
+      const isReallyConnected = true // If we get here, we have connectivity
       
       setWiFiStatus({
         isConnected: isReallyConnected,
@@ -127,11 +136,11 @@ export function useWiFiStatus(): WiFiStatus {
         isOnline: isReallyConnected
       })
     } catch (error) {
-      // If ping fails, still consider online but with limited connectivity
+      // If external test fails, fall back to navigator.onLine
       setWiFiStatus({
         isConnected: isOnline,
-        networkName: connectionType === 'wifi' ? 'WiFi Network' : undefined,
-        signalStrength: undefined,
+        networkName: connectionType === 'wifi' ? getNetworkName() : undefined,
+        signalStrength: getSignalStrength(),
         connectionType: isOnline ? connectionType : 'none',
         isOnline: isOnline
       })
