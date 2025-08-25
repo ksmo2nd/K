@@ -79,6 +79,10 @@ _supabase_client: Client = None
 _database_engine = None
 _session_factory = None
 
+# Backward compatibility aliases - will be set by lazy initialization
+engine = None
+AsyncSessionLocal = None
+
 
 def get_supabase_client() -> Client:
     """Get Supabase client with lazy initialization"""
@@ -91,7 +95,7 @@ def get_supabase_client() -> Client:
 
 def get_database_engine():
     """Get database engine with lazy initialization"""
-    global _database_engine, _session_factory
+    global _database_engine, _session_factory, engine, AsyncSessionLocal
     if _database_engine is None:
         logger.info("Creating database engine...")
         _database_engine = create_async_engine(
@@ -122,6 +126,11 @@ def get_database_engine():
             class_=AsyncSession,
             expire_on_commit=False,  # Important for async usage
         )
+        
+        # Set backward compatibility aliases
+        engine = _database_engine
+        AsyncSessionLocal = _session_factory
+        
     return _database_engine
 
 
@@ -146,7 +155,8 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """
     Dependency function to get async database session
     """
-    async with AsyncSessionLocal() as session:
+    session_factory = get_session_factory()
+    async with session_factory() as session:
         try:
             yield session
         except Exception:
@@ -185,9 +195,14 @@ async def init_db():
         db_engine = get_database_engine()  # Lazy initialization
         async with db_engine.begin() as conn:
             # Import models here to ensure they're registered
-            from ..models.base import Base
-            await conn.run_sync(Base.metadata.create_all)
-            logger.info("Database tables initialized successfully")
+            try:
+                from ..models.base import Base
+                await conn.run_sync(Base.metadata.create_all)
+                logger.info("Database tables initialized successfully")
+            except ImportError:
+                # If no custom models exist, use the Base from this module
+                await conn.run_sync(Base.metadata.create_all)
+                logger.info("Database tables initialized successfully (using default Base)")
             
     except Exception as e:
         logger.error(f"Database initialization failed: {e}")
@@ -199,7 +214,8 @@ async def get_database_health():
     Get database health status for monitoring
     """
     try:
-        async with engine.begin() as conn:
+        db_engine = get_database_engine()  # Use lazy initialization
+        async with db_engine.begin() as conn:
             result = await conn.execute("""
                 SELECT 
                     version() as postgres_version,
@@ -218,9 +234,9 @@ async def get_database_health():
                 "server_time": row[3].isoformat(),
                 "tables": row[4],
                 "connection_pool": {
-                    "size": engine.pool.size(),
-                    "checked_in": engine.pool.checkedin(),
-                    "checked_out": engine.pool.checkedout(),
+                    "size": db_engine.pool.size(),
+                    "checked_in": db_engine.pool.checkedin(),
+                    "checked_out": db_engine.pool.checkedout(),
                 }
             }
     except Exception as e:
@@ -232,9 +248,13 @@ async def get_database_health():
 
 async def close_db():
     """Close database connections"""
-    logger.info("Closing database connections...")
-    await engine.dispose()
-    logger.info("Database connections closed")
+    global _database_engine
+    if _database_engine is not None:
+        logger.info("Closing database connections...")
+        await _database_engine.dispose()
+        logger.info("Database connections closed")
+    else:
+        logger.info("No database connections to close")
 
 
 # Direct Supabase operations for convenience
@@ -242,7 +262,14 @@ class SupabaseClient:
     """Wrapper for common Supabase operations"""
     
     def __init__(self):
-        self.client = get_supabase_client()  # Use lazy initialization
+        self._client = None  # Lazy initialization
+    
+    @property
+    def client(self):
+        """Get Supabase client with lazy initialization"""
+        if self._client is None:
+            self._client = get_supabase_client()
+        return self._client
     
     async def get_user_by_id(self, user_id: str):
         """Get user profile from Supabase"""
