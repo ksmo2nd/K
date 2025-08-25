@@ -67,7 +67,7 @@ export function AboutApp() {
           </div>
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-foreground">KSWiFi</h1>
-            <p className="text-muted-foreground">Version 2.0.0</p>
+            <p className="text-muted-foreground">Version 1.0</p>
           </div>
         </div>
         
@@ -134,11 +134,11 @@ export function AboutApp() {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 text-center">
             <div className="space-y-2">
-              <div className="text-xl md:text-2xl font-bold text-primary">2.0.0</div>
+              <div className="text-xl md:text-2xl font-bold text-primary">1.0</div>
               <div className="text-xs md:text-sm text-muted-foreground">Current Version</div>
             </div>
             <div className="space-y-2">
-              <div className="text-xl md:text-2xl font-bold text-primary">2024</div>
+              <div className="text-xl md:text-2xl font-bold text-primary">2025</div>
               <div className="text-xs md:text-sm text-muted-foreground">Year Released</div>
             </div>
             <div className="space-y-2">
@@ -276,7 +276,7 @@ export function AboutApp() {
             </div>
             
             <div className="text-xs md:text-sm text-muted-foreground">
-              © 2024 KSWiFi. All rights reserved. 
+              © 2025 KSWiFi. All rights reserved. 
               <br className="md:hidden" />
               <span className="hidden md:inline"> • </span>
               Connecting you to the world, one data pack at a time.

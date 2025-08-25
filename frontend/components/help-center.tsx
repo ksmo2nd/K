@@ -16,7 +16,6 @@ import {
   Download,
   Settings,
   MessageCircle,
-  Phone,
   Mail,
   ExternalLink
 } from 'lucide-react'
@@ -339,25 +338,14 @@ export function HelpCenter() {
             Can't find what you're looking for? Our support team is here to help.
           </p>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Button variant="outline" className="h-auto p-3 md:p-4 flex items-center space-x-2 md:space-x-3">
-              <Mail className="w-4 h-4 md:w-5 md:h-5 text-primary flex-shrink-0" />
-              <div className="text-left min-w-0 flex-1">
-                <div className="font-semibold text-sm md:text-base">Email Support</div>
-                <div className="text-xs md:text-sm text-muted-foreground truncate">support@kswifi.app</div>
-              </div>
-              <ExternalLink className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" />
-            </Button>
-            
-            <Button variant="outline" className="h-auto p-3 md:p-4 flex items-center space-x-2 md:space-x-3">
-              <Phone className="w-4 h-4 md:w-5 md:h-5 text-primary flex-shrink-0" />
-              <div className="text-left min-w-0 flex-1">
-                <div className="font-semibold text-sm md:text-base">Phone Support</div>
-                <div className="text-xs md:text-sm text-muted-foreground">Available 24/7</div>
-              </div>
-              <ExternalLink className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" />
-            </Button>
-          </div>
+          <Button variant="outline" className="h-auto p-3 md:p-4 flex items-center space-x-2 md:space-x-3 mx-auto max-w-md">
+            <Mail className="w-4 h-4 md:w-5 md:h-5 text-primary flex-shrink-0" />
+            <div className="text-left min-w-0 flex-1">
+              <div className="font-semibold text-sm md:text-base">Email Support</div>
+              <div className="text-xs md:text-sm text-muted-foreground truncate">support@kswifi.app</div>
+            </div>
+            <ExternalLink className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" />
+          </Button>
           
           <div className="text-sm text-muted-foreground text-center pt-2">
             Response time: Usually within 2-4 hours
