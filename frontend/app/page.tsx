@@ -185,6 +185,32 @@ export default function KSWiFiApp() {
     })
   }
 
+  const handleESIMSetup = async () => {
+    if (!user) {
+      showNotification("warning", "Sign In Required", "Please sign in to setup eSIM")
+      return
+    }
+
+    try {
+      showNotification("info", "Generating eSIM", "Creating your virtual eSIM profile...")
+      
+      // Generate new eSIM profile
+      const esimResult = await apiService.generateESIM()
+      
+      // Show QR code and instructions
+      showNotification("success", "eSIM Generated!", "Your eSIM QR code has been created")
+      
+      // You can extend this to show a modal with the QR code
+      console.log("eSIM Profile Generated:", esimResult)
+      console.log("QR Code Data:", esimResult.qr_code_data)
+      console.log("Activation Code:", esimResult.activation_code)
+      
+    } catch (error) {
+      console.error("Error generating eSIM:", error)
+      showNotification("warning", "eSIM Generation Failed", "Failed to generate eSIM profile")
+    }
+  }
+
   const handleDataPackActivation = async () => {
     if (!user) {
       showNotification("warning", "Sign In Required", "Please sign in to activate data packs")
@@ -399,8 +425,8 @@ export default function KSWiFiApp() {
             <ActionButton
               icon={QrCode}
               label="Setup eSIM"
-              description="Scan QR Code"
-              onClick={() => showNotification("info", "QR Scanner", "QR scanner feature coming soon!")}
+              description="Generate QR Code"
+              onClick={handleESIMSetup}
               variant="secondary"
             />
           </div>

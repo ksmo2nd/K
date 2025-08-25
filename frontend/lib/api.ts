@@ -493,6 +493,34 @@ class ApiService {
     return response;
   }
 
+  // eSIM Generation
+  async generateESIM(sessionId?: string, dataPackSizeMb: number = 1024): Promise<{
+    success: boolean;
+    esim_id: string;
+    iccid: string;
+    imsi: string;
+    carrier_name: string;
+    carrier_plmn: string;
+    activation_code: string;
+    qr_code_data: string;
+    qr_code_image: string;
+    data_pack_id?: string;
+    profile_data: any;
+    installation_instructions: string[];
+    message: string;
+  }> {
+    const response = await this.makeBackendRequest<any>('/esim/generate-esim', {
+      method: 'POST',
+      body: JSON.stringify({
+        session_id: sessionId,
+        data_pack_size_mb: dataPackSizeMb,
+        carrier_name: 'KSWiFi',
+        carrier_plmn: '99999'
+      })
+    });
+    return response;
+  }
+
   // Health Check
   async healthCheck(): Promise<{ status: string; service: string; [key: string]: string }> {
     try {
