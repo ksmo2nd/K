@@ -54,9 +54,9 @@ def create_database_url() -> str:
                 logger.info("SSL mode detected in DATABASE_URL - handling via connect_args")
                 continue
             elif param.startswith('pgbouncer='):
-                # Keep pgbouncer parameter for Supabase
-                query_params.append(param)
-                logger.info(f"Supabase parameter preserved: {param}")
+                # Skip pgbouncer parameter - asyncpg doesn't understand it
+                logger.info(f"Skipping pgbouncer parameter: {param} (not supported by asyncpg)")
+                continue
             else:
                 # Keep other parameters
                 query_params.append(param)
@@ -108,13 +108,11 @@ def get_database_engine():
             max_overflow=20,
             # Use NullPool for serverless environments
             poolclass=NullPool if settings.DEBUG else None,
-            # Connection arguments for Supabase with SSL support
+            # Connection arguments for Supabase
             connect_args={
                 "server_settings": {
                     "application_name": "KSWiFi_FastAPI",
-                },
-                # SSL configuration for Supabase external connections
-                "ssl": "require" if "sslmode=require" in settings.DATABASE_URL else None,
+                }
             }
         )
         
