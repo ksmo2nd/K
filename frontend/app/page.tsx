@@ -58,7 +58,7 @@ export default function KSWiFiApp() {
     message: string
     isVisible: boolean
   }>({ type: "info", title: "", message: "", isVisible: false })
-  const [securityEnabled, setSecurityEnabled] = useState(false)
+  const [securityEnabled, setSecurityEnabled] = useState(true)
 
   // Data state
   const [dataPacks, setDataPacks] = useState<any[]>([])
@@ -68,7 +68,6 @@ export default function KSWiFiApp() {
   // Session state
   const [showSessionSelector, setShowSessionSelector] = useState(false)
   const [sessionsRefreshTrigger, setSessionsRefreshTrigger] = useState(0)
-  const [securityEnabled, setSecurityEnabled] = useState(true)
 
   // Check for URL messages (like password reset success)
   useEffect(() => {
