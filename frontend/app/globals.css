@@ -148,6 +148,46 @@ script[src*="tracking"] {
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* Enhanced hiding for all development/deployment overlays and toolbars */
+[data-name="vercel-live-feedback"],
+[data-name="vercel-toolbar"],
+[data-testid="vercel-live-feedback"],
+[data-testid="vercel-toolbar"],
+div[class*="vercel-live-feedback"],
+div[class*="vercel-toolbar"],
+iframe[src*="vercel"],
+iframe[title*="vercel"],
+iframe[src*="cursor"],
+iframe[title*="cursor"],
+div[class*="cursor"]:not([class*="cursor-pointer"]):not([class*="cursor-default"]),
+div[id*="cursor"]:not([id*="cursor-pointer"]),
+div[data-cursor],
+[class*="cursor-overlay"],
+[id*="cursor-overlay"],
+div[class*="toolbar"]:not([class*="app-toolbar"]):not([class*="user-toolbar"]),
+div[id*="toolbar"]:not([id*="app-toolbar"]):not([id*="user-toolbar"]),
+div[class*="analytics"]:not([class*="user-analytics"]),
+div[id*="analytics"]:not([id*="user-analytics"]),
+iframe[src*="analytics"],
+div[style*="position: fixed"][style*="z-index: 999"]:not([class*="user-"]),
+div[style*="position: fixed"][style*="z-index: 9999"]:not([class*="user-"]),
+div[class*="dev-mode"],
+div[id*="dev-mode"],
+div[class*="development"],
+div[id*="development"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  left: -9999px !important;
+  top: -9999px !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  z-index: -1 !important;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

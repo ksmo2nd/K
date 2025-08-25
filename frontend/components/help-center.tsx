@@ -228,15 +228,15 @@ export function HelpCenter() {
                   <Button
                     key={category.id}
                     variant={selectedCategory === category.id ? "default" : "outline"}
-                    className="h-auto p-4 flex flex-col items-center space-y-2"
+                    className="h-auto p-3 md:p-4 flex flex-col items-center space-y-2"
                     onClick={() => setSelectedCategory(
                       selectedCategory === category.id ? null : category.id
                     )}
                   >
-                    <Icon className={`w-8 h-8 ${category.color}`} />
+                    <Icon className={`w-6 h-6 md:w-8 md:h-8 ${category.color}`} />
                     <div className="text-center">
-                      <div className="font-semibold">{category.name}</div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="font-semibold text-xs md:text-sm">{category.name}</div>
+                      <div className="text-xs md:text-sm text-muted-foreground">
                         {getCategoryCount(category.id)} articles
                       </div>
                     </div>
@@ -275,12 +275,12 @@ export function HelpCenter() {
                 <CardContent className="p-0">
                   <Button
                     variant="ghost"
-                    className="w-full p-6 h-auto justify-between text-left"
+                    className="w-full p-4 md:p-6 h-auto justify-between text-left"
                     onClick={() => setExpandedFAQ(
                       expandedFAQ === faq.id ? null : faq.id
                     )}
                   >
-                    <span className="font-medium text-foreground pr-4">
+                    <span className="font-medium text-foreground pr-2 md:pr-4 text-sm md:text-base">
                       {faq.question}
                     </span>
                     {expandedFAQ === faq.id ? (
@@ -291,8 +291,8 @@ export function HelpCenter() {
                   </Button>
                   
                   {expandedFAQ === faq.id && (
-                    <div className="px-6 pb-6 pt-0">
-                      <div className="text-muted-foreground leading-relaxed">
+                    <div className="px-4 md:px-6 pb-4 md:pb-6 pt-0">
+                      <div className="text-muted-foreground leading-relaxed text-sm md:text-base">
                         {faq.answer}
                       </div>
                     </div>
@@ -328,22 +328,22 @@ export function HelpCenter() {
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Button variant="outline" className="h-auto p-4 flex items-center space-x-3">
-              <Mail className="w-5 h-5 text-primary" />
-              <div className="text-left">
-                <div className="font-semibold">Email Support</div>
-                <div className="text-sm text-muted-foreground">support@kswifi.app</div>
+            <Button variant="outline" className="h-auto p-3 md:p-4 flex items-center space-x-2 md:space-x-3">
+              <Mail className="w-4 h-4 md:w-5 md:h-5 text-primary flex-shrink-0" />
+              <div className="text-left min-w-0 flex-1">
+                <div className="font-semibold text-sm md:text-base">Email Support</div>
+                <div className="text-xs md:text-sm text-muted-foreground truncate">support@kswifi.app</div>
               </div>
-              <ExternalLink className="w-4 h-4 ml-auto" />
+              <ExternalLink className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" />
             </Button>
             
-            <Button variant="outline" className="h-auto p-4 flex items-center space-x-3">
-              <Phone className="w-5 h-5 text-primary" />
-              <div className="text-left">
-                <div className="font-semibold">Phone Support</div>
-                <div className="text-sm text-muted-foreground">Available 24/7</div>
+            <Button variant="outline" className="h-auto p-3 md:p-4 flex items-center space-x-2 md:space-x-3">
+              <Phone className="w-4 h-4 md:w-5 md:h-5 text-primary flex-shrink-0" />
+              <div className="text-left min-w-0 flex-1">
+                <div className="font-semibold text-sm md:text-base">Phone Support</div>
+                <div className="text-xs md:text-sm text-muted-foreground">Available 24/7</div>
               </div>
-              <ExternalLink className="w-4 h-4 ml-auto" />
+              <ExternalLink className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" />
             </Button>
           </div>
           
