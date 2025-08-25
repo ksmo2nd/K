@@ -1,0 +1,15 @@
+{
+  "analyticsId": null,
+  "speedInsights": {
+    "enabled": false
+  },
+  "webAnalytics": {
+    "enabled": false
+  },
+  "functions": {},
+  "rewrites": [],
+  "redirects": [],
+  "headers": [],
+  "framework": "nextjs",
+  "outputDirectory": "frontend/out"
+}

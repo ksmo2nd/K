@@ -2,6 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hide Vercel Analytics and Speed Insights overlay buttons */
+[data-name="speed-insights-panel"],
+[data-name="vercel-live-feedback"],
+[data-name="vercel-toolbar"],
+div[style*="position: fixed"][style*="bottom: 20px"][style*="right: 20px"],
+div[style*="position: fixed"][style*="z-index: 2147483647"],
+iframe[src*="vercel"],
+iframe[src*="analytics"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 :root {
   /* KSWiFi color scheme: Black background with cyan/teal blue (#00CFE8) accents */
   --background: 0 0% 0%; /* Pure black #000000 */
