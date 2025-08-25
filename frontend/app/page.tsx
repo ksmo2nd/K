@@ -15,6 +15,9 @@ import { SignInForm, SignUpForm, PasswordResetForm } from "@/components/auth"
 import { ProtectedRoute } from "@/components/auth/protected-route"
 import { useAuth } from "@/lib/auth-context"
 import { useUserProfile } from "@/hooks/use-user-profile"
+import { useWiFiStatus } from "@/hooks/use-wifi-status"
+import { SecurityProvider, useAppSecurity } from "@/lib/security-context"
+import { SecurityIndicator } from "@/components/security-indicator"
 import { apiService } from "@/lib/api"
 import { toast } from "sonner"
 import {
@@ -39,6 +42,9 @@ export default function KSWiFiApp() {
   // Auth state
   const { user, loading: authLoading, signOut } = useAuth()
   const { profile, loading: profileLoading } = useUserProfile()
+  
+  // Real WiFi status
+  const wifiStatus = useWiFiStatus()
   
   // App state
   const [currentScreen, setCurrentScreen] = useState<AppScreen>("onboarding")
@@ -120,32 +126,26 @@ export default function KSWiFiApp() {
     }
   }
 
-  // Mock data for demo (fallback when no real data)
+  // Real user data (no mocks)
   const userData = profile ? {
     name: `${profile.first_name} ${profile.last_name}`,
     email: profile.email,
     currentData: dataPackStats?.used_data_mb || 0,
     totalData: dataPackStats?.total_data_mb || 0,
-    isWifiConnected: true,
-    networkName: "WiFi Network",
   } : {
     name: "Guest User",
     email: "",
     currentData: 0,
     totalData: 0,
-    isWifiConnected: true,
-    networkName: "WiFi Network",
   }
 
-  // Recent history from actual data or mock
+  // Recent history from actual data only
   const recentHistory = dataPacks.length > 0 ? dataPacks.map(pack => ({
     size: pack.name,
     date: new Date(pack.created_at).toLocaleDateString(),
     used: `${pack.used_data_mb}MB`,
     status: pack.status as "completed" | "active" | "expired"
-  })) : [
-    { size: "No data packs", date: "Sign in to view", used: "0 GB", status: "completed" as const },
-  ]
+  })) : []
 
   const showNotification = (type: "success" | "warning" | "info", title: string, message: string) => {
     setNotification({ type, title, message, isVisible: true })
@@ -166,8 +166,8 @@ export default function KSWiFiApp() {
   }
 
   const handleSessionDownload = () => {
-    if (!userData.isWifiConnected) {
-      showNotification("warning", "WiFi Required", "Connect to WiFi to download internet sessions")
+    if (!wifiStatus.isConnected || !wifiStatus.isOnline) {
+      showNotification("warning", "Internet Required", "Connect to the internet to download sessions")
       return
     }
     if (!user) {
@@ -388,10 +388,9 @@ export default function KSWiFiApp() {
             </div>
           </div>
           
-          <WifiStatus 
-            isConnected={userData.isWifiConnected} 
-            networkName={userData.networkName} 
-          />
+          <WifiStatus />
+          
+          <SecurityIndicator />
         </div>
 
         {/* Data Usage */}
@@ -409,7 +408,7 @@ export default function KSWiFiApp() {
             <ActionButton
               icon={Download}
               label="Download Session"
-              description="On WiFi"
+              description={wifiStatus.isConnected ? "Ready to Download" : "Internet Required"}
               onClick={handleSessionDownload}
             />
             <ActionButton
@@ -609,9 +608,11 @@ export default function KSWiFiApp() {
 
   // Authenticated user screens
   return (
-    <ProtectedRoute fallback={renderAuth()}>
-      {currentScreen === "dashboard" && renderDashboard()}
-      {currentScreen === "settings" && renderSettings()}
-    </ProtectedRoute>
+    <SecurityProvider>
+      <ProtectedRoute fallback={renderAuth()}>
+        {currentScreen === "dashboard" && renderDashboard()}
+        {currentScreen === "settings" && renderSettings()}
+      </ProtectedRoute>
+    </SecurityProvider>
   )
 }

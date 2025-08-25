@@ -2,18 +2,38 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Hide Vercel Analytics and Speed Insights overlay buttons */
+/* Hide all overlay icons and analytics widgets */
 [data-name="speed-insights-panel"],
 [data-name="vercel-live-feedback"],
 [data-name="vercel-toolbar"],
+[data-testid="vercel-live-feedback"],
+[data-testid="vercel-toolbar"],
 div[style*="position: fixed"][style*="bottom: 20px"][style*="right: 20px"],
+div[style*="position: fixed"][style*="bottom: 16px"][style*="right: 16px"],
 div[style*="position: fixed"][style*="z-index: 2147483647"],
+div[style*="position: fixed"][style*="z-index: 9999999"],
 iframe[src*="vercel"],
-iframe[src*="analytics"] {
+iframe[src*="analytics"],
+iframe[src*="cursor"],
+iframe[src*="feedback"],
+/* Cursor AI overlay */
+div[class*="cursor"],
+div[id*="cursor"],
+/* Generic overlay patterns */
+div[style*="position: fixed"][style*="bottom"][style*="right"][style*="z-index"],
+button[style*="position: fixed"][style*="bottom"][style*="right"],
+/* Analytics and tracking widgets */
+div[data-analytics],
+div[data-tracking],
+script[src*="analytics"],
+script[src*="tracking"] {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
 }
 
 :root {
