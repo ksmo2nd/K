@@ -1,6 +1,19 @@
 -- Migration: Internet Sessions for KSWiFi
 -- Description: Create tables for internet session downloads and management
 
+-- Drop existing dependencies if they exist
+DROP INDEX IF EXISTS idx_internet_sessions_user_id;
+DROP INDEX IF EXISTS idx_internet_sessions_status;
+DROP INDEX IF EXISTS idx_session_usage_logs_session_id;
+DROP INDEX IF EXISTS idx_session_usage_logs_user_id;
+
+-- Drop existing tables if they exist (cascade to handle dependencies)
+DROP TABLE IF EXISTS session_usage_logs CASCADE;
+DROP TABLE IF EXISTS internet_sessions CASCADE;
+
+-- Drop existing types if they exist
+DROP TYPE IF EXISTS session_status CASCADE;
+
 -- Create session status enum
 CREATE TYPE session_status AS ENUM (
     'downloading',
@@ -15,7 +28,7 @@ CREATE TYPE session_status AS ENUM (
 );
 
 -- Internet sessions table
-CREATE TABLE internet_sessions (
+CREATE TABLE IF NOT EXISTS internet_sessions (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     session_id TEXT NOT NULL, -- Session type identifier (e.g., '5gb', 'unlimited')
