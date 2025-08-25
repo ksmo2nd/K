@@ -5,8 +5,17 @@
 import { supabase } from './supabase';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 
-// Backend API URL
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+// Backend API URL - REQUIRES environment variable
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+if (!backendUrl) {
+  throw new Error(
+    'Missing required environment variable: NEXT_PUBLIC_BACKEND_URL\n' +
+    'Please set this to your FastAPI backend URL in production.'
+  );
+}
+
+const BACKEND_URL = backendUrl;
 
 export interface User {
   id: string;

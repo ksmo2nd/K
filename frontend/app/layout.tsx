@@ -26,16 +26,7 @@ html {
   --font-mono: ${GeistMono.variable};
 }
         `}</style>
-        {/* Disable Vercel analytics and speed insights */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.va = { disabled: true };
-              window.si = { disabled: true };
-              window.vaq = [];
-            `,
-          }}
-        />
+
       </head>
       <body>
         <AuthProvider>

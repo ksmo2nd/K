@@ -98,11 +98,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Trigger backend post-signup webhook
         try {
-          await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/api/auth/webhook/signup`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: data.user.id })
-          })
+          const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+          if (backendUrl) {
+            await fetch(`${backendUrl}/api/auth/webhook/signup`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ user_id: data.user.id })
+            })
+          }
         } catch (e) {
           console.warn('Backend signup webhook failed:', e)
         }
@@ -127,11 +130,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Trigger backend post-login webhook
       if (data.user) {
         try {
-          await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/api/auth/webhook/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: data.user.id })
-          })
+          const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+          if (backendUrl) {
+            await fetch(`${backendUrl}/api/auth/webhook/login`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ user_id: data.user.id })
+            })
+          }
         } catch (e) {
           console.warn('Backend login webhook failed:', e)
         }

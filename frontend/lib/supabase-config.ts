@@ -1,2 +1,17 @@
-export const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321';
-export const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
+// Supabase configuration - REQUIRES real environment variables
+const supabaseUrlEnv = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKeyEnv = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+// Validate required environment variables
+if (!supabaseUrlEnv || !supabaseAnonKeyEnv) {
+  throw new Error(
+    'Missing required Supabase environment variables. Please set:\n' +
+    '- NEXT_PUBLIC_SUPABASE_URL\n' +
+    '- NEXT_PUBLIC_SUPABASE_ANON_KEY\n\n' +
+    'Get these from your Supabase project settings.'
+  );
+}
+
+// Export validated strings (safe to assert as string after validation)
+export const supabaseUrl: string = supabaseUrlEnv;
+export const supabaseAnonKey: string = supabaseAnonKeyEnv;
