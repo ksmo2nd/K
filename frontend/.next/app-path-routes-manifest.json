@@ -1,5 +1,5 @@
 {
   "/_not-found/page": "/_not-found",
-  "/reset-password/page": "/reset-password",
-  "/page": "/"
+  "/page": "/",
+  "/reset-password/page": "/reset-password"
 }
