@@ -74,41 +74,71 @@ def create_database_url() -> str:
     return db_url
 
 
-# Production database connections - PUT YOUR REAL SUPABASE CREDENTIALS IN .env FILE
-# Supabase client for auth and real-time features
-logger.info("Initializing Supabase client...")
-supabase: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+# Global variables for lazy initialization (avoid import-time network access)
+_supabase_client: Client = None
+_database_engine = None
+_session_factory = None
 
-# Async SQLAlchemy engine for Supabase PostgreSQL operations
-logger.info("Creating database engine...")
-engine = create_async_engine(
-    create_database_url(),
-    echo=settings.DEBUG,
-    # Supabase connection settings
-    pool_pre_ping=True,
-    pool_recycle=300,
-    pool_size=10,
-    max_overflow=20,
-    # Use NullPool for serverless environments
-    poolclass=NullPool if settings.DEBUG else None,
-    # Connection arguments for Supabase with SSL support
-    connect_args={
-        "server_settings": {
-            "application_name": "KSWiFi_FastAPI",
-        },
-        # SSL configuration for Supabase external connections
-        "ssl": "require" if "sslmode=require" in settings.DATABASE_URL else None,
-    }
-)
 
-# Async session factory
-AsyncSessionLocal = async_sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine,
-    class_=AsyncSession,
-    expire_on_commit=False,  # Important for async usage
-)
+def get_supabase_client() -> Client:
+    """Get Supabase client with lazy initialization"""
+    global _supabase_client
+    if _supabase_client is None:
+        logger.info("Initializing Supabase client...")
+        _supabase_client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+    return _supabase_client
+
+
+def get_database_engine():
+    """Get database engine with lazy initialization"""
+    global _database_engine, _session_factory
+    if _database_engine is None:
+        logger.info("Creating database engine...")
+        _database_engine = create_async_engine(
+            create_database_url(),
+            echo=settings.DEBUG,
+            # Supabase connection settings
+            pool_pre_ping=True,
+            pool_recycle=300,
+            pool_size=10,
+            max_overflow=20,
+            # Use NullPool for serverless environments
+            poolclass=NullPool if settings.DEBUG else None,
+            # Connection arguments for Supabase with SSL support
+            connect_args={
+                "server_settings": {
+                    "application_name": "KSWiFi_FastAPI",
+                },
+                # SSL configuration for Supabase external connections
+                "ssl": "require" if "sslmode=require" in settings.DATABASE_URL else None,
+            }
+        )
+        
+        # Create session factory
+        _session_factory = async_sessionmaker(
+            autocommit=False,
+            autoflush=False,
+            bind=_database_engine,
+            class_=AsyncSession,
+            expire_on_commit=False,  # Important for async usage
+        )
+    return _database_engine
+
+
+def get_session_factory():
+    """Get session factory (ensures engine is initialized)"""
+    get_database_engine()  # Ensure engine is created
+    return _session_factory
+
+
+# Backward compatibility functions
+def get_supabase() -> Client:
+    """Backward compatibility function"""
+    return get_supabase_client()
+
+def get_engine():
+    """Backward compatibility function"""
+    return get_database_engine()
 
 
 @asynccontextmanager
@@ -132,7 +162,8 @@ async def test_database_connection():
     """
     try:
         logger.info("Testing database connection...")
-        async with engine.begin() as conn:
+        db_engine = get_database_engine()  # Lazy initialization
+        async with db_engine.begin() as conn:
             result = await conn.execute("SELECT version(), current_database(), current_user")
             row = result.fetchone()
             logger.info(f"Connected to PostgreSQL: {row[0]}")
@@ -151,7 +182,8 @@ async def init_db():
         
         # Note: We'll primarily use Supabase migrations for schema
         # This is just for any additional tables if needed
-        async with engine.begin() as conn:
+        db_engine = get_database_engine()  # Lazy initialization
+        async with db_engine.begin() as conn:
             # Import models here to ensure they're registered
             from ..models.base import Base
             await conn.run_sync(Base.metadata.create_all)
@@ -210,7 +242,7 @@ class SupabaseClient:
     """Wrapper for common Supabase operations"""
     
     def __init__(self):
-        self.client = supabase
+        self.client = get_supabase_client()  # Use lazy initialization
     
     async def get_user_by_id(self, user_id: str):
         """Get user profile from Supabase"""
