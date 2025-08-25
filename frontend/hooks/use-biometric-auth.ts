@@ -27,7 +27,10 @@ export function useBiometricAuth() {
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
-    checkBiometricCapabilities()
+    // Only check capabilities if we're in a browser environment
+    if (typeof window !== 'undefined') {
+      checkBiometricCapabilities()
+    }
   }, [])
 
   const checkBiometricCapabilities = async () => {
@@ -50,19 +53,29 @@ export function useBiometricAuth() {
 
   const checkMobileBiometrics = async () => {
     try {
-      // Import Capacitor biometric plugin dynamically
-      const { NativeBiometric } = await import('@capawesome/capacitor-native-biometric')
-      
-      const result = await NativeBiometric.isAvailable()
-      const hasCredentials = await NativeBiometric.getCredentials({ server: 'kswifi.app' })
-        .then(() => true)
-        .catch(() => false)
+      // Check if the plugin is available (only on mobile)
+      if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.()) {
+        // Dynamically import only if we're actually on a mobile platform
+        const { NativeBiometric } = await import('@capawesome/capacitor-native-biometric')
+        
+        const result = await NativeBiometric.isAvailable()
+        const hasCredentials = await NativeBiometric.getCredentials({ server: 'kswifi.app' })
+          .then(() => true)
+          .catch(() => false)
 
-      setCapabilities({
-        isAvailable: result.isAvailable,
-        supportedTypes: result.biometryType ? [result.biometryType] : [],
-        hasEnrolledCredentials: hasCredentials
-      })
+        setCapabilities({
+          isAvailable: result.isAvailable,
+          supportedTypes: result.biometryType ? [result.biometryType] : [],
+          hasEnrolledCredentials: hasCredentials
+        })
+      } else {
+        // Not on mobile platform, biometrics not available
+        setCapabilities({
+          isAvailable: false,
+          supportedTypes: [],
+          hasEnrolledCredentials: false
+        })
+      }
     } catch (error) {
       console.warn('Mobile biometric check failed:', error)
       setCapabilities({
@@ -132,17 +145,25 @@ export function useBiometricAuth() {
 
   const authenticateMobile = async (reason: string): Promise<BiometricAuthResult> => {
     try {
-      const { NativeBiometric } = await import('@capawesome/capacitor-native-biometric')
-      
-      const result = await NativeBiometric.verifyIdentity({
-        reason,
-        title: "KSWiFi Authentication",
-        subtitle: "Use your biometric to sign in",
-        description: "Place your finger on the sensor or look at the camera"
-      })
+      // Only import if we're on a mobile platform
+      if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.()) {
+        const { NativeBiometric } = await import('@capawesome/capacitor-native-biometric')
+        
+        const result = await NativeBiometric.verifyIdentity({
+          reason,
+          title: "KSWiFi Authentication",
+          subtitle: "Use your biometric to sign in",
+          description: "Place your finger on the sensor or look at the camera"
+        })
 
-      return {
-        success: true
+        return {
+          success: true
+        }
+      } else {
+        return {
+          success: false,
+          error: 'Mobile biometric authentication not available on this platform'
+        }
       }
     } catch (error: any) {
       if (error.code === 'userCancel' || error.message?.includes('cancel')) {
@@ -216,7 +237,7 @@ export function useBiometricAuth() {
     if (!capabilities.isAvailable) return false
 
     try {
-      if (typeof window !== 'undefined' && (window as any).Capacitor) {
+      if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.()) {
         const { NativeBiometric } = await import('@capawesome/capacitor-native-biometric')
         
         await NativeBiometric.setCredentials({
@@ -241,7 +262,7 @@ export function useBiometricAuth() {
     if (!capabilities.isAvailable) return null
 
     try {
-      if (typeof window !== 'undefined' && (window as any).Capacitor) {
+      if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.()) {
         const { NativeBiometric } = await import('@capawesome/capacitor-native-biometric')
         
         const credentials = await NativeBiometric.getCredentials({
@@ -263,7 +284,7 @@ export function useBiometricAuth() {
 
   const deleteBiometricCredentials = async (): Promise<boolean> => {
     try {
-      if (typeof window !== 'undefined' && (window as any).Capacitor) {
+      if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.()) {
         const { NativeBiometric } = await import('@capawesome/capacitor-native-biometric')
         
         await NativeBiometric.deleteCredentials({
