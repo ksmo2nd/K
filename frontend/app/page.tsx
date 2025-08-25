@@ -234,7 +234,11 @@ export default function KSWiFiApp() {
           <Button 
             className="w-full bg-primary text-primary-foreground hover:bg-primary/90" 
             size="lg"
-            onClick={() => setAuthScreen("signup")}
+            onClick={() => {
+              console.log("🔥 GET STARTED BUTTON CLICKED")
+              setAuthScreen("signup")
+              setCurrentScreen("dashboard") // This will trigger auth screen via logic
+            }}
           >
             Get Started
           </Button>
@@ -242,7 +246,11 @@ export default function KSWiFiApp() {
             variant="outline" 
             className="w-full border-border text-foreground hover:bg-muted" 
             size="lg"
-            onClick={() => setAuthScreen("signin")}
+            onClick={() => {
+              console.log("🔥 SIGN IN BUTTON CLICKED")
+              setAuthScreen("signin")
+              setCurrentScreen("dashboard") // This will trigger auth screen via logic
+            }}
           >
             Sign In
           </Button>
@@ -254,6 +262,21 @@ export default function KSWiFiApp() {
   // Authentication Screen
   const renderAuth = () => (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      {/* Back to onboarding button */}
+      <div className="absolute top-4 left-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            setAuthScreen("signin") // Reset to default
+            setCurrentScreen("onboarding") // Go back to onboarding
+          }}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          ← Back
+        </Button>
+      </div>
+
       {authScreen === "signin" && (
         <SignInForm
           onSuccess={handleAuthSuccess}
@@ -506,7 +529,12 @@ export default function KSWiFiApp() {
 
   // Render based on authentication state
   if (!user) {
-    return currentScreen === "onboarding" ? renderOnboarding() : renderAuth()
+    // Show auth screen if user clicked Get Started or Sign In, or if currentScreen is not onboarding
+    if (currentScreen !== "onboarding" || authScreen === "signup" || authScreen === "reset-password") {
+      return renderAuth()
+    }
+    // Otherwise show onboarding
+    return renderOnboarding()
   }
 
   // Authenticated user screens
