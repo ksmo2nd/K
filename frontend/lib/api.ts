@@ -277,8 +277,32 @@ class ApiService {
 
   // Internet Sessions - Core KSWiFi functionality
   async getAvailableSessions(): Promise<any[]> {
-    const response = await this.makeBackendRequest<any[]>('/sessions/available');
-    return response;
+    try {
+      // This is a public endpoint - no authentication required
+      console.log('🔍 Loading sessions from:', `${BACKEND_URL}/api/sessions/available`);
+      
+      const response = await fetch(`${BACKEND_URL}/api/sessions/available`, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('📡 Sessions API response:', response.status, response.statusText);
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        console.error('❌ Sessions API error:', error);
+        throw new Error(error.detail || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Sessions loaded:', data.length, 'sessions');
+      return data;
+    } catch (error) {
+      console.error('❌ Failed to load sessions:', error);
+      console.error('🔧 Backend URL:', BACKEND_URL);
+      throw error;
+    }
   }
 
   async startSessionDownload(sessionId: string, esimId?: string): Promise<any> {
