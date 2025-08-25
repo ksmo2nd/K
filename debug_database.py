@@ -40,6 +40,15 @@ def check_database_url():
         print(f"   Database: {parsed.path.lstrip('/')}")
         print(f"   Username: {parsed.username}")
         print(f"   Password: {'*' * len(parsed.password) if parsed.password else 'NOT SET'}")
+        print(f"   Query params: {parsed.query}")
+        
+        # Check for SSL mode
+        if 'sslmode=require' in db_url:
+            print("✅ SSL mode is set to 'require' (good for Supabase)")
+        elif 'sslmode' in db_url:
+            print(f"⚠️  SSL mode is set but not 'require': {parsed.query}")
+        else:
+            print("❌ SSL mode not set - Supabase external connections need ?sslmode=require")
         
         # Validate components
         issues = []
@@ -110,27 +119,48 @@ async def test_database_connection():
         # Test actual connection
         import asyncpg
         
-        # Convert back to regular postgresql:// for asyncpg
         raw_url = os.getenv('DATABASE_URL')
         print()
         print("🔌 Testing direct asyncpg connection...")
+        print(f"   URL: {raw_url[:50]}...{raw_url[-20:] if len(raw_url) > 70 else ''}")
         
         try:
             conn = await asyncpg.connect(raw_url, timeout=10)
             await conn.close()
             print("✅ Direct asyncpg connection successful!")
+            
+            # Also test the processed URL
+            print()
+            print("🔌 Testing processed SQLAlchemy URL...")
+            processed_url = db_url.replace('postgresql+asyncpg://', 'postgresql://')
+            conn2 = await asyncpg.connect(processed_url, timeout=10)
+            await conn2.close()
+            print("✅ Processed URL connection successful!")
+            
             return True
         except asyncpg.InvalidAuthorizationSpecificationError:
             print("❌ Authentication failed - check password")
+            print("💡 Make sure you replaced [YOUR-PASSWORD] with actual password")
             return False
         except asyncpg.CannotConnectNowError:
             print("❌ Cannot connect - server may be down")
+            print("💡 Check if your Supabase project is paused")
             return False
         except asyncpg.ConnectionDoesNotExistError:
             print("❌ Database does not exist")
             return False
+        except asyncpg.InterfaceError as e:
+            if "SSL" in str(e):
+                print(f"❌ SSL connection failed: {e}")
+                print("💡 Make sure you have ?sslmode=require at the end of DATABASE_URL")
+            else:
+                print(f"❌ Interface error: {e}")
+            return False
         except Exception as e:
             print(f"❌ Connection failed: {e}")
+            print(f"   Error type: {type(e).__name__}")
+            if "SSL" in str(e) or "ssl" in str(e).lower():
+                print("💡 This looks like an SSL issue - ensure ?sslmode=require is in your DATABASE_URL")
             return False
             
     except Exception as e:

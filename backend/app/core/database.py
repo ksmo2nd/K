@@ -27,6 +27,7 @@ def create_database_url() -> str:
     """
     Create database URL compatible with asyncpg from Supabase DATABASE_URL
     Converts postgresql:// to postgresql+asyncpg:// for SQLAlchemy async support
+    Preserves SSL and other query parameters (e.g., ?sslmode=require)
     """
     db_url = settings.DATABASE_URL
     
@@ -36,11 +37,14 @@ def create_database_url() -> str:
     if not parsed.scheme.startswith('postgresql'):
         raise ValueError(f"Invalid DATABASE_URL scheme: {parsed.scheme}. Must start with 'postgresql'")
     
-    # Convert to asyncpg driver for SQLAlchemy async support
+    # Convert to asyncpg driver for SQLAlchemy async support while preserving query params
     if not db_url.startswith('postgresql+asyncpg://'):
-        db_url = db_url.replace('postgresql://', 'postgresql+asyncpg://')
+        # Replace scheme but preserve everything else including query parameters
+        db_url = db_url.replace('postgresql://', 'postgresql+asyncpg://', 1)
     
-    logger.info(f"Database connection: {parsed.hostname}:{parsed.port}/{parsed.path.lstrip('/')}")
+    # Log connection details (without exposing password)
+    query_info = f" with params: {parsed.query}" if parsed.query else ""
+    logger.info(f"Database connection: {parsed.hostname}:{parsed.port}/{parsed.path.lstrip('/')}{query_info}")
     return db_url
 
 
