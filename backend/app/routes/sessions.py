@@ -37,7 +37,7 @@ class SessionInfo(BaseModel):
     data_mb: int
     price_ngn: int
     price_usd: float
-    validity_days: int
+    validity_days: Optional[int]  # None for sessions that don't expire
     plan_type: str
     is_unlimited: bool
     is_free: bool
