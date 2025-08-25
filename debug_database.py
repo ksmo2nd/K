@@ -45,6 +45,7 @@ def check_database_url():
         # Check for SSL mode
         if 'sslmode=require' in db_url:
             print("✅ SSL mode is set to 'require' (good for Supabase)")
+            print("   Note: SSL handled via SQLAlchemy connect_args, not query params")
         elif 'sslmode' in db_url:
             print(f"⚠️  SSL mode is set but not 'require': {parsed.query}")
         else:

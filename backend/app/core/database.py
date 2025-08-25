@@ -27,7 +27,7 @@ def create_database_url() -> str:
     """
     Create database URL compatible with asyncpg from Supabase DATABASE_URL
     Converts postgresql:// to postgresql+asyncpg:// for SQLAlchemy async support
-    Preserves SSL and other query parameters (e.g., ?sslmode=require)
+    Removes sslmode query parameter (handled via connect_args instead)
     """
     db_url = settings.DATABASE_URL
     
@@ -37,14 +37,18 @@ def create_database_url() -> str:
     if not parsed.scheme.startswith('postgresql'):
         raise ValueError(f"Invalid DATABASE_URL scheme: {parsed.scheme}. Must start with 'postgresql'")
     
-    # Convert to asyncpg driver for SQLAlchemy async support while preserving query params
+    # Convert to asyncpg driver for SQLAlchemy async support
     if not db_url.startswith('postgresql+asyncpg://'):
-        # Replace scheme but preserve everything else including query parameters
         db_url = db_url.replace('postgresql://', 'postgresql+asyncpg://', 1)
     
+    # Remove sslmode query parameter since we handle SSL via connect_args
+    if '?sslmode=' in db_url:
+        db_url = db_url.split('?sslmode=')[0]
+        logger.info("SSL mode detected in DATABASE_URL - handling via connect_args")
+    
     # Log connection details (without exposing password)
-    query_info = f" with params: {parsed.query}" if parsed.query else ""
-    logger.info(f"Database connection: {parsed.hostname}:{parsed.port}/{parsed.path.lstrip('/')}{query_info}")
+    ssl_info = " (SSL required)" if "sslmode=require" in settings.DATABASE_URL else ""
+    logger.info(f"Database connection: {parsed.hostname}:{parsed.port}/{parsed.path.lstrip('/')}{ssl_info}")
     return db_url
 
 
@@ -65,11 +69,13 @@ engine = create_async_engine(
     max_overflow=20,
     # Use NullPool for serverless environments
     poolclass=NullPool if settings.DEBUG else None,
-    # Connection arguments for Supabase
+    # Connection arguments for Supabase with SSL support
     connect_args={
         "server_settings": {
             "application_name": "KSWiFi_FastAPI",
-        }
+        },
+        # SSL configuration for Supabase external connections
+        "ssl": "require" if "sslmode=require" in settings.DATABASE_URL else None,
     }
 )
 
