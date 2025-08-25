@@ -48,12 +48,12 @@ class Settings(BaseSettings):
     # Redis for background tasks
     REDIS_URL: str = Field(default="redis://localhost:6379", description="Redis connection URL")
     
-    # eSIM Provider Configuration - PUT YOUR REAL ESIM PROVIDER CREDENTIALS HERE
-    # Choose provider: Truphone, GigSky, or Airalo
-    ESIM_PROVIDER_API_URL: str = Field(..., description="eSIM provider API URL - Example: https://api.truphone.com/v1")
-    ESIM_PROVIDER_API_KEY: str = Field(..., description="eSIM provider API key - Get from provider dashboard")
-    ESIM_PROVIDER_USERNAME: str = Field(..., description="eSIM provider username - Your account username")
-    ESIM_PROVIDER_PASSWORD: str = Field(..., description="eSIM provider password - Your account password")
+    # eSIM Provider Configuration - NOW OPTIONAL (we have inbuilt eSIM generation)
+    # These are only needed if you want to use external eSIM providers alongside our inbuilt system
+    ESIM_PROVIDER_API_URL: Optional[str] = Field(default=None, description="External eSIM provider API URL (optional)")
+    ESIM_PROVIDER_API_KEY: Optional[str] = Field(default=None, description="External eSIM provider API key (optional)")
+    ESIM_PROVIDER_USERNAME: Optional[str] = Field(default=None, description="External eSIM provider username (optional)")
+    ESIM_PROVIDER_PASSWORD: Optional[str] = Field(default=None, description="External eSIM provider password (optional)")
     
     # Data monitoring
     DATA_CHECK_INTERVAL_MINUTES: int = Field(default=5, description="Data balance check interval")

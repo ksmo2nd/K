@@ -18,10 +18,16 @@ class ESIMService:
     """Service for eSIM operations and provider integration"""
     
     def __init__(self):
+        # External provider credentials (optional - we have inbuilt eSIM generation)
         self.api_url = settings.ESIM_PROVIDER_API_URL
         self.api_key = settings.ESIM_PROVIDER_API_KEY
         self.username = settings.ESIM_PROVIDER_USERNAME
         self.password = settings.ESIM_PROVIDER_PASSWORD
+        
+        # Check if external provider is configured
+        self.has_external_provider = all([
+            self.api_url, self.api_key, self.username, self.password
+        ])
     
     async def _make_api_request(self, method: str, endpoint: str, data: Dict = None) -> Dict:
         """Make authenticated request to eSIM provider API"""
