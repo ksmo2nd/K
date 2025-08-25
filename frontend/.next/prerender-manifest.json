@@ -1,30 +1,6 @@
 {
   "version": 4,
   "routes": {
-    "/reset-password": {
-      "experimentalBypassFor": [
-        {
-          "type": "header",
-          "key": "Next-Action"
-        },
-        {
-          "type": "header",
-          "key": "content-type",
-          "value": "multipart/form-data;.*"
-        }
-      ],
-      "initialRevalidateSeconds": false,
-      "srcRoute": "/reset-password",
-      "dataRoute": "/reset-password.rsc",
-      "allowHeader": [
-        "host",
-        "x-matched-path",
-        "x-prerender-revalidate",
-        "x-prerender-revalidate-if-generated",
-        "x-next-revalidated-tags",
-        "x-next-revalidate-tag-token"
-      ]
-    },
     "/": {
       "experimentalBypassFor": [
         {
@@ -48,13 +24,37 @@
         "x-next-revalidated-tags",
         "x-next-revalidate-tag-token"
       ]
+    },
+    "/reset-password": {
+      "experimentalBypassFor": [
+        {
+          "type": "header",
+          "key": "Next-Action"
+        },
+        {
+          "type": "header",
+          "key": "content-type",
+          "value": "multipart/form-data;.*"
+        }
+      ],
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/reset-password",
+      "dataRoute": "/reset-password.rsc",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
     }
   },
   "dynamicRoutes": {},
   "notFoundRoutes": [],
   "preview": {
-    "previewModeId": "14e9261a8aecd8814c369a7086dade96",
-    "previewModeSigningKey": "ecfecf33da8f76d044240405fc92907f0b55fe766f2da94daf4054286a2c08e0",
-    "previewModeEncryptionKey": "aaaf57502375013821fb7004229ba2240803b885babdb029fbf277bb127888f6"
+    "previewModeId": "0a400caef3fc316c2d4c72a489976f5e",
+    "previewModeSigningKey": "a612ef1b1b702e90b6eb09239d523911e0122c88fd3d7a03b0324195ca74b568",
+    "previewModeEncryptionKey": "59b97f7ef3596819969cbd772d9135cff8d77af1b798ad7827ba69f04f063812"
   }
 }

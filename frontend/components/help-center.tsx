@@ -70,7 +70,7 @@ const faqData: FAQItem[] = [
     id: '4',
     category: 'wifi-data',
     question: 'How do I download internet sessions?',
-    answer: 'To download internet sessions: 1) Make sure you\'re connected to a stable WiFi network, 2) Go to the main dashboard, 3) Tap "Download Session", 4) Choose your preferred data pack size, 5) Wait for the download to complete. You can only download sessions when connected to WiFi for security reasons.'
+    answer: 'To download internet sessions: 1) Connect to WiFi, 2) Go to dashboard, 3) Tap "Download Session", 4) Choose data size, 5) Wait for download. WiFi required for security.'
   },
   {
     id: '5',
@@ -110,7 +110,7 @@ const faqData: FAQItem[] = [
     id: '10',
     category: 'billing',
     question: 'What data pack sizes are available?',
-    answer: 'You can download free data packs up to 5GB at no cost. For anything exceeding 5GB, you pay ₦800 (Nigerian Naira). All data packs expire after 7 days from purchase, but your active sessions won\'t expire unless you exhaust the data you\'ve downloaded.'
+    answer: 'You can download free data packs up to 5GB at no cost. For anything exceeding 5GB, you pay ₦800. All data packs expire after 7 days from purchase, but your active sessions won\'t expire unless you exhaust the data you\'ve downloaded.'
   },
   {
     id: '11',
@@ -128,13 +128,13 @@ const faqData: FAQItem[] = [
     id: '13',
     category: 'billing',
     question: 'How much does additional data cost?',
-    answer: 'Additional data beyond the free 5GB costs ₦800 (Nigerian Naira). This gives you access to larger data packs for heavy usage, streaming, or extended internet sessions. Payment is processed securely through our payment system.'
+    answer: 'Additional data beyond the free 5GB costs ₦800. This gives you access to larger data packs for heavy usage, streaming, or extended internet sessions. Payment is processed securely through our payment system.'
   },
   {
     id: '14',
     category: 'billing',
     question: 'How do I purchase additional data?',
-    answer: 'To purchase additional data: 1) Go to the main dashboard, 2) Tap "Activate Data Pack", 3) Choose from available pack sizes, 4) Complete the secure payment process with ₦800, 5) Your new data pack will be available for download immediately after payment confirmation.'
+    answer: 'To purchase additional data: 1) Go to dashboard, 2) Tap "Activate Data Pack", 3) Choose pack size, 4) Pay ₦800, 5) Download immediately after payment.'
   },
   
   // Security & Privacy
