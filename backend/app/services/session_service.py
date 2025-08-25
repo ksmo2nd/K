@@ -364,10 +364,9 @@ class SessionService:
             if data_remaining <= 0:
                 raise ValueError("Session data has been exhausted")
             
-            # Activate eSIM
+            # Activate eSIM for internet browsing
             esim_activation = await self.esim_service.activate_esim(
-                esim_id=session['esim_id'],
-                user_id=user_id
+                esim_id=session['esim_id']
             )
             
             # Update session status
@@ -382,10 +381,28 @@ class SessionService:
             
             return {
                 'status': 'success',
-                'message': 'Session activated successfully',
+                'message': 'Session activated - Internet browsing enabled',
                 'session_id': session_id,
                 'esim_activation': esim_activation,
-                'data_remaining_mb': session['data_mb'] if session['data_mb'] > 0 else 999999
+                'data_remaining_mb': session.get('data_remaining_mb', session['data_mb']) if session['data_mb'] > 0 else 100*1024,
+                'internet_access': {
+                    'enabled': True,
+                    'data_available': True,
+                    'connection_type': 'eSIM',
+                    'browsing_ready': True
+                },
+                'usage_info': {
+                    'data_used_mb': session.get('data_used_mb', 0),
+                    'data_remaining_mb': session.get('data_remaining_mb', session['data_mb']) if session['data_mb'] > 0 else 100*1024,
+                    'expires_when': 'data_exhausted',
+                    'no_time_limit': True
+                },
+                'next_steps': [
+                    'Your eSIM is now active',
+                    'Internet connection is ready',
+                    'Start browsing with your available data',
+                    'Data will be tracked automatically'
+                ]
             }
             
         except Exception as e:

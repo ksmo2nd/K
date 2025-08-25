@@ -150,9 +150,24 @@ class ESIMService:
                 return {
                     'status': 'activated',
                     'activated_at': datetime.utcnow().isoformat(),
-                    'message': 'Inbuilt eSIM activated successfully',
+                    'message': 'eSIM activated successfully - Internet browsing enabled',
                     'activation_code': esim['activation_code'],
-                    'apn': esim['apn']
+                    'apn': esim['apn'],
+                    'internet_access': True,
+                    'connection_details': {
+                        'apn': esim['apn'],
+                        'username': esim['username'],
+                        'password': esim['password'],
+                        'iccid': esim['iccid'],
+                        'network_type': 'LTE/5G',
+                        'data_enabled': True
+                    },
+                    'setup_instructions': [
+                        'Scan QR code with your device',
+                        'eSIM will be added to your device',
+                        'Internet connection will be automatically configured',
+                        'Start browsing immediately'
+                    ]
                 }
             else:
                 # External provider activation
@@ -263,6 +278,48 @@ class ESIMService:
             
         except Exception as e:
             raise Exception(f"Failed to get eSIM usage: {str(e)}")
+    
+    async def check_internet_connectivity(self, esim_id: str) -> Dict[str, Any]:
+        """Check if eSIM has internet connectivity for browsing"""
+        try:
+            # Get eSIM details
+            esim_response = supabase_client.client.table('esims').select('*').eq('id', esim_id).execute()
+            if not esim_response.data:
+                raise Exception("eSIM not found")
+            
+            esim = esim_response.data[0]
+            
+            # Check if eSIM is active
+            is_active = esim['status'] == ESIMStatus.ACTIVE.value
+            
+            # For inbuilt eSIMs, connectivity is ready when active
+            if not self.has_external_provider:
+                return {
+                    'esim_id': esim_id,
+                    'internet_ready': is_active,
+                    'connectivity_status': 'ready' if is_active else 'inactive',
+                    'apn_configured': True,
+                    'data_connection': 'available' if is_active else 'unavailable',
+                    'browsing_enabled': is_active,
+                    'network_type': 'LTE/5G',
+                    'connection_details': {
+                        'apn': esim['apn'],
+                        'iccid': esim['iccid'],
+                        'activated_at': esim.get('activated_at')
+                    }
+                }
+            else:
+                # For external providers, we might need to check with the provider
+                # For now, assume ready if active
+                return {
+                    'esim_id': esim_id,
+                    'internet_ready': is_active,
+                    'connectivity_status': 'ready' if is_active else 'inactive',
+                    'browsing_enabled': is_active
+                }
+                
+        except Exception as e:
+            raise Exception(f"Failed to check internet connectivity: {str(e)}")
     
     def _generate_qr_code(self, data: str) -> str:
         """Generate QR code image as base64 string"""
