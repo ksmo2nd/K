@@ -1,18 +1,33 @@
 """
-Base model definitions
+Base model definitions for Supabase HTTP client
+No SQLAlchemy needed - using Supabase's schema directly
 """
 
-from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy import DateTime, String
-from sqlalchemy.orm import Mapped, mapped_column
 from datetime import datetime
 from typing import Optional
 import uuid
 
 
-class Base(DeclarativeBase):
-    """Base model with common fields"""
+class BaseModel:
+    """
+    Simple base model for common fields
+    Used for type hints and documentation only
+    Actual database operations use Supabase HTTP client
+    """
     
-    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, onupdate=datetime.utcnow)
+    def __init__(self):
+        self.id: str = str(uuid.uuid4())
+        self.created_at: datetime = datetime.utcnow()
+        self.updated_at: Optional[datetime] = None
+    
+    def to_dict(self) -> dict:
+        """Convert to dictionary for Supabase operations"""
+        return {
+            "id": self.id,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+        }
+
+
+# For backward compatibility
+Base = BaseModel
