@@ -610,8 +610,9 @@ class SessionService:
     async def _update_session_status(self, session_id: str, status: SessionStatus, error: str = None) -> None:
         """Update session status"""
         update_data = {'status': status.value}
+        # Note: error_message column doesn't exist in current schema
         if error:
-            update_data['error_message'] = error
+            print(f"⚠️ Session {session_id} error: {error}")  # Log error instead
         
         get_supabase_client().table('internet_sessions')\
             .update(update_data)\

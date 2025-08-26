@@ -198,7 +198,7 @@ class ESIMService:
                 'name': f"eSIM Data Pack - {bundle_size_mb}MB",
                 'data_mb': bundle_size_mb,
                 'used_data_mb': 0,
-                'remaining_data_mb': bundle_size_mb,
+                # 'remaining_data_mb' is auto-calculated (generated column)
                 'price_ngn': 0,  # Free for downloaded sessions
                 'price_usd': 0.0,
                 'status': 'active',
