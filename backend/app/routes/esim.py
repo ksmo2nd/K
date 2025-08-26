@@ -316,6 +316,33 @@ async def generate_esim(
         raise HTTPException(status_code=500, detail=f"Error generating eSIM: {str(e)}")
 
 
+@router.post("/test-qr")
+async def test_qr_generation():
+    """Test QR code generation without database operations"""
+    try:
+        import secrets
+        
+        # Generate a simple test activation code
+        test_code = f"LPA:1$kswifi.onrender.com$test{secrets.token_urlsafe(8)}"
+        
+        # Generate QR code
+        qr_image = esim_service._generate_qr_code(test_code)
+        
+        return {
+            "success": True,
+            "activation_code": test_code,
+            "qr_code_image": qr_image,
+            "message": "QR code generated successfully"
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "message": "QR generation failed"
+        }
+
+
 def _calculate_luhn_check_digit(number_string: str) -> int:
     """Calculate Luhn check digit for ICCID validation"""
     digits = [int(d) for d in number_string]
