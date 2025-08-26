@@ -682,7 +682,7 @@ class SessionService:
                 
                 # Determine if session can be activated
                 status = session.get('status', 'downloading')
-                can_activate = status == 'stored' and not (session.get('status') == 'active')
+                can_activate = status == 'stored' and status != 'active'
                 
                 sessions.append({
                     "id": session['id'],
