@@ -123,8 +123,7 @@ class ESIMService:
                 'apn': apn,
                 'username': username,
                 'password': password,
-                'created_at': datetime.utcnow().isoformat(),
-                'expires_at': (datetime.utcnow() + timedelta(days=30)).isoformat()
+                'created_at': datetime.utcnow().isoformat()
             }
             
             supabase = get_supabase_client()
@@ -145,7 +144,6 @@ class ESIMService:
                 'price_usd': 0.0,
                 'status': 'active',
                 'is_active': True,
-                'expires_at': (datetime.utcnow() + timedelta(days=30)).isoformat(),
                 'created_at': datetime.utcnow().isoformat(),
                 'updated_at': datetime.utcnow().isoformat()
             }
@@ -197,7 +195,7 @@ class ESIMService:
         """Activate an eSIM (inbuilt or external provider)"""
         try:
             # Get eSIM details from database
-            esim_response = get_supabase_client().table('esims').select('id, user_id, iccid, imsi, msisdn, activation_code, qr_code_data, status, apn, username, password, activated_at, expires_at, created_at, updated_at').eq('id', esim_id).execute()
+            esim_response = get_supabase_client().table('esims').select('id, user_id, iccid, status').eq('id', esim_id).execute()
             if not esim_response.data:
                 raise Exception("eSIM not found")
             
@@ -367,7 +365,7 @@ class ESIMService:
         """Check if eSIM has internet connectivity for browsing"""
         try:
             # Get eSIM details
-            esim_response = get_supabase_client().table('esims').select('id, user_id, iccid, status, apn, activated_at').eq('id', esim_id).execute()
+            esim_response = get_supabase_client().table('esims').select('id, user_id, iccid, status, apn').eq('id', esim_id).execute()
             if not esim_response.data:
                 raise Exception("eSIM not found")
             
@@ -388,8 +386,7 @@ class ESIMService:
                     'network_type': 'LTE/5G',
                     'connection_details': {
                         'apn': esim['apn'],
-                        'iccid': esim['iccid'],
-                        'activated_at': esim.get('activated_at')
+                        'iccid': esim['iccid']
                     }
                 }
             else:
