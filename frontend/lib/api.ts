@@ -580,19 +580,25 @@ class ApiService {
     message: string;
   }> {
     console.log('🔍 API: Generating eSIM QR code', { sessionId, dataPackSizeMb });
+    console.log('🔍 API: Calling endpoint /esim/generate');
     
-    const response = await this.makeBackendRequest<any>('/esim/generate', {
-      method: 'POST',
-      body: JSON.stringify({
-        session_id: sessionId,
-        data_pack_size_mb: dataPackSizeMb,
-        carrier_name: 'KSWiFi',
-        carrier_plmn: '99999'
-      })
-    });
-    
-    console.log('✅ API: eSIM QR code generated successfully', response);
-    return response;
+    try {
+      const response = await this.makeBackendRequest<any>('/esim/generate', {
+        method: 'POST',
+        body: JSON.stringify({
+          session_id: sessionId,
+          data_pack_size_mb: dataPackSizeMb,
+          carrier_name: 'KSWiFi',
+          carrier_plmn: '99999'
+        })
+      });
+      
+      console.log('✅ API: eSIM QR code generated successfully', response);
+      return response;
+    } catch (error) {
+      console.log('❌ API: eSIM generation failed:', error);
+      throw error;
+    }
   }
 
   // Health Check
