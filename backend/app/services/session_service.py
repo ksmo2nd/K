@@ -773,32 +773,7 @@ class SessionService:
             
         except Exception as e:
             raise Exception(f"Failed to activate session: {str(e)}")
-    
-    async def get_user_sessions(self, user_id: str) -> List[Dict[str, Any]]:
-        """Get all sessions for a user"""
-        response = get_supabase_client().table('internet_sessions')\
-            .select('*')\
-            .eq('user_id', user_id)\
-            .order('download_started_at', desc=True)\
-            .execute()
-        
-        sessions = []
-        for session in response.data:
-            session_info = {
-                'id': session['id'],
-                'name': session['session_name'],
-                'size': f"{session['data_mb'] / 1024:.0f}GB" if session['data_mb'] > 0 else "Unlimited",
-                'status': session['status'],
-                'progress_percent': session.get('progress_percent', 0),
-                'download_started_at': session['download_started_at'],
-                'expires_at': session.get('expires_at'),
-                'is_active': session['status'] == SessionStatus.ACTIVE.value,
-                'can_activate': session['status'] == SessionStatus.STORED.value,
-                'data_remaining_mb': session['data_mb'] - session.get('used_data_mb', 0) if session['data_mb'] > 0 else 999999
-            }
-            sessions.append(session_info)
-        
-        return sessions
+
     
     async def track_session_usage(self, session_id: str, data_used_mb: int) -> Dict[str, Any]:
         """Track data usage for an active session"""
