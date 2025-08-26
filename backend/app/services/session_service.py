@@ -4,6 +4,7 @@ Internet Session Download Service - Core KSWiFi functionality
 
 import asyncio
 import json
+import uuid
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 from enum import Enum
@@ -137,7 +138,8 @@ class SessionService:
         for size_gb in default_sizes:
             is_free = size_gb <= 5
             session = {
-                'id': f'default_{size_gb}gb',
+                'id': str(uuid.uuid4()),
+                'session_name': f'default_{size_gb}gb',
                 'name': f'{size_gb}GB',
                 'size': f'{size_gb}GB',
                 'data_mb': size_gb * 1024,
@@ -196,7 +198,8 @@ class SessionService:
             
             for size_gb in available_sizes:
                 session = {
-                    'id': f'wifi_{wifi_network}_{size_gb}gb',
+                    'id': str(uuid.uuid4()),
+                    'session_name': f'wifi_{wifi_network}_{size_gb}gb',
                     'name': f'{size_gb}GB',
                     'size': f'{size_gb}GB',
                     'data_mb': size_gb * 1024,
@@ -263,6 +266,8 @@ class SessionService:
             
             session_data = {
                 'id': session['id'],
+                'session_id': session['session_name'],  # Use session_name for session_id field
+                'session_name': session['name'],  # Use name for session_name field
                 'data_mb': session['data_mb'],
                 'price_ngn': session['price_ngn'],
                 'price_usd': session['price_usd'],
@@ -284,7 +289,8 @@ class SessionService:
         """Get fallback sessions when WiFi scanning fails"""
         return [
             {
-                'id': f'fallback_1gb',
+                'id': str(uuid.uuid4()),
+                'session_name': f'fallback_1gb',
                 'name': '1GB',
                 'size': '1GB',
                 'data_mb': 1024,
