@@ -129,6 +129,8 @@ async def get_my_sessions(user_data: dict = Depends(verify_jwt_token)):
     """Get all sessions for the current user"""
     try:
         user_id = user_data["sub"]
+        print(f"🔍 MY SESSIONS ROUTE: JWT user_id = {user_id}")
+        print(f"🔍 MY SESSIONS ROUTE: Full user_data = {user_data}")
         sessions = await session_service.get_user_sessions(user_id)
         return sessions
     except Exception as e:
