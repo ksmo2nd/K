@@ -191,9 +191,6 @@ export function SessionSelector({ onSessionDownload }: SessionSelectorProps) {
         <p className="text-sm text-muted-foreground">
           Download internet sessions on WiFi to use later offline via eSIM
         </p>
-        
-        {/* Free Quota Display */}
-        {/* Removed as per edit hint */}
       </CardHeader>
 
       <CardContent>
