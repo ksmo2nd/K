@@ -137,7 +137,7 @@ class ApiService {
     options: RequestInit = {}
   ): Promise<T> {
     try {
-      const headers: Record<string, string> = {
+      const headers: HeadersInit = {
         'Content-Type': 'application/json',
         ...options.headers,
       };
@@ -145,7 +145,9 @@ class ApiService {
       // Try to add auth token if available
       try {
         const token = await this.getAuthToken();
-        headers['Authorization'] = `Bearer ${token}`;
+        if (typeof headers === 'object' && headers !== null && !Array.isArray(headers)) {
+          (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+        }
         console.log('🔑 Using auth token for request');
       } catch (authError) {
         console.log('⚠️ No auth token available, making request without auth');
