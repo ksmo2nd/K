@@ -65,14 +65,16 @@ async def lifespan(app: FastAPI):
     try:
         logger.info("🔧 Environment Check:", 
                    supabase_url_set=bool(settings.SUPABASE_URL),
-                   database_url_set=bool(settings.DATABASE_URL),
+                   database_url_set=bool(settings.DATABASE_URL) if settings.DATABASE_URL else False,
                    secret_key_set=bool(settings.SECRET_KEY))
         
         # Test critical settings
         if not settings.SUPABASE_URL or settings.SUPABASE_URL.startswith('https://placeholder'):
             logger.warning("⚠️  SUPABASE_URL appears to be placeholder")
-        if not settings.DATABASE_URL or 'localhost' in settings.DATABASE_URL:
+        if settings.DATABASE_URL and 'localhost' in settings.DATABASE_URL:
             logger.warning("⚠️  DATABASE_URL appears to be localhost/placeholder")
+        elif not settings.DATABASE_URL:
+            logger.info("ℹ️  DATABASE_URL not set (using Supabase HTTP client)")
         if not settings.SECRET_KEY or len(settings.SECRET_KEY) < 32:
             logger.warning("⚠️  SECRET_KEY appears to be weak or placeholder")
             
@@ -84,17 +86,16 @@ async def lifespan(app: FastAPI):
                     error_type=type(e).__name__)
         raise
     
-    # Database initialization
+    # Supabase HTTP client initialization
     try:
-        logger.info("🗄️  Initializing database connection...")
+        logger.info("🗄️  Initializing Supabase HTTP client...")
         await init_db()
-        logger.info("✅ Database initialized successfully")
+        logger.info("✅ Supabase HTTP client initialized successfully")
         
     except Exception as e:
-        logger.error("❌ Database initialization failed", 
+        logger.error("❌ Supabase initialization failed", 
                     error=str(e), 
-                    error_type=type(e).__name__,
-                    database_url_preview=settings.DATABASE_URL[:50] + "..." if len(settings.DATABASE_URL) > 50 else settings.DATABASE_URL)
+                    error_type=type(e).__name__)
         # Continue anyway - some services might work without DB
         logger.warning("⚠️  Continuing without database - some features may not work")
     
@@ -250,7 +251,7 @@ async def debug_info():
             "host": settings.HOST,
             "port": settings.PORT,
             "supabase_url_configured": bool(settings.SUPABASE_URL and not settings.SUPABASE_URL.startswith('https://placeholder')),
-            "database_url_configured": bool(settings.DATABASE_URL and 'localhost' not in settings.DATABASE_URL),
+            "database_url_configured": bool(settings.DATABASE_URL and 'localhost' not in settings.DATABASE_URL) if settings.DATABASE_URL else False,
             "secret_key_configured": bool(settings.SECRET_KEY and len(settings.SECRET_KEY) >= 32),
             "cors_origins": settings.ALLOWED_ORIGINS
         }
@@ -316,10 +317,10 @@ async def cors_test():
 async def database_health_check():
     """Dedicated Supabase PostgreSQL database health check"""
     try:
-        from .core.database import get_database_health, test_database_connection
+        from .core.database import get_database_health, test_supabase_connection
         
         # Test basic connection
-        await test_database_connection()
+        await test_supabase_connection()
         
         # Get detailed health info
         db_health = await get_database_health()
@@ -353,8 +354,8 @@ async def detailed_health_check():
         
         # Check database
         try:
-            from .core.database import supabase_client
-            test_response = supabase_client.client.table('users').select('id').limit(1).execute()
+            from .core.database import get_supabase_client
+            test_response = get_supabase_client().table('users').select('id').limit(1).execute()
             health_data["components"]["database"] = {
                 "status": "healthy",
                 "response_time": "< 100ms"

@@ -25,8 +25,8 @@ class Settings(BaseSettings):
     SUPABASE_KEY: str = Field(..., description="Supabase service role key - Get from project settings")
     SUPABASE_ANON_KEY: str = Field(..., description="Supabase anon key - Get from project settings")
     
-    # Database (Supabase PostgreSQL) - PUT YOUR REAL DATABASE URL HERE
-    DATABASE_URL: str = Field(..., description="PostgreSQL connection string from Supabase - Format: postgresql://postgres:[password]@[host]:5432/postgres")
+    # Database - No longer needed (using Supabase HTTP client)
+    DATABASE_URL: Optional[str] = Field(default=None, description="Not used - kept for backward compatibility")
     
     # Security - PUT YOUR REAL SECRET KEY HERE
     SECRET_KEY: str = Field(..., description="Secret key for JWT - Generate with: openssl rand -hex 32")

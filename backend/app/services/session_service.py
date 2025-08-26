@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 
 from ..core.config import settings
-from ..core.database import supabase_client
+from ..core.database import get_supabase_client
 from ..models.enums import ESIMStatus, DataPackStatus
 from .esim_service import ESIMService
 
@@ -139,7 +139,7 @@ class SessionService:
                 'expires_at': None  # No expiry date
             }
             
-            response = supabase_client.client.table('internet_sessions').insert(session_data).execute()
+            response = get_supabase_client().table('internet_sessions').insert(session_data).execute()
             session_record = response.data[0] if response.data else None
             
             # Start background download process from WiFi
@@ -201,7 +201,7 @@ class SessionService:
     async def _check_unlimited_access(self, user_id: str) -> None:
         """Check if user has paid for unlimited access"""
         # Check for unlimited subscription
-        response = supabase_client.client.table('user_subscriptions')\
+        response = get_supabase_client().table('user_subscriptions')\
             .select('*')\
             .eq('user_id', user_id)\
             .eq('plan_type', 'unlimited')\
@@ -216,7 +216,7 @@ class SessionService:
         # Get user's free sessions this month
         current_month = datetime.utcnow().replace(day=1)
         
-        response = supabase_client.client.table('internet_sessions')\
+        response = get_supabase_client().table('internet_sessions')\
             .select('data_mb')\
             .eq('user_id', user_id)\
             .eq('price_ngn', 0)\
@@ -243,7 +243,7 @@ class SessionService:
         """Background process to download session from connected WiFi"""
         try:
             # Get session record
-            response = supabase_client.client.table('internet_sessions')\
+            response = get_supabase_client().table('internet_sessions')\
                 .select('*')\
                 .eq('id', session_record_id)\
                 .single()\
@@ -287,7 +287,7 @@ class SessionService:
     
     async def _update_session_progress(self, session_id: str, progress: int) -> None:
         """Update session download progress"""
-        supabase_client.client.table('internet_sessions')\
+        get_supabase_client().table('internet_sessions')\
             .update({'progress_percent': progress})\
             .eq('id', session_id)\
             .execute()
@@ -298,7 +298,7 @@ class SessionService:
         if error:
             update_data['error_message'] = error
         
-        supabase_client.client.table('internet_sessions')\
+        get_supabase_client().table('internet_sessions')\
             .update(update_data)\
             .eq('id', session_id)\
             .execute()
@@ -307,7 +307,7 @@ class SessionService:
         """Complete the session download process"""
         try:
             # Get session record
-            response = supabase_client.client.table('internet_sessions')\
+            response = get_supabase_client().table('internet_sessions')\
                 .select('*')\
                 .eq('id', session_record_id)\
                 .single()\
@@ -335,7 +335,7 @@ class SessionService:
                 'data_remaining_mb': session['data_mb'] if session['data_mb'] != -1 else 100 * 1024  # 100GB for unlimited
             }
             
-            supabase_client.client.table('internet_sessions')\
+            get_supabase_client().table('internet_sessions')\
                 .update(update_data)\
                 .eq('id', session_record_id)\
                 .execute()
@@ -347,7 +347,7 @@ class SessionService:
         """Activate a downloaded session for use"""
         try:
             # Get session record
-            response = supabase_client.client.table('internet_sessions')\
+            response = get_supabase_client().table('internet_sessions')\
                 .select('*')\
                 .eq('id', session_id)\
                 .eq('user_id', user_id)\
@@ -370,7 +370,7 @@ class SessionService:
             )
             
             # Update session status
-            supabase_client.client.table('internet_sessions')\
+            get_supabase_client().table('internet_sessions')\
                 .update({
                     'status': SessionStatus.ACTIVE.value,
                     'activated_at': datetime.utcnow().isoformat(),
@@ -410,7 +410,7 @@ class SessionService:
     
     async def get_user_sessions(self, user_id: str) -> List[Dict[str, Any]]:
         """Get all sessions for a user"""
-        response = supabase_client.client.table('internet_sessions')\
+        response = get_supabase_client().table('internet_sessions')\
             .select('*')\
             .eq('user_id', user_id)\
             .order('download_started_at', desc=True)\
@@ -438,7 +438,7 @@ class SessionService:
         """Track data usage for an active session"""
         try:
             # Get current session
-            response = supabase_client.client.table('internet_sessions')\
+            response = get_supabase_client().table('internet_sessions')\
                 .select('*')\
                 .eq('id', session_id)\
                 .single()\
@@ -457,7 +457,7 @@ class SessionService:
                 new_status = session['status']
             
             # Update usage
-            supabase_client.client.table('internet_sessions')\
+            get_supabase_client().table('internet_sessions')\
                 .update({
                     'used_data_mb': new_usage,
                     'status': new_status,
