@@ -658,6 +658,50 @@ class SessionService:
         except Exception as e:
             await self._update_session_status(session_record_id, SessionStatus.FAILED, str(e))
     
+    async def get_user_sessions(self, user_id: str) -> List[Dict[str, Any]]:
+        """Get all sessions for a user with can_activate status"""
+        try:
+            # Get user sessions from database
+            response = get_supabase_client().table('internet_sessions')\
+                .select('*')\
+                .eq('user_id', user_id)\
+                .order('created_at', desc=True)\
+                .execute()
+            
+            sessions = []
+            for session in response.data:
+                # Calculate data size display
+                data_mb = session.get('data_mb', 0)
+                if data_mb == -1:
+                    size_display = "Unlimited"
+                elif data_mb >= 1024:
+                    size_display = f"{data_mb // 1024}GB"
+                else:
+                    size_display = f"{data_mb}MB"
+                
+                # Determine if session can be activated
+                status = session.get('status', 'downloading')
+                can_activate = status == 'stored' and not (session.get('status') == 'active')
+                
+                sessions.append({
+                    "id": session['id'],
+                    "name": session.get('session_name', size_display),
+                    "size": size_display,
+                    "status": status,
+                    "progress_percent": session.get('progress_percent', 0),
+                    "download_started_at": session.get('download_started_at', session.get('created_at')),
+                    "expires_at": session.get('expires_at'),
+                    "is_active": session.get('status') == 'active',
+                    "can_activate": can_activate,
+                    "data_remaining_mb": session.get('data_remaining_mb', data_mb if data_mb != -1 else 100 * 1024)
+                })
+            
+            return sessions
+            
+        except Exception as e:
+            print(f"❌ GET USER SESSIONS ERROR: {str(e)}")
+            raise Exception(f"Failed to get user sessions: {str(e)}")
+    
     async def activate_session(self, session_id: str, user_id: str) -> Dict[str, Any]:
         """Activate a downloaded session for use"""
         try:
