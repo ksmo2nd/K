@@ -694,7 +694,7 @@ class SessionService:
                 
                 # Determine if session can be activated
                 status = session.get('status', 'downloading')
-                can_activate = status == 'stored' and status != 'active'
+                can_activate = status in ['stored', 'available'] and status != 'active'
                 
                 print(f"🔍 SESSION PROCESSING: status='{status}', can_activate={can_activate}")
                 
