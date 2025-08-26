@@ -268,7 +268,7 @@ class ESIMService:
         """Activate an eSIM (inbuilt or external provider)"""
         try:
             # Get eSIM details from database
-            esim_response = get_supabase_client().table('esims').select('id, user_id, iccid, status').eq('id', esim_id).execute()
+            esim_response = get_supabase_client().table('esims').select('*').eq('id', esim_id).execute()
             if not esim_response.data:
                 raise Exception("eSIM not found")
             
