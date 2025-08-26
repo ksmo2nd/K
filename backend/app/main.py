@@ -191,6 +191,7 @@ app.include_router(monitoring_router, prefix="/api/monitoring", tags=["Monitorin
 app.include_router(notifications_router, prefix="/api/notifications", tags=["Notifications"])
 app.include_router(activation_router, tags=["Data Pack Activation"])
 app.include_router(sessions_router, prefix="/api", tags=["Internet Sessions"])
+app.include_router(debug_router, prefix="/api/debug", tags=["Debug"])
 
 # Health check endpoints
 @app.get("/health")

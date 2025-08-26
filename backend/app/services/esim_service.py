@@ -7,7 +7,7 @@ import qrcode
 import io
 import base64
 from typing import Dict, Optional, Any
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from ..core.config import settings
 from ..core.database import get_supabase_client
