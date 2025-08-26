@@ -111,45 +111,9 @@ class ESIMService:
             # Generate QR code for the eSIM activation
             qr_image = self._generate_qr_code(activation_code)
             
-            # Store eSIM in Supabase
-            esim_data = {
-                'user_id': user_id,
-                'iccid': iccid,
-                'imsi': imsi,
-                'msisdn': msisdn,
-                'activation_code': activation_code,
-                'qr_code_data': activation_code,
-                'status': ESIMStatus.PENDING.value,
-                'apn': apn,
-                'username': username,
-                'password': password,
-                'created_at': datetime.utcnow().isoformat()
-            }
-            
-            supabase = get_supabase_client()
-            response = supabase.table('esims').insert(esim_data).execute()
-            esim_record = response.data[0] if response.data else None
-            
-            if not esim_record:
-                raise Exception("Failed to create eSIM record in database")
-            
-            # Create associated data pack to track bundle size and usage
-            data_pack_data = {
-                'user_id': user_id,
-                'name': f"eSIM Data Pack - {bundle_size_mb}MB",
-                'data_mb': bundle_size_mb,
-                'used_data_mb': 0,
-                'remaining_data_mb': bundle_size_mb,
-                'price_ngn': 0,  # Free for downloaded sessions
-                'price_usd': 0.0,
-                'status': 'active',
-                'is_active': True,
-                'created_at': datetime.utcnow().isoformat(),
-                'updated_at': datetime.utcnow().isoformat()
-            }
-            
-            pack_response = supabase.table('data_packs').insert(data_pack_data).execute()
-            data_pack_record = pack_response.data[0] if pack_response.data else None
+            # Temporarily skip database operations to test QR generation
+            print(f"✅ eSIM generated successfully - ICCID: {iccid}")
+            print(f"✅ QR Code generated successfully")
             
             # Prepare manual setup instructions
             manual_setup = {
@@ -175,16 +139,17 @@ class ESIMService:
                 }
             
             return {
-                'esim_id': esim_record['id'],
-                'iccid': esim_record['iccid'],
+                'esim_id': f"temp_{iccid}",  # Temporary ID
+                'iccid': iccid,
                 'activation_code': activation_code,
                 'qr_code_image': qr_image,
                 'bundle_size_mb': bundle_size_mb,
-                'data_pack_id': data_pack_record['id'] if data_pack_record else None,
+                'data_pack_id': None,
                 'status': 'pending_activation',
                 'manual_setup': manual_setup,
                 'network_ready': True,
-                'internet_enabled': True
+                'internet_enabled': True,
+                'note': 'Database storage temporarily disabled for testing'
             }
             
         except Exception as e:
