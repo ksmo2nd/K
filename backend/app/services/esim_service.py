@@ -134,6 +134,7 @@ class ESIMService:
             
             # Ensure user exists in database (create if needed)
             try:
+                print(f"🔍 ESIM DEBUG: Checking if user exists: {user_id}")
                 # Check if user exists
                 user_response = supabase.table('users').select('id').eq('id', user_id).execute()
                 if not user_response.data:
@@ -148,12 +149,20 @@ class ESIMService:
                         'updated_at': datetime.utcnow().isoformat()
                     }
                     user_create_response = supabase.table('users').insert(user_data).execute()
-                    print(f"🔍 ESIM DEBUG: User created: {user_create_response.data is not None}")
+                    print(f"🔍 ESIM DEBUG: User create response: {user_create_response}")
+                    
+                    if user_create_response.data:
+                        print(f"🔍 ESIM DEBUG: User created successfully: {user_create_response.data[0]['id']}")
+                    else:
+                        print(f"❌ ESIM ERROR: Failed to create user - no data returned")
+                        raise Exception("Failed to create user record")
                 else:
                     print(f"🔍 ESIM DEBUG: User exists: {user_response.data[0]['id']}")
             except Exception as user_error:
-                print(f"⚠️ ESIM WARNING: Could not create/verify user: {user_error}")
-                # Continue anyway - let the foreign key constraint handle it
+                print(f"❌ ESIM ERROR: User creation/verification failed: {user_error}")
+                print(f"❌ ESIM ERROR: User error type: {type(user_error).__name__}")
+                # Don't continue if user creation fails - it will cause foreign key errors
+                raise Exception(f"Cannot create eSIM: User {user_id} does not exist and could not be created: {str(user_error)}")
             
             # Store eSIM in Supabase (now that schema is updated)
             esim_data = {
