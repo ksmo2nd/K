@@ -812,15 +812,26 @@ class SessionService:
             
             # Update session status
             print(f"🔍 ACTIVATION: Updating session {session_id} status to {SessionStatus.ACTIVE.value}")
+            update_data = {
+                'status': SessionStatus.ACTIVE.value,
+                'activated_at': datetime.utcnow().isoformat(),
+                'used_data_mb': 0
+            }
+            print(f"🔍 ACTIVATION: Update data: {update_data}")
+            
             update_response = get_supabase_client().table('internet_sessions')\
-                .update({
-                    'status': SessionStatus.ACTIVE.value,
-                    'activated_at': datetime.utcnow().isoformat(),
-                    'used_data_mb': 0
-                })\
+                .update(update_data)\
                 .eq('id', session_id)\
                 .execute()
             print(f"🔍 ACTIVATION: Update response: {update_response}")
+            
+            # Verify the update worked
+            verify_response = get_supabase_client().table('internet_sessions')\
+                .select('id, status')\
+                .eq('id', session_id)\
+                .single()\
+                .execute()
+            print(f"🔍 ACTIVATION: Verification - session status is now: {verify_response.data.get('status') if verify_response.data else 'NOT FOUND'}")
             print(f"🔍 ACTIVATION: Session {session_id} should now have status='active'")
             
             return {
