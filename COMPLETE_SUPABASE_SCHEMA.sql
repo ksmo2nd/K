@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS user_subscriptions (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     subscription_type TEXT NOT NULL, -- 'free', 'unlimited'
+    plan_type TEXT DEFAULT 'free', -- 'free', 'unlimited_required', 'premium'
     status TEXT DEFAULT 'active', -- 'active', 'expired', 'cancelled'
     expires_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -223,4 +224,29 @@ ON CONFLICT DO NOTHING;
 */
 
 -- Success message
-SELECT 'KSWiFi database schema created successfully!' as message;
+SELECT 'KSWiFi database schema created successfully! 🎉' as message;
+
+-- Fix missing columns (run these if you get column not found errors)
+
+-- Add plan_type column to user_subscriptions if it doesn't exist
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'user_subscriptions' 
+                   AND column_name = 'plan_type') THEN
+        ALTER TABLE user_subscriptions ADD COLUMN plan_type TEXT DEFAULT 'free';
+    END IF;
+END $$;
+
+-- Ensure data_used_mb exists in internet_sessions (should already exist)
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'internet_sessions' 
+                   AND column_name = 'data_used_mb') THEN
+        ALTER TABLE internet_sessions ADD COLUMN data_used_mb INTEGER DEFAULT 0;
+    END IF;
+END $$;
+
+-- Refresh PostgREST schema cache (critical for API to see new columns)
+NOTIFY pgrst, 'reload schema';

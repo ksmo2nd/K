@@ -358,7 +358,7 @@ class SessionService:
                 'download_started_at': datetime.utcnow().isoformat(),
                 'progress_percent': 0,
                 'esim_id': esim_id,
-                'data_used_mb': 0,  # Track usage, not time
+                # Remove data_used_mb for now to avoid schema cache issues
                 'expires_at': None  # No expiry date
             }
             
@@ -450,7 +450,7 @@ class SessionService:
         response = get_supabase_client().table('user_subscriptions')\
             .select('*')\
             .eq('user_id', user_id)\
-            .eq('plan_type', 'unlimited')\
+            .eq('subscription_type', 'unlimited')\
             .eq('status', 'active')\
             .execute()
         
