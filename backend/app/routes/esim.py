@@ -164,7 +164,7 @@ async def get_esim_status(esim_id: str):
         from ..core.database import get_supabase_client
         
         # Get eSIM details
-        esim_response = get_supabase_client().table('esims').select('id, user_id, iccid, imsi, msisdn, activation_code, qr_code_data, status, apn, username, password, expires_at, created_at').eq('id', esim_id).execute()
+        esim_response = get_supabase_client().table('esims').select('id, user_id, iccid, status').eq('id', esim_id).execute()
         if not esim_response.data:
             raise HTTPException(status_code=404, detail="eSIM not found")
         
@@ -280,7 +280,6 @@ async def generate_esim(
                 "price": 0.0,  # Free for downloaded sessions
                 "currency": "NGN",
                 "status": "active",
-                "expires_at": (datetime.utcnow() + timedelta(days=30)).isoformat(),
                 "created_at": datetime.utcnow().isoformat(),
                 "updated_at": datetime.utcnow().isoformat()
             }
