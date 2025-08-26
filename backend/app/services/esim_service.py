@@ -128,6 +128,33 @@ class ESIMService:
             print(f"🔍 ESIM DEBUG: QR code generated successfully, length: {len(qr_image)}")
             
             print(f"🔍 ESIM DEBUG: Storing eSIM in database...")
+            
+            supabase = get_supabase_client()
+            print(f"🔍 ESIM DEBUG: Supabase client obtained")
+            
+            # Ensure user exists in database (create if needed)
+            try:
+                # Check if user exists
+                user_response = supabase.table('users').select('id').eq('id', user_id).execute()
+                if not user_response.data:
+                    print(f"🔍 ESIM DEBUG: User not found, creating user record...")
+                    # Create basic user record
+                    user_data = {
+                        'id': user_id,
+                        'email': f"user_{user_id[:8]}@kswifi.app",
+                        'first_name': 'KSWiFi',
+                        'last_name': 'User',
+                        'created_at': datetime.utcnow().isoformat(),
+                        'updated_at': datetime.utcnow().isoformat()
+                    }
+                    user_create_response = supabase.table('users').insert(user_data).execute()
+                    print(f"🔍 ESIM DEBUG: User created: {user_create_response.data is not None}")
+                else:
+                    print(f"🔍 ESIM DEBUG: User exists: {user_response.data[0]['id']}")
+            except Exception as user_error:
+                print(f"⚠️ ESIM WARNING: Could not create/verify user: {user_error}")
+                # Continue anyway - let the foreign key constraint handle it
+            
             # Store eSIM in Supabase (now that schema is updated)
             esim_data = {
                 'user_id': user_id,
@@ -145,9 +172,6 @@ class ESIMService:
                 'expires_at': (datetime.utcnow() + timedelta(days=30)).isoformat()
             }
             print(f"🔍 ESIM DEBUG: eSIM data prepared: {list(esim_data.keys())}")
-            
-            supabase = get_supabase_client()
-            print(f"🔍 ESIM DEBUG: Supabase client obtained")
             
             response = supabase.table('esims').insert(esim_data).execute()
             print(f"🔍 ESIM DEBUG: eSIM insert response: {response}")
