@@ -502,7 +502,14 @@ class ApiService {
   }
 
   async getESIMStatus(esimId: string): Promise<any> {
-    const response = await this.makeBackendRequest<any>(`/esim/${esimId}/status`);
+    const response = await this.makeBackendRequest<any>(`/esims/${esimId}/status`);
+    return response;
+  }
+
+  async getESIMQRCode(esimId: string): Promise<any> {
+    console.log('🔍 API: Getting eSIM QR code for ID:', esimId);
+    const response = await this.makeBackendRequest<any>(`/esims/${esimId}/qr-code`);
+    console.log('✅ API: eSIM QR code retrieved', response);
     return response;
   }
 
@@ -559,23 +566,27 @@ class ApiService {
     return response;
   }
 
-  // eSIM Generation
+  // eSIM Generation with QR Code
   async generateESIM(sessionId?: string, dataPackSizeMb: number = 1024): Promise<{
     success: boolean;
     esim_id: string;
-    iccid: string;
-    imsi: string;
-    carrier_name: string;
-    carrier_plmn: string;
+    session_id?: string;
     activation_code: string;
-    qr_code_data: string;
     qr_code_image: string;
-    data_pack_id?: string;
-    profile_data: any;
-    installation_instructions: string[];
+    bundle_size_mb: number;
+    status: string;
+    manual_setup: {
+      activation_code: string;
+      apn: string;
+      username: string;
+      password: string;
+      instructions: string[];
+    };
     message: string;
   }> {
-    const response = await this.makeBackendRequest<any>('/esim/generate-esim', {
+    console.log('🔍 API: Generating eSIM QR code', { sessionId, dataPackSizeMb });
+    
+    const response = await this.makeBackendRequest<any>('/esims/generate', {
       method: 'POST',
       body: JSON.stringify({
         session_id: sessionId,
@@ -584,6 +595,8 @@ class ApiService {
         carrier_plmn: '99999'
       })
     });
+    
+    console.log('✅ API: eSIM QR code generated successfully', response);
     return response;
   }
 

@@ -120,6 +120,110 @@ async def get_esim_qr_code(esim_id: str):
         raise HTTPException(status_code=500, detail=f"Error getting QR code: {str(e)}")
 
 
+@router.post("/generate")
+async def generate_esim_qr_code(request: GenerateESIMRequest):
+    """Generate eSIM QR code for a session or data pack"""
+    try:
+        print(f"🔍 GENERATE QR: Request received - session_id: {request.session_id}, size: {request.data_pack_size_mb}MB")
+        
+        # If session_id provided, get the session details
+        if request.session_id:
+            print(f"🔍 GENERATE QR: Looking up session {request.session_id}")
+            supabase = get_supabase_client()
+            
+            # Get session record
+            session_response = supabase.table('internet_sessions')\
+                .select('*')\
+                .eq('id', request.session_id)\
+                .single()\
+                .execute()
+            
+            if not session_response.data:
+                raise HTTPException(status_code=404, detail="Session not found")
+            
+            session = session_response.data
+            user_id = session['user_id']
+            bundle_size_mb = session['data_mb']
+            
+            print(f"🔍 GENERATE QR: Session found - user: {user_id}, size: {bundle_size_mb}MB")
+            
+            # Check if eSIM already exists for this session
+            if session.get('esim_id'):
+                print(f"🔍 GENERATE QR: eSIM already exists, returning existing QR code")
+                # Return existing eSIM QR code
+                esim_response = supabase.table('esims')\
+                    .select('*')\
+                    .eq('id', session['esim_id'])\
+                    .single()\
+                    .execute()
+                
+                if esim_response.data:
+                    esim = esim_response.data
+                    qr_image = esim_service._generate_qr_code(esim['activation_code'])
+                    
+                    return {
+                        'success': True,
+                        'esim_id': esim['id'],
+                        'session_id': request.session_id,
+                        'qr_code_image': qr_image,
+                        'activation_code': esim['activation_code'],
+                        'bundle_size_mb': bundle_size_mb,
+                        'status': 'ready_for_activation',
+                        'manual_setup': {
+                            'activation_code': esim['activation_code'],
+                            'apn': esim['apn'],
+                            'username': esim['username'],
+                            'password': esim['password'],
+                            'instructions': [
+                                "1. Scan the QR code with your device camera",
+                                "2. Follow the prompts to add the cellular plan", 
+                                "3. Enable the new cellular plan for data",
+                                "4. You can now browse the internet using your downloaded data"
+                            ]
+                        }
+                    }
+        else:
+            # Generate for standalone data pack
+            user_id = "anonymous_user"  # For demo purposes
+            bundle_size_mb = request.data_pack_size_mb
+            
+        print(f"🔍 GENERATE QR: Provisioning new eSIM for user {user_id}")
+        
+        # Provision new eSIM
+        esim_result = await esim_service.provision_esim(
+            user_id=user_id,
+            bundle_size_mb=bundle_size_mb
+        )
+        
+        print(f"🔍 GENERATE QR: eSIM provisioned successfully - ID: {esim_result['esim_id']}")
+        
+        # Update session with eSIM ID if session_id provided
+        if request.session_id:
+            print(f"🔍 GENERATE QR: Linking eSIM to session {request.session_id}")
+            supabase.table('internet_sessions')\
+                .update({'esim_id': esim_result['esim_id']})\
+                .eq('id', request.session_id)\
+                .execute()
+        
+        return {
+            'success': True,
+            'esim_id': esim_result['esim_id'],
+            'session_id': request.session_id,
+            'qr_code_image': esim_result['qr_code_image'],
+            'activation_code': esim_result['activation_code'],
+            'bundle_size_mb': bundle_size_mb,
+            'status': esim_result['status'],
+            'manual_setup': esim_result['manual_setup'],
+            'message': 'eSIM QR code generated successfully! Scan with your device to activate.'
+        }
+        
+    except Exception as e:
+        print(f"❌ GENERATE QR ERROR: {str(e)}")
+        import traceback
+        print(f"❌ GENERATE QR TRACEBACK: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Error generating eSIM QR code: {str(e)}")
+
+
 @router.get("/user/{user_id}")
 async def get_user_esims(user_id: str):
     """Get all eSIMs for a user"""

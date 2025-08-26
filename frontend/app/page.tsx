@@ -20,6 +20,7 @@ import { SecurityProvider, useAppSecurity } from "@/lib/security-context"
 import { SecurityIndicator } from "@/components/security-indicator"
 import { HelpCenter } from "@/components/help-center"
 import { AboutApp } from "@/components/about-app"
+import { ESIMQRPopup } from "@/components/esim-qr-popup"
 import { apiService } from "@/lib/api"
 import { toast } from "sonner"
 import {
@@ -68,6 +69,10 @@ export default function KSWiFiApp() {
   // Session state
   const [showSessionSelector, setShowSessionSelector] = useState(false)
   const [sessionsRefreshTrigger, setSessionsRefreshTrigger] = useState(0)
+  
+  // eSIM QR popup state
+  const [showESIMPopup, setShowESIMPopup] = useState(false)
+  const [esimData, setESIMData] = useState<any>(null)
 
   // Check for URL messages (like password reset success)
   useEffect(() => {
@@ -200,24 +205,50 @@ export default function KSWiFiApp() {
       return
     }
 
+    await handleGenerateESIM()
+  }
+
+  const handleGenerateESIM = async (sessionId?: string, dataSizeMB?: number) => {
     try {
-      showNotification("info", "Generating eSIM", "Creating your virtual eSIM profile...")
+      console.log('🔄 Generating eSIM QR code...', { sessionId, dataSizeMB })
       
-      // Generate new eSIM profile
-      const esimResult = await apiService.generateESIM()
+      // Show loading toast
+      const loadingToast = toast.loading('Generating eSIM QR code...', {
+        description: 'Please wait while we prepare your eSIM'
+      })
       
-      // Show QR code and instructions
-      showNotification("success", "eSIM Generated!", "Your eSIM QR code has been created")
+      // Generate eSIM QR code
+      const result = await apiService.generateESIM(sessionId, dataSizeMB)
       
-      // You can extend this to show a modal with the QR code
-      console.log("eSIM Profile Generated:", esimResult)
-      console.log("QR Code Data:", esimResult.qr_code_data)
-      console.log("Activation Code:", esimResult.activation_code)
+      console.log('✅ eSIM generated successfully:', result)
       
-    } catch (error) {
-      console.error("Error generating eSIM:", error)
-      showNotification("warning", "eSIM Generation Failed", "Failed to generate eSIM profile")
+      // Dismiss loading toast
+      toast.dismiss(loadingToast)
+      
+      if (result.success) {
+        // Store eSIM data and show popup
+        setESIMData(result)
+        setShowESIMPopup(true)
+        
+        toast.success('eSIM QR Code Generated!', {
+          description: 'Scan the QR code to activate your eSIM'
+        })
+      } else {
+        throw new Error('eSIM generation failed')
+      }
+      
+    } catch (error: any) {
+      console.error('❌ eSIM generation error:', error)
+      
+      toast.error('Failed to generate eSIM', {
+        description: error?.message || 'Please try again later'
+      })
     }
+  }
+
+  const closeESIMPopup = () => {
+    setShowESIMPopup(false)
+    setESIMData(null)
   }
 
   const handleDataPackActivation = async () => {
@@ -503,6 +534,13 @@ export default function KSWiFiApp() {
           onClose={() => setNotification(prev => ({ ...prev, isVisible: false }))}
         />
       )}
+
+      {/* eSIM QR Code Popup */}
+      <ESIMQRPopup
+        isOpen={showESIMPopup}
+        onClose={closeESIMPopup}
+        esimData={esimData}
+      />
     </div>
   )
 

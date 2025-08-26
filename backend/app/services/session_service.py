@@ -505,7 +505,7 @@ class SessionService:
         return max(1, int(estimated_seconds / 60))  # Convert to minutes, minimum 1
     
     async def _download_session_from_wifi(self, session_record_id: str) -> None:
-        """Background process to download session from connected WiFi"""
+        """Background process to download session from connected WiFi with chunked processing"""
         try:
             # Get session record
             response = get_supabase_client().table('internet_sessions')\
@@ -520,29 +520,79 @@ class SessionService:
             # Check WiFi connection
             await self._verify_wifi_connection()
             
-            # Simulate real WiFi download progress (faster than before)
-            download_steps = [15, 35, 55, 70, 85, 95, 100]
-            for i, progress in enumerate(download_steps):
-                # Simulate download time based on session size
-                if data_mb == -1:  # Unlimited
-                    await asyncio.sleep(0.5)  # Quick setup
-                else:
-                    # Scale download time with size (larger = longer)
-                    sleep_time = min(2, max(0.3, data_mb / 5120))  # 0.3-2 seconds
-                    await asyncio.sleep(sleep_time)
-                
-                # Update progress
-                await self._update_session_progress(session_record_id, progress)
-                
-                if progress == 35:
-                    # Start transferring to eSIM
-                    await self._update_session_status(session_record_id, SessionStatus.TRANSFERRING)
-                elif progress == 100:
-                    # Complete download and store on eSIM
-                    await self._complete_session_download(session_record_id)
+            print(f"🔄 DOWNLOAD: Starting chunked download for {data_mb}MB session")
+            
+            # Use chunked download approach
+            if data_mb == -1:  # Unlimited sessions
+                await self._download_unlimited_session(session_record_id)
+            else:
+                await self._download_chunked_session(session_record_id, data_mb)
             
         except Exception as e:
+            print(f"❌ DOWNLOAD ERROR: {str(e)}")
             await self._update_session_status(session_record_id, SessionStatus.FAILED, str(e))
+    
+    async def _download_chunked_session(self, session_record_id: str, total_mb: int) -> None:
+        """Download session in chunks (50-100MB each) with realistic progress"""
+        print(f"🔄 CHUNKED DOWNLOAD: Processing {total_mb}MB in chunks")
+        
+        # Define chunk size (50-100MB per chunk)
+        chunk_size_mb = min(100, max(50, total_mb // 10))  # Adaptive chunk size
+        total_chunks = max(1, total_mb // chunk_size_mb)
+        
+        print(f"🔄 CHUNKED DOWNLOAD: {total_chunks} chunks of {chunk_size_mb}MB each")
+        
+        downloaded_mb = 0
+        
+        for chunk_num in range(total_chunks):
+            # Calculate chunk progress
+            current_chunk_mb = min(chunk_size_mb, total_mb - downloaded_mb)
+            progress_percent = int((downloaded_mb / total_mb) * 100)
+            
+            print(f"🔄 CHUNK {chunk_num + 1}/{total_chunks}: Downloading {current_chunk_mb}MB (Progress: {progress_percent}%)")
+            
+            # Update progress before processing chunk
+            await self._update_session_progress(session_record_id, progress_percent)
+            
+            # Simulate realistic chunk download time (2-5 seconds per chunk)
+            chunk_time = min(5, max(2, current_chunk_mb / 25))  # ~25MB/second
+            await asyncio.sleep(chunk_time)
+            
+            # Update downloaded amount
+            downloaded_mb += current_chunk_mb
+            
+            # Update progress after chunk completion
+            final_progress = int((downloaded_mb / total_mb) * 100)
+            await self._update_session_progress(session_record_id, final_progress)
+            
+            # Status updates at key milestones
+            if final_progress >= 35 and chunk_num == 0:
+                await self._update_session_status(session_record_id, SessionStatus.TRANSFERRING)
+                print(f"🔄 STATUS: Started transferring to eSIM at {final_progress}%")
+        
+        # Complete download
+        await self._update_session_progress(session_record_id, 100)
+        await self._complete_session_download(session_record_id)
+        print(f"✅ CHUNKED DOWNLOAD: Completed {total_mb}MB session")
+    
+    async def _download_unlimited_session(self, session_record_id: str) -> None:
+        """Download unlimited session with quick setup"""
+        print(f"🔄 UNLIMITED DOWNLOAD: Quick setup for unlimited session")
+        
+        # Quick progress updates for unlimited
+        progress_steps = [25, 50, 75, 100]
+        
+        for progress in progress_steps:
+            await self._update_session_progress(session_record_id, progress)
+            
+            if progress == 50:
+                await self._update_session_status(session_record_id, SessionStatus.TRANSFERRING)
+            
+            # Quick intervals for unlimited
+            await asyncio.sleep(1)
+        
+        await self._complete_session_download(session_record_id)
+        print(f"✅ UNLIMITED DOWNLOAD: Completed unlimited session setup")
     
     async def _verify_wifi_connection(self) -> None:
         """Verify WiFi connection is available for download"""
