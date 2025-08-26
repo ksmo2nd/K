@@ -205,7 +205,24 @@ export default function KSWiFiApp() {
       return
     }
 
-    await handleGenerateESIM()
+    try {
+      // Get user's downloaded sessions
+      const sessions = await apiService.getMySessions()
+      const availableSessions = sessions.filter(session => session.can_activate)
+
+      if (availableSessions.length === 0) {
+        showNotification("info", "No Data Packs Available", "Download a session first, then generate eSIM")
+        return
+      }
+
+      // Use the first available session for eSIM generation
+      const session = availableSessions[0]
+      await handleGenerateESIM(session.id, session.data_mb)
+      
+    } catch (error: any) {
+      console.error('Error setting up eSIM:', error)
+      showNotification("warning", "eSIM Setup Failed", error.message || "Failed to setup eSIM")
+    }
   }
 
   const handleGenerateESIM = async (sessionId?: string, dataSizeMB?: number) => {
