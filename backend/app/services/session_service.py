@@ -692,9 +692,9 @@ class SessionService:
                 else:
                     size_display = f"{data_mb}MB"
                 
-                # Determine if session can be activated
+                # Determine if session can be activated (available but not already active)
                 status = session.get('status', 'downloading')
-                can_activate = status == 'available'  # Only available sessions can be activated
+                can_activate = status == 'available'  # Only available sessions, excludes active/downloading/etc
                 
                 print(f"🔍 SESSION PROCESSING: status='{status}', can_activate={can_activate}")
                 
@@ -762,7 +762,8 @@ class SessionService:
             )
             
             # Update session status
-            get_supabase_client().table('internet_sessions')\
+            print(f"🔍 ACTIVATION: Updating session {session_id} status to {SessionStatus.ACTIVE.value}")
+            update_response = get_supabase_client().table('internet_sessions')\
                 .update({
                     'status': SessionStatus.ACTIVE.value,
                     'activated_at': datetime.utcnow().isoformat(),
@@ -770,6 +771,8 @@ class SessionService:
                 })\
                 .eq('id', session_id)\
                 .execute()
+            print(f"🔍 ACTIVATION: Update response: {update_response}")
+            print(f"🔍 ACTIVATION: Session {session_id} should now have status='active'")
             
             return {
                 'status': 'success',
