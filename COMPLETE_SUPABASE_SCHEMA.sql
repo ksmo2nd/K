@@ -118,7 +118,7 @@ CREATE TABLE internet_sessions (
     price_usd DECIMAL(10,2) DEFAULT 0.00 CHECK (price_usd >= 0),
     status TEXT DEFAULT 'downloading' CHECK (status IN ('downloading', 'available', 'active', 'exhausted', 'expired')),
     progress_percent INTEGER DEFAULT 0 CHECK (progress_percent >= 0 AND progress_percent <= 100),
-    plan_type TEXT DEFAULT 'default' CHECK (plan_type IN ('default', 'unlimited_required', 'premium')),
+    plan_type TEXT DEFAULT 'default' CHECK (plan_type IN ('default', 'unlimited_required', 'premium', 'wifi_download')),
     source_network TEXT,
     network_quality TEXT DEFAULT 'good' CHECK (network_quality IN ('excellent', 'good', 'fair', 'poor')),
     esim_id UUID REFERENCES esims(id) ON DELETE SET NULL,
@@ -336,6 +336,24 @@ ON CONFLICT DO NOTHING;
 
 -- This is CRITICAL - PostgREST must reload schema to see new tables/columns
 NOTIFY pgrst, 'reload schema';
+
+-- Update existing CHECK constraints if tables already exist
+DO $$ 
+BEGIN 
+    -- Drop and recreate the plan_type check constraint to include wifi_download
+    IF EXISTS (SELECT 1 FROM information_schema.table_constraints 
+               WHERE table_name = 'internet_sessions' 
+               AND constraint_name = 'internet_sessions_plan_type_check') THEN
+        ALTER TABLE internet_sessions DROP CONSTRAINT internet_sessions_plan_type_check;
+    END IF;
+    
+    -- Add updated constraint with wifi_download included
+    IF EXISTS (SELECT 1 FROM information_schema.tables 
+               WHERE table_name = 'internet_sessions') THEN
+        ALTER TABLE internet_sessions ADD CONSTRAINT internet_sessions_plan_type_check 
+        CHECK (plan_type IN ('default', 'unlimited_required', 'premium', 'wifi_download'));
+    END IF;
+END $$;
 
 -- Success message
 SELECT 'KSWiFi database schema created successfully! 🎉 All tables, indexes, triggers, and functions are ready!' as message;
