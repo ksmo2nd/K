@@ -278,13 +278,11 @@ class ESIMService:
             if not self.has_external_provider:
                 # Update eSIM status in database
                 get_supabase_client().table('esims').update({
-                    'status': ESIMStatus.ACTIVE.value,
-                    'activated_at': datetime.utcnow().isoformat()
+                    'status': ESIMStatus.ACTIVE.value
                 }).eq('id', esim_id).execute()
                 
                 return {
                     'status': 'activated',
-                    'activated_at': datetime.utcnow().isoformat(),
                     'message': 'eSIM activated successfully - Internet browsing enabled',
                     'activation_code': esim['activation_code'],
                     'apn': esim['apn'],
@@ -319,13 +317,11 @@ class ESIMService:
                 
                 # Update eSIM status in database
                 get_supabase_client().table('esims').update({
-                    'status': ESIMStatus.ACTIVE.value,
-                    'activated_at': datetime.utcnow().isoformat()
+                    'status': ESIMStatus.ACTIVE.value
                 }).eq('id', esim_id).execute()
                 
                 return {
                     'status': 'activated',
-                    'activated_at': datetime.utcnow().isoformat(),
                     'provider_response': provider_response
                 }
             
