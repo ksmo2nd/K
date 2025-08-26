@@ -389,6 +389,39 @@ class SessionService:
         """Get session details from predefined or custom sizes"""
         print(f"🔍 SESSION DEBUG: Getting details for session_id: {session_id}")
         
+        # Check if it's a UUID (existing session in database)
+        try:
+            import uuid
+            uuid.UUID(session_id)  # This will raise ValueError if not a valid UUID
+            
+            # It's a UUID, look up the session in database
+            print(f"🔍 SESSION DEBUG: UUID detected, looking up in database")
+            response = get_supabase_client().table('internet_sessions')\
+                .select('*')\
+                .eq('id', session_id)\
+                .eq('user_id', user_id)\
+                .single()\
+                .execute()
+            
+            if response.data:
+                session = response.data
+                print(f"🔍 SESSION DEBUG: Found existing session: {session.get('session_name')} - {session.get('data_mb')}MB")
+                return {
+                    'name': session.get('session_name', f"{session.get('data_mb', 0)}MB"),
+                    'data_mb': session.get('data_mb', 0),
+                    'price_ngn': session.get('price_ngn', 0),
+                    'price_usd': session.get('price_usd', 0.0),
+                    'plan_type': session.get('plan_type', 'default'),
+                    'existing_session': True  # Flag to indicate this is an existing session
+                }
+            else:
+                print(f"🔍 SESSION DEBUG: UUID session not found in database")
+                raise ValueError(f"Session {session_id} not found")
+                
+        except ValueError:
+            # Not a UUID, continue with original logic for descriptive session IDs
+            print(f"🔍 SESSION DEBUG: Not a UUID, using descriptive session ID logic")
+        
         # Handle default session IDs (default_1gb, default_2gb, etc.)
         if session_id.startswith('default_'):
             size_part = session_id.replace('default_', '')
