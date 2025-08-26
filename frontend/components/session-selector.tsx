@@ -61,20 +61,25 @@ export function SessionSelector({ onSessionDownload }: SessionSelectorProps) {
 
   const loadSessions = async () => {
     try {
-      // Only load sessions if connected to WiFi
-      if (!wifiStatus.isConnected || !wifiStatus.networkName) {
-        console.log('🚫 No WiFi connection detected, cannot load sessions')
-        setSessions([])
-        toast.error('Please connect to WiFi to view available sessions')
-        return
+      console.log('🌐 WiFi Status:', wifiStatus)
+      console.log('🌐 Loading sessions...')
+      
+      // Always load sessions - backend handles WiFi detection gracefully
+      // Pass WiFi network name if available for personalization
+      const networkName = wifiStatus.isConnected && wifiStatus.networkName ? wifiStatus.networkName : undefined
+      if (networkName) {
+        console.log('🌐 Loading sessions from WiFi network:', networkName)
+      } else {
+        console.log('🌐 Loading default sessions (no specific WiFi network)')
       }
-
-      console.log('🌐 Loading sessions from WiFi network:', wifiStatus.networkName)
-      const sessionsData = await api.getAvailableSessions(wifiStatus.networkName)
+      
+      const sessionsData = await api.getAvailableSessions(networkName)
       setSessions(sessionsData)
       
       if (sessionsData.length === 0) {
-        toast.info(`No sessions available on "${wifiStatus.networkName}"`)
+        toast.info('No sessions available at the moment')
+      } else {
+        console.log(`✅ Loaded ${sessionsData.length} sessions`)
       }
     } catch (error) {
       console.error('Failed to load sessions:', error)

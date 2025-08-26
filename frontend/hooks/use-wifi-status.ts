@@ -80,71 +80,48 @@ export function useWiFiStatus(): WiFiStatus {
       return
     }
 
-    // Try to determine connection type using Network Information API
-    let connectionType: 'wifi' | 'cellular' | 'ethernet' | 'none' = 'none'
-    let effectiveType = 'unknown'
+    // Simplified: If online, assume connected
+    // The complex detection was causing issues
+    let connectionType: 'wifi' | 'cellular' | 'ethernet' | 'none' = 'wifi' // Default to wifi
+    let networkName = 'Connected Network' // Generic name since browser can't access SSID
 
+    // Try to determine connection type using Network Information API (if available)
     if ('connection' in navigator) {
       const connection = (navigator as any).connection
-      effectiveType = connection.effectiveType || 'unknown'
       
-      // Map connection types
       if (connection.type) {
         switch (connection.type) {
           case 'wifi':
             connectionType = 'wifi'
+            networkName = 'WiFi Network'
             break
           case 'cellular':
             connectionType = 'cellular'
+            networkName = 'Cellular Network'
             break
           case 'ethernet':
             connectionType = 'ethernet'
+            networkName = 'Ethernet Connection'
             break
           default:
-            connectionType = 'none'
+            connectionType = 'wifi' // Default to wifi
+            networkName = 'Connected Network'
         }
       } else {
-        // Fallback: assume WiFi for fast connections, cellular for slower
-        connectionType = ['4g', '3g', '2g', 'slow-2g'].includes(effectiveType) ? 'cellular' : 'wifi'
+        // Fallback: assume WiFi for most web connections
+        connectionType = 'wifi'
+        networkName = 'WiFi Network'
       }
     }
 
-    // Test actual connectivity with a lightweight external request
-    try {
-      // Use a reliable external service for connectivity test
-      // Create AbortController for timeout (better browser compatibility)
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 5000)
-      
-      const response = await fetch('https://www.google.com/favicon.ico', { 
-        method: 'HEAD',
-        cache: 'no-cache',
-        signal: controller.signal,
-        mode: 'no-cors' // Prevent CORS issues
-      })
-      
-      clearTimeout(timeoutId)
-      
-      // For no-cors mode, we just check if the request completed
-      const isReallyConnected = true // If we get here, we have connectivity
-      
-      setWiFiStatus({
-        isConnected: isReallyConnected,
-        networkName: connectionType === 'wifi' ? getNetworkName() : undefined,
-        signalStrength: getSignalStrength(),
-        connectionType: isReallyConnected ? connectionType : 'none',
-        isOnline: isReallyConnected
-      })
-    } catch (error) {
-      // If external test fails, fall back to navigator.onLine
-      setWiFiStatus({
-        isConnected: isOnline,
-        networkName: connectionType === 'wifi' ? getNetworkName() : undefined,
-        signalStrength: getSignalStrength(),
-        connectionType: isOnline ? connectionType : 'none',
-        isOnline: isOnline
-      })
-    }
+    // Always set as connected if online (simplified approach)
+    setWiFiStatus({
+      isConnected: true, // If navigator.onLine is true, we're connected
+      networkName: networkName,
+      signalStrength: getSignalStrength(),
+      connectionType: connectionType,
+      isOnline: true
+    })
   }
 
   const getNetworkName = (): string | undefined => {
