@@ -675,6 +675,12 @@ class SessionService:
                 .order('created_at', desc=True)\
                 .execute()
             
+            print(f"🔍 GET USER SESSIONS DEBUG: user_id = {user_id}")
+            print(f"🔍 GET USER SESSIONS DEBUG: Raw response data count: {len(response.data) if response.data else 0}")
+            if response.data:
+                for i, session in enumerate(response.data):
+                    print(f"🔍 SESSION {i+1}: id={session.get('id')}, status='{session.get('status')}', data_mb={session.get('data_mb')}")
+            
             sessions = []
             for session in response.data:
                 # Calculate data size display
@@ -690,6 +696,8 @@ class SessionService:
                 status = session.get('status', 'downloading')
                 can_activate = status == 'stored' and status != 'active'
                 
+                print(f"🔍 SESSION PROCESSING: status='{status}', can_activate={can_activate}")
+                
                 sessions.append({
                     "id": session['id'],
                     "name": session.get('session_name', size_display),
@@ -702,6 +710,9 @@ class SessionService:
                     "can_activate": can_activate,
                     "data_remaining_mb": session.get('data_remaining_mb', data_mb if data_mb != -1 else 100 * 1024)
                 })
+            
+            activatable_count = sum(1 for s in sessions if s['can_activate'])
+            print(f"🔍 GET USER SESSIONS RESULT: Total sessions: {len(sessions)}, Can activate: {activatable_count}")
             
             return sessions
             
