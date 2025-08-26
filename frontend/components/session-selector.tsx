@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { api } from '@/lib/api'
 import { toast } from 'sonner'
+import { useWiFiStatus } from '@/hooks/use-wifi-status'
 import { 
   Download, 
   Wifi, 
@@ -27,12 +28,14 @@ interface SessionOption {
   data_mb: number
   price_ngn: number
   price_usd: number
-  validity_days: number
+  validity_days: number | null
   plan_type: string
   is_unlimited: boolean
   is_free: boolean
   description: string
   features: string[]
+  source_network?: string
+  network_quality?: string
 }
 
 interface SessionSelectorProps {
@@ -47,16 +50,32 @@ export function SessionSelector({ onSessionDownload }: SessionSelectorProps) {
   const [currentDownloadId, setCurrentDownloadId] = useState<string | null>(null)
   const [freeQuota, setFreeQuota] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  
+  // Get WiFi connection status
+  const wifiStatus = useWiFiStatus()
 
   useEffect(() => {
     loadSessions()
     loadFreeQuota()
-  }, [])
+  }, [wifiStatus.networkName]) // Reload when WiFi network changes
 
   const loadSessions = async () => {
     try {
-      const sessionsData = await api.getAvailableSessions()
+      // Only load sessions if connected to WiFi
+      if (!wifiStatus.isConnected || !wifiStatus.networkName) {
+        console.log('🚫 No WiFi connection detected, cannot load sessions')
+        setSessions([])
+        toast.error('Please connect to WiFi to view available sessions')
+        return
+      }
+
+      console.log('🌐 Loading sessions from WiFi network:', wifiStatus.networkName)
+      const sessionsData = await api.getAvailableSessions(wifiStatus.networkName)
       setSessions(sessionsData)
+      
+      if (sessionsData.length === 0) {
+        toast.info(`No sessions available on "${wifiStatus.networkName}"`)
+      }
     } catch (error) {
       console.error('Failed to load sessions:', error)
       toast.error('Failed to load available sessions')
@@ -269,7 +288,7 @@ export function SessionSelector({ onSessionDownload }: SessionSelectorProps) {
                       <div className="flex items-center space-x-4 text-xs text-muted-foreground">
                         <div className="flex items-center space-x-1">
                           <Clock className="h-3 w-3" />
-                          <span>Valid {getValidityText(session.validity_days)}</span>
+                          <span>Valid {getValidityText(session.validity_days || 0)}</span>
                         </div>
                         <div className="flex items-center space-x-1">
                           <Smartphone className="h-3 w-3" />
@@ -292,7 +311,7 @@ export function SessionSelector({ onSessionDownload }: SessionSelectorProps) {
                       </div>
                       {!session.is_free && (
                         <div className="text-xs text-muted-foreground">
-                          per {getValidityText(session.validity_days)}
+                          per {getValidityText(session.validity_days || 0)}
                         </div>
                       )}
                     </div>

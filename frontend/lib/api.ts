@@ -276,12 +276,19 @@ class ApiService {
   }
 
   // Internet Sessions - Core KSWiFi functionality
-  async getAvailableSessions(): Promise<any[]> {
+  async getAvailableSessions(wifiNetwork?: string): Promise<any[]> {
     try {
-      console.log('🔍 Loading sessions from:', `${BACKEND_URL}/api/sessions/available`);
+      const params = new URLSearchParams();
+      if (wifiNetwork) {
+        params.append('wifi_network', wifiNetwork);
+        console.log('🌐 Loading sessions from WiFi network:', wifiNetwork);
+      }
+      
+      const endpoint = `/sessions/available${params.toString() ? `?${params.toString()}` : ''}`;
+      console.log('🔍 Loading sessions from:', `${BACKEND_URL}/api${endpoint}`);
       console.log('🔧 Backend URL configured:', BACKEND_URL);
       
-      const response = await this.makeBackendRequest<any[]>('/sessions/available');
+      const response = await this.makeBackendRequest<any[]>(endpoint);
       console.log('✅ Sessions loaded:', response.length, 'sessions');
       return response;
     } catch (error) {

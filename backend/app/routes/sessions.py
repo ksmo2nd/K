@@ -43,6 +43,8 @@ class SessionInfo(BaseModel):
     is_free: bool
     description: str
     features: List[str]
+    source_network: Optional[str] = None
+    network_quality: Optional[str] = None
 
 
 # User Session Response
@@ -60,10 +62,10 @@ class UserSession(BaseModel):
 
 
 @router.get("/sessions/available", response_model=List[SessionInfo])
-async def get_available_sessions():
-    """Get all available internet session options"""
+async def get_available_sessions(wifi_network: Optional[str] = None, user_id: Optional[str] = None):
+    """Get all available internet session options from connected WiFi network"""
     try:
-        sessions = await session_service.get_available_sessions()
+        sessions = await session_service.get_available_sessions(wifi_network=wifi_network, user_id=user_id)
         return sessions
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -36,47 +36,194 @@ class SessionService:
     
 
     
-    async def get_available_sessions(self) -> List[Dict[str, Any]]:
-        """Get available session download options (1GB-100GB range)"""
+    async def get_available_sessions(self, wifi_network: Optional[str] = None, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Get available session download options from connected WiFi network"""
+        
+        # If no WiFi network is provided, return empty list since we need a connection
+        if not wifi_network:
+            return []
+        
         sessions = []
         
-        # Add predefined free sessions (1GB-5GB)
-        for session_name, details in self.pricing.items():
-            session = {
-                'id': session_name.lower().replace(' ', '_'),
-                'name': session_name,
-                'size': session_name,
-                'data_mb': details['data_mb'],
-                'price_ngn': details.get('price_ngn', 0),
-                'price_usd': details['price_usd'],
-                'validity_days': details['validity_days'],
-                'plan_type': details.get('plan_type', 'standard'),
-                'is_unlimited': details['data_mb'] == -1,
-                'is_free': details.get('price_ngn', 0) == 0,
-                'description': self._get_session_description(session_name, details),
-                'features': self._get_session_features(details)
+        try:
+            # Get sessions from connected WiFi network
+            # Check if this WiFi network has any available sessions in our database
+            supabase = get_supabase_client()
+            
+            # Query for sessions available on this WiFi network
+            wifi_sessions_response = supabase.table('internet_sessions').select('*').eq('source_network', wifi_network).eq('status', 'available').execute()
+            
+            if wifi_sessions_response.data:
+                # Convert database sessions to API format
+                for session_data in wifi_sessions_response.data:
+                    session = {
+                        'id': session_data['id'],
+                        'name': f"{session_data['data_mb'] // 1024}GB",
+                        'size': f"{session_data['data_mb'] // 1024}GB",
+                        'data_mb': session_data['data_mb'],
+                        'price_ngn': session_data.get('price_ngn', 0),
+                        'price_usd': session_data.get('price_usd', 0.0),
+                        'validity_days': session_data.get('validity_days'),
+                        'plan_type': session_data.get('plan_type', 'standard'),
+                        'is_unlimited': session_data['data_mb'] == -1,
+                        'is_free': session_data.get('price_ngn', 0) == 0,
+                        'description': f"Download {session_data['data_mb'] // 1024}GB from {wifi_network}",
+                        'features': [
+                            f"{session_data['data_mb'] // 1024}GB internet session",
+                            f"Available from {wifi_network}",
+                            "Download to eSIM for offline use",
+                            "No expiry - only when data exhausted"
+                        ],
+                        'source_network': wifi_network,
+                        'network_quality': session_data.get('network_quality', 'good')
+                    }
+                    sessions.append(session)
+            else:
+                # If no sessions found in database, scan the WiFi network for available sessions
+                detected_sessions = await self._scan_wifi_for_sessions(wifi_network)
+                sessions.extend(detected_sessions)
+            
+            # Sort by data size
+            sessions.sort(key=lambda x: x['data_mb'] if x['data_mb'] != -1 else float('inf'))
+            
+            return sessions
+            
+        except Exception as e:
+            # Fallback: return basic session options if WiFi scanning fails
+            print(f"❌ Error scanning WiFi for sessions: {e}")
+            return await self._get_fallback_sessions(wifi_network)
+    
+    async def _scan_wifi_for_sessions(self, wifi_network: str) -> List[Dict[str, Any]]:
+        """Scan the connected WiFi network for available internet sessions"""
+        sessions = []
+        
+        try:
+            # In a real implementation, this would:
+            # 1. Connect to the WiFi router's admin interface
+            # 2. Check for available bandwidth/data packages
+            # 3. Query the network for downloadable sessions
+            # 4. Detect what data amounts are available for download
+            
+            # For now, we'll create standard session sizes based on network capacity
+            # This simulates detecting what's available on the connected WiFi
+            
+            # Simulate network capacity detection
+            network_capacity_gb = await self._detect_network_capacity(wifi_network)
+            
+            # Generate available sessions based on network capacity
+            available_sizes = []
+            if network_capacity_gb >= 100:
+                available_sizes = [1, 2, 3, 5, 10, 20, 50, 100]
+            elif network_capacity_gb >= 50:
+                available_sizes = [1, 2, 3, 5, 10, 20]
+            elif network_capacity_gb >= 10:
+                available_sizes = [1, 2, 3, 5]
+            else:
+                available_sizes = [1, 2]
+            
+            for size_gb in available_sizes:
+                session = {
+                    'id': f'wifi_{wifi_network}_{size_gb}gb',
+                    'name': f'{size_gb}GB',
+                    'size': f'{size_gb}GB',
+                    'data_mb': size_gb * 1024,
+                    'price_ngn': 0 if size_gb <= 5 else 800,  # Free up to 5GB
+                    'price_usd': 0.0 if size_gb <= 5 else 1.92,
+                    'validity_days': None,
+                    'plan_type': 'wifi_download' if size_gb <= 5 else 'unlimited_required',
+                    'is_unlimited': False,
+                    'is_free': size_gb <= 5,
+                    'description': f'Download {size_gb}GB from connected WiFi network "{wifi_network}"',
+                    'features': [
+                        f'{size_gb}GB internet session',
+                        f'Available from {wifi_network}',
+                        'Download while connected to WiFi',
+                        'Transfer to eSIM for offline use',
+                        'No time expiry - only when data exhausted'
+                    ],
+                    'source_network': wifi_network,
+                    'network_quality': 'good'
+                }
+                sessions.append(session)
+                
+                # Store detected session in database for future reference
+                await self._store_detected_session(session)
+            
+            return sessions
+            
+        except Exception as e:
+            print(f"❌ Error scanning WiFi network {wifi_network}: {e}")
+            return []
+    
+    async def _detect_network_capacity(self, wifi_network: str) -> int:
+        """Detect the capacity/bandwidth available on the WiFi network"""
+        try:
+            # In a real implementation, this would:
+            # 1. Perform speed tests
+            # 2. Check router capacity
+            # 3. Analyze network traffic
+            # 4. Determine available bandwidth for session downloads
+            
+            # For now, simulate based on network name patterns
+            network_lower = wifi_network.lower()
+            
+            if any(keyword in network_lower for keyword in ['fiber', 'gigabit', '5g', 'enterprise']):
+                return 100  # High capacity networks
+            elif any(keyword in network_lower for keyword in ['broadband', 'cable', '4g']):
+                return 50   # Medium capacity networks
+            elif any(keyword in network_lower for keyword in ['mobile', '3g', 'hotspot']):
+                return 10   # Lower capacity networks
+            else:
+                return 20   # Default capacity
+                
+        except Exception as e:
+            print(f"❌ Error detecting network capacity: {e}")
+            return 5  # Conservative default
+    
+    async def _store_detected_session(self, session: Dict[str, Any]) -> None:
+        """Store detected session in database for future reference"""
+        try:
+            supabase = get_supabase_client()
+            
+            session_data = {
+                'id': session['id'],
+                'data_mb': session['data_mb'],
+                'price_ngn': session['price_ngn'],
+                'price_usd': session['price_usd'],
+                'source_network': session['source_network'],
+                'network_quality': session['network_quality'],
+                'plan_type': session['plan_type'],
+                'status': 'available',
+                'created_at': datetime.utcnow().isoformat(),
+                'updated_at': datetime.utcnow().isoformat()
             }
-            sessions.append(session)
-        
-        # Add custom size options for unlimited users (6GB-100GB)
-        custom_sizes = [6, 7, 8, 9, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100]
-        for size_gb in custom_sizes:
-            sessions.append({
-                'id': f'{size_gb}gb',
-                'name': f'{size_gb}GB',
-                'size': f'{size_gb}GB',
-                'data_mb': size_gb * 1024,
-                'price_ngn': 0,  # Free for unlimited users
-                'price_usd': 0,
+            
+            # Insert or update session
+            supabase.table('internet_sessions').upsert(session_data).execute()
+            
+        except Exception as e:
+            print(f"❌ Error storing detected session: {e}")
+    
+    async def _get_fallback_sessions(self, wifi_network: str) -> List[Dict[str, Any]]:
+        """Get fallback sessions when WiFi scanning fails"""
+        return [
+            {
+                'id': f'fallback_1gb',
+                'name': '1GB',
+                'size': '1GB',
+                'data_mb': 1024,
+                'price_ngn': 0,
+                'price_usd': 0.0,
                 'validity_days': None,
-                'plan_type': 'unlimited_required',
+                'plan_type': 'wifi_download',
                 'is_unlimited': False,
-                'is_free': False,  # Requires unlimited subscription
-                'description': f'Download {size_gb}GB internet session (requires unlimited access)',
-                'features': [f'{size_gb}GB internet session', 'No expiry - only when exhausted', 'Requires ₦800 unlimited access']
-            })
-        
-        return sessions
+                'is_free': True,
+                'description': f'Basic 1GB session from {wifi_network}',
+                'features': ['1GB internet session', 'Basic connectivity', 'No expiry'],
+                'source_network': wifi_network,
+                'network_quality': 'unknown'
+            }
+        ]
     
     def _get_session_description(self, name: str, details: Dict) -> str:
         """Get user-friendly session description"""
