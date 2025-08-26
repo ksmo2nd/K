@@ -351,14 +351,13 @@ class SessionService:
                 'session_id': session_id,
                 'session_name': session_details['name'],
                 'data_mb': session_details['data_mb'],
+                'data_used_mb': 0,  # Start with zero usage
                 'price_ngn': session_details.get('price_ngn', 0),
-                'validity_days': None,  # No expiry - only when exhausted
                 'plan_type': session_details.get('plan_type', 'standard'),
                 'status': SessionStatus.DOWNLOADING.value,
                 'download_started_at': datetime.utcnow().isoformat(),
                 'progress_percent': 0,
                 'esim_id': esim_id,
-                # Remove data_used_mb for now to avoid schema cache issues
                 'expires_at': None  # No expiry date
             }
             
