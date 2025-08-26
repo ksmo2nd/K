@@ -58,7 +58,11 @@ async def login_webhook(login_data: dict):
             raise HTTPException(status_code=400, detail="Missing user_id")
         
         # Update last login time
-        await supabase_client.update_user_last_login(user_id)
+        from datetime import datetime
+        supabase = get_supabase_client()
+        supabase.table('users').update({
+            'last_login': datetime.utcnow().isoformat()
+        }).eq('id', user_id).execute()
         
         return {"status": "success", "message": "Post-login actions completed"}
         
@@ -70,7 +74,9 @@ async def login_webhook(login_data: dict):
 async def get_user_profile(user_id: str):
     """Get user profile information"""
     try:
-        user = await supabase_client.get_user_by_id(user_id)
+        supabase = get_supabase_client()
+        response = supabase.table('users').select('*').eq('id', user_id).execute()
+        user = response.data[0] if response.data else None
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         

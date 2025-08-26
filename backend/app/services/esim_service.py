@@ -215,7 +215,10 @@ class ESIMService:
             )
             
             # Update status in database
-            await supabase_client.update_esim_status(esim_id, ESIMStatus.SUSPENDED.value)
+            supabase = get_supabase_client()
+            supabase.table('esims').update({
+                'status': ESIMStatus.SUSPENDED.value
+            }).eq('id', esim_id).execute()
             
             return {
                 'status': 'suspended',

@@ -152,7 +152,9 @@ class BundleService:
         """Calculate cost of data usage across user's active packs"""
         try:
             # Get user's active data packs
-            packs = await supabase_client.get_user_data_packs(user_id, DataPackStatus.ACTIVE.value)
+            supabase = get_supabase_client()
+            response = supabase.table('data_packs').select('*').eq('user_id', user_id).eq('status', DataPackStatus.ACTIVE.value).execute()
+            packs = response.data if response.data else []
             
             if not packs:
                 return {
@@ -210,7 +212,9 @@ class BundleService:
         """Update data pack usage and return updated status"""
         try:
             # Get active packs sorted by expiry date
-            packs = await supabase_client.get_user_data_packs(user_id, DataPackStatus.ACTIVE.value)
+            supabase = get_supabase_client()
+            response = supabase.table('data_packs').select('*').eq('user_id', user_id).eq('status', DataPackStatus.ACTIVE.value).execute()
+            packs = response.data if response.data else []
             packs.sort(key=lambda x: x['expires_at'])
             
             remaining_usage = data_used_mb
@@ -233,20 +237,21 @@ class BundleService:
                 new_status = DataPackStatus.EXHAUSTED.value if new_remaining <= 0 else DataPackStatus.ACTIVE.value
                 
                 # Update in database
-                await supabase_client.update_data_pack_usage(
-                    pack['id'],
-                    new_used,
-                    new_remaining,
-                    new_status
-                )
+                update_data = {
+                    'used_data_mb': new_used,
+                    'remaining_data_mb': new_remaining,
+                    'status': new_status
+                }
+                supabase.table('data_packs').update(update_data).eq('id', pack['id']).execute()
                 
                 # Log the usage
-                await supabase_client.log_data_usage(
-                    user_id,
-                    pack['id'],
-                    usage_from_pack,
+                log_data = {
+                    'user_id': user_id,
+                    'data_pack_id': pack['id'],
+                    'data_used_mb': usage_from_pack,
                     **(session_info or {})
-                )
+                }
+                supabase.table('usage_logs').insert(log_data).execute()
                 
                 updated_packs.append({
                     'pack_id': pack['id'],
@@ -273,7 +278,9 @@ class BundleService:
         """Get comprehensive bundle summary for user"""
         try:
             # Get all user's data packs
-            all_packs = await supabase_client.get_user_data_packs(user_id)
+            supabase = get_supabase_client()
+            response = supabase.table('data_packs').select('*').eq('user_id', user_id).execute()
+            all_packs = response.data if response.data else []
             
             summary = {
                 'total_packs': len(all_packs),
