@@ -238,14 +238,18 @@ export default function KSWiFiApp() {
       const result = await apiService.generateESIM(sessionId, dataSizeMB)
       
       console.log('✅ eSIM generated successfully:', result)
+      console.log('🔍 ESIM DEBUG: result.success =', result.success)
+      console.log('🔍 ESIM DEBUG: result keys =', Object.keys(result))
       
       // Dismiss loading toast
       toast.dismiss(loadingToast)
       
       if (result.success) {
+        console.log('🔍 ESIM DEBUG: Setting eSIM data and showing popup')
         // Store eSIM data and show popup
         setESIMData(result)
         setShowESIMPopup(true)
+        console.log('🔍 ESIM DEBUG: showESIMPopup set to true')
         
         toast.success('eSIM QR Code Generated!', {
           description: 'Scan the QR code to activate your eSIM'

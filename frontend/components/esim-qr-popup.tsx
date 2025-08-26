@@ -32,7 +32,14 @@ export function ESIMQRPopup({ isOpen, onClose, esimData }: ESIMQRPopupProps) {
   const [activeTab, setActiveTab] = useState<'qr' | 'manual'>('qr')
   const [copied, setCopied] = useState<string | null>(null)
 
-  if (!isOpen || !esimData) return null
+  console.log('🔍 POPUP DEBUG: ESIMQRPopup rendered with:', { isOpen, esimData: !!esimData })
+  
+  if (!isOpen || !esimData) {
+    console.log('🔍 POPUP DEBUG: Popup not showing - isOpen:', isOpen, 'esimData:', !!esimData)
+    return null
+  }
+  
+  console.log('🔍 POPUP DEBUG: Popup should be visible!')
 
   const copyToClipboard = async (text: string, label: string) => {
     try {
