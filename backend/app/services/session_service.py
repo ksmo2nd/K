@@ -400,11 +400,10 @@ class SessionService:
                 .select('*')\
                 .eq('id', session_id)\
                 .eq('user_id', user_id)\
-                .single()\
                 .execute()
             
-            if response.data:
-                session = response.data
+            if response.data and len(response.data) > 0:
+                session = response.data[0]
                 print(f"🔍 SESSION DEBUG: Found existing session: {session.get('session_name')} - {session.get('data_mb')}MB")
                 return {
                     'name': session.get('session_name', f"{session.get('data_mb', 0)}MB"),
