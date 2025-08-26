@@ -138,7 +138,7 @@ class SessionService:
         for size_gb in default_sizes:
             is_free = size_gb <= 5
             session = {
-                'id': str(uuid.uuid4()),
+                'id': f'default_{size_gb}gb',
                 'session_name': f'default_{size_gb}gb',
                 'name': f'{size_gb}GB',
                 'size': f'{size_gb}GB',
@@ -198,7 +198,7 @@ class SessionService:
             
             for size_gb in available_sizes:
                 session = {
-                    'id': str(uuid.uuid4()),
+                    'id': f'wifi_{wifi_network}_{size_gb}gb',
                     'session_name': f'wifi_{wifi_network}_{size_gb}gb',
                     'name': f'{size_gb}GB',
                     'size': f'{size_gb}GB',
@@ -289,7 +289,7 @@ class SessionService:
         """Get fallback sessions when WiFi scanning fails"""
         return [
             {
-                'id': str(uuid.uuid4()),
+                'id': f'fallback_1gb',
                 'session_name': f'fallback_1gb',
                 'name': '1GB',
                 'size': '1GB',
@@ -414,12 +414,16 @@ class SessionService:
                     'existing_session': True  # Flag to indicate this is an existing session
                 }
             else:
-                print(f"🔍 SESSION DEBUG: UUID session not found in database")
-                raise ValueError(f"Session {session_id} not found")
+                print(f"🔍 SESSION DEBUG: UUID session not found in database, will create new session")
+                # Don't throw error, let it fall through to create new session
                 
         except ValueError:
             # Not a UUID, continue with original logic for descriptive session IDs
             print(f"🔍 SESSION DEBUG: Not a UUID, using descriptive session ID logic")
+        except Exception as e:
+            # UUID format but database lookup failed, treat as new session
+            print(f"🔍 SESSION DEBUG: UUID lookup failed: {e}")
+            print(f"🔍 SESSION DEBUG: Treating as new session, falling back to descriptive logic")
         
         # Handle default session IDs (default_1gb, default_2gb, etc.)
         if session_id.startswith('default_'):
