@@ -581,7 +581,7 @@ class ApiService {
   }> {
     console.log('🔍 API: Generating eSIM QR code', { sessionId, dataPackSizeMb });
     
-    const response = await this.makeBackendRequest<any>('/esims/generate', {
+    const response = await this.makeBackendRequest<any>('/esim/generate', {
       method: 'POST',
       body: JSON.stringify({
         session_id: sessionId,
