@@ -649,7 +649,7 @@ class SessionService:
             
             # Update session record with completion (no expiry date)
             update_data = {
-                'status': SessionStatus.STORED.value,
+                'status': 'available',  # Use 'available' status as per database constraint
                 'progress_percent': 100,
                 'download_completed_at': datetime.utcnow().isoformat(),
                 'esim_id': esim_id,
@@ -694,7 +694,7 @@ class SessionService:
                 
                 # Determine if session can be activated
                 status = session.get('status', 'downloading')
-                can_activate = status in ['stored', 'available'] and status != 'active'
+                can_activate = status == 'available'  # Only available sessions can be activated
                 
                 print(f"🔍 SESSION PROCESSING: status='{status}', can_activate={can_activate}")
                 
@@ -733,7 +733,7 @@ class SessionService:
             
             session = response.data
             
-            if session['status'] != SessionStatus.STORED.value:
+            if session['status'] != 'available':
                 raise ValueError("Session must be downloaded before activation")
             
             # Check if session data is exhausted
