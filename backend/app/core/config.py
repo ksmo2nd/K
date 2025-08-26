@@ -11,14 +11,15 @@ from pydantic import Field
 class Settings(BaseSettings):
     """Application settings"""
     
-    # Application
-    APP_NAME: str = "KSWiFi Backend Service"
-    APP_VERSION: str = "1.0"
+    # Application Configuration
+    APP_NAME: str = Field(default="KSWiFi Backend Service", description="Application name")
+    APP_VERSION: str = Field(default="1.0", description="Application version")
     DEBUG: bool = Field(default=False, description="Debug mode")
-    
-    # Server
     HOST: str = Field(default="0.0.0.0", description="Server host")
     PORT: int = Field(default=int(os.getenv("PORT", 8000)), description="Server port (uses Render's $PORT env var)")
+    
+    # Backend URL for eSIM configuration
+    BACKEND_URL: Optional[str] = Field(default=None, description="Backend URL for eSIM network configuration (e.g., https://kswifi.onrender.com)")
     
     # Supabase Configuration - PUT YOUR REAL SUPABASE CREDENTIALS HERE
     SUPABASE_URL: str = Field(..., description="Supabase project URL - Get from https://supabase.com/dashboard")
