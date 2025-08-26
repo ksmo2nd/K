@@ -10,6 +10,7 @@ postgrest>=0.16.11
 # Database
 asyncpg>=0.29.0
 sqlalchemy[asyncio]>=2.0.43
+psycopg2-binary>=2.9.10
 
 # Authentication and security
 python-jose[cryptography]>=3.5.0
