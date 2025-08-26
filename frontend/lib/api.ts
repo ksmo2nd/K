@@ -394,11 +394,6 @@ class ApiService {
     return response;
   }
 
-  async getFreeQuotaUsage(): Promise<any> {
-    const response = await this.makeBackendRequest<any>('/sessions/quota/free');
-    return response;
-  }
-
   // Data Packs - Legacy support for backward compatibility
   async getDataPacks(statusFilter?: string): Promise<DataPack[]> {
     const userId = await this.getCurrentUserId();

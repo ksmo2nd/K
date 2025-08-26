@@ -201,35 +201,3 @@ async def get_session_status(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/sessions/quota/free")
-async def get_free_quota_usage(user_data: dict = Depends(verify_jwt_token)):
-    """Get user's free session quota usage for current month"""
-    try:
-        user_id = user_data["sub"]
-        
-        from ..core.database import get_supabase_client
-        
-        # Call database function to get quota usage
-        response = get_supabase_client().rpc(
-            'get_user_free_quota_usage', 
-            {'user_uuid': user_id}
-        ).execute()
-        
-        used_mb = response.data if response.data else 0
-        limit_mb = 5 * 1024  # 5GB limit
-        
-        return {
-            "success": True,
-            "data": {
-                "used_mb": used_mb,
-                "limit_mb": limit_mb,
-                "remaining_mb": max(0, limit_mb - used_mb),
-                "percentage_used": round((used_mb / limit_mb) * 100, 1) if limit_mb > 0 else 0,
-                "can_download_free": used_mb < limit_mb
-            }
-        }
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))

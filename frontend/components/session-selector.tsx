@@ -48,7 +48,6 @@ export function SessionSelector({ onSessionDownload }: SessionSelectorProps) {
   const [isDownloading, setIsDownloading] = useState(false)
   const [downloadProgress, setDownloadProgress] = useState(0)
   const [currentDownloadId, setCurrentDownloadId] = useState<string | null>(null)
-  const [freeQuota, setFreeQuota] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   
   // Get WiFi connection status
@@ -56,7 +55,6 @@ export function SessionSelector({ onSessionDownload }: SessionSelectorProps) {
 
   useEffect(() => {
     loadSessions()
-    loadFreeQuota()
   }, [wifiStatus.networkName]) // Reload when WiFi network changes
 
   const loadSessions = async () => {
@@ -86,15 +84,6 @@ export function SessionSelector({ onSessionDownload }: SessionSelectorProps) {
       toast.error('Failed to load available sessions')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const loadFreeQuota = async () => {
-    try {
-      const quotaData = await api.getFreeQuotaUsage()
-      setFreeQuota(quotaData.data)
-    } catch (error) {
-      console.error('Failed to load quota:', error)
     }
   }
 
@@ -204,20 +193,7 @@ export function SessionSelector({ onSessionDownload }: SessionSelectorProps) {
         </p>
         
         {/* Free Quota Display */}
-        {freeQuota && (
-          <div className="mt-4 p-3 bg-muted rounded-lg">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Free Quota This Month</span>
-              <span className="font-medium text-foreground">
-                {(freeQuota.used_mb / 1024).toFixed(1)}GB / {(freeQuota.limit_mb / 1024).toFixed(0)}GB
-              </span>
-            </div>
-            <Progress 
-              value={freeQuota.percentage_used} 
-              className="mt-2 h-2"
-            />
-          </div>
-        )}
+        {/* Removed as per edit hint */}
       </CardHeader>
 
       <CardContent>
