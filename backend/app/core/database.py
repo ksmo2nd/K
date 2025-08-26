@@ -108,11 +108,13 @@ def get_database_engine():
             max_overflow=20,
             # Use NullPool for serverless environments
             poolclass=NullPool if settings.DEBUG else None,
-            # Connection arguments for Supabase
+            # Connection arguments for Supabase with SSL support
             connect_args={
                 "server_settings": {
                     "application_name": "KSWiFi_FastAPI",
-                }
+                },
+                # Enable SSL if sslmode=require is in DATABASE_URL
+                "ssl": "require" if "sslmode=require" in settings.DATABASE_URL else None,
             }
         )
         
