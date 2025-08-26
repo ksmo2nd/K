@@ -65,14 +65,16 @@ async def lifespan(app: FastAPI):
     try:
         logger.info("🔧 Environment Check:", 
                    supabase_url_set=bool(settings.SUPABASE_URL),
-                   database_url_set=bool(settings.DATABASE_URL),
+                   database_url_set=bool(settings.DATABASE_URL) if settings.DATABASE_URL else False,
                    secret_key_set=bool(settings.SECRET_KEY))
         
         # Test critical settings
         if not settings.SUPABASE_URL or settings.SUPABASE_URL.startswith('https://placeholder'):
             logger.warning("⚠️  SUPABASE_URL appears to be placeholder")
-        if not settings.DATABASE_URL or 'localhost' in settings.DATABASE_URL:
+        if settings.DATABASE_URL and 'localhost' in settings.DATABASE_URL:
             logger.warning("⚠️  DATABASE_URL appears to be localhost/placeholder")
+        elif not settings.DATABASE_URL:
+            logger.info("ℹ️  DATABASE_URL not set (using Supabase HTTP client)")
         if not settings.SECRET_KEY or len(settings.SECRET_KEY) < 32:
             logger.warning("⚠️  SECRET_KEY appears to be weak or placeholder")
             
@@ -249,7 +251,7 @@ async def debug_info():
             "host": settings.HOST,
             "port": settings.PORT,
             "supabase_url_configured": bool(settings.SUPABASE_URL and not settings.SUPABASE_URL.startswith('https://placeholder')),
-            "database_url_configured": bool(settings.DATABASE_URL and 'localhost' not in settings.DATABASE_URL),
+            "database_url_configured": bool(settings.DATABASE_URL and 'localhost' not in settings.DATABASE_URL) if settings.DATABASE_URL else False,
             "secret_key_configured": bool(settings.SECRET_KEY and len(settings.SECRET_KEY) >= 32),
             "cors_origins": settings.ALLOWED_ORIGINS
         }

@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     SUPABASE_ANON_KEY: str = Field(..., description="Supabase anon key - Get from project settings")
     
     # Database - No longer needed (using Supabase HTTP client)
-    # DATABASE_URL: Optional[str] = Field(default=None, description="Not used - kept for backward compatibility")
+    DATABASE_URL: Optional[str] = Field(default=None, description="Not used - kept for backward compatibility")
     
     # Security - PUT YOUR REAL SECRET KEY HERE
     SECRET_KEY: str = Field(..., description="Secret key for JWT - Generate with: openssl rand -hex 32")
