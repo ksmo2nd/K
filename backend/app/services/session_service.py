@@ -382,9 +382,30 @@ class SessionService:
     
     async def _get_session_details(self, session_id: str, user_id: str) -> Dict[str, Any]:
         """Get session details from predefined or custom sizes"""
-        # Check predefined sessions first
+        print(f"🔍 SESSION DEBUG: Getting details for session_id: {session_id}")
+        
+        # Handle default session IDs (default_1gb, default_2gb, etc.)
+        if session_id.startswith('default_'):
+            size_part = session_id.replace('default_', '')
+            if size_part.endswith('gb'):
+                size_str = size_part.replace('gb', '')
+                try:
+                    size_gb = int(size_str)
+                    print(f"🔍 SESSION DEBUG: Found default session: {size_gb}GB")
+                    return {
+                        'name': f'{size_gb}GB',
+                        'data_mb': size_gb * 1024,
+                        'price_ngn': 0 if size_gb <= 5 else 800,
+                        'price_usd': 0.0 if size_gb <= 5 else 1.92,
+                        'plan_type': 'default' if size_gb <= 5 else 'unlimited_required'
+                    }
+                except ValueError:
+                    pass
+        
+        # Check predefined sessions in pricing
         for name, details in self.pricing.items():
             if name.lower().replace(' ', '_') == session_id:
+                print(f"🔍 SESSION DEBUG: Found pricing session: {name}")
                 return {
                     'name': name,
                     'data_mb': details['data_mb'],
@@ -398,6 +419,7 @@ class SessionService:
             try:
                 size_gb = int(size_str)
                 if 6 <= size_gb <= 100:
+                    print(f"🔍 SESSION DEBUG: Found custom session: {size_gb}GB")
                     return {
                         'name': f'{size_gb}GB',
                         'data_mb': size_gb * 1024,
@@ -407,6 +429,7 @@ class SessionService:
             except ValueError:
                 pass
         
+        print(f"❌ SESSION ERROR: Session {session_id} not found")
         raise ValueError(f"Session {session_id} not found")
     
     async def _check_download_permissions(self, user_id: str, session_details: Dict) -> None:
