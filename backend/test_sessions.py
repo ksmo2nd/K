@@ -19,7 +19,7 @@ async def test_sessions():
         # Test 1: Import services
         print("\n1️⃣ Testing imports...")
         from app.services.session_service import SessionService
-        from app.core.database import supabase_client
+        from app.core.database import get_supabase_client
         print("✅ Imports successful")
         
         # Test 2: Create service
@@ -45,7 +45,7 @@ async def test_sessions():
         
         # Check internet_sessions table
         try:
-            response = supabase_client.client.table('internet_sessions').select('count').execute()
+            response = get_supabase_client().table('internet_sessions').select('count').execute()
             print(f"✅ internet_sessions table exists")
         except Exception as db_error:
             print(f"❌ internet_sessions table missing: {db_error}")
@@ -80,7 +80,7 @@ CREATE INDEX idx_sessions_status ON internet_sessions(status);
         
         # Check user_subscriptions table
         try:
-            response = supabase_client.client.table('user_subscriptions').select('count').execute()
+            response = get_supabase_client().table('user_subscriptions').select('count').execute()
             print(f"✅ user_subscriptions table exists")
         except Exception as db_error:
             print(f"❌ user_subscriptions table missing: {db_error}")

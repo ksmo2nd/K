@@ -19,7 +19,7 @@ async def test_esim_generation():
         # Test 1: Import services
         print("\n1️⃣ Testing imports...")
         from app.services.esim_service import ESIMService
-        from app.core.database import supabase_client
+        from app.core.database import get_supabase_client
         print("✅ Imports successful")
         
         # Test 2: Create service
@@ -31,7 +31,7 @@ async def test_esim_generation():
         print("\n3️⃣ Testing database connection...")
         try:
             # Try to query esims table
-            response = supabase_client.client.table('esims').select('count').execute()
+            response = get_supabase_client().table('esims').select('count').execute()
             print(f"✅ esims table exists, count: {len(response.data) if response.data else 0}")
         except Exception as db_error:
             print(f"❌ Database/Table error: {db_error}")

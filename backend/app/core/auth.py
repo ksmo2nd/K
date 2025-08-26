@@ -6,7 +6,7 @@ from typing import Optional
 from fastapi import HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from .config import settings
-from .database import supabase_client
+from .database import get_supabase_client
 import structlog
 
 logger = structlog.get_logger(__name__)
@@ -25,7 +25,8 @@ async def verify_jwt_token(credentials: HTTPAuthorizationCredentials = Depends(s
         # or decode directly with the JWT secret
         try:
             # Try to get user from Supabase using the token
-            user_response = await supabase_client.auth.get_user(token)
+            supabase = get_supabase_client()
+            user_response = supabase.auth.get_user(token)
             if user_response.user:
                 return {
                     "user_id": user_response.user.id,
