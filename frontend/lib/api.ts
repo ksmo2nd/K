@@ -580,10 +580,10 @@ class ApiService {
     message: string;
   }> {
     console.log('🔍 API: Generating eSIM QR code', { sessionId, dataPackSizeMb });
-    console.log('🔍 API: Calling endpoint /esim/generate');
+    console.log('🔍 API: Calling endpoint /esim/generate-esim');
     
     try {
-      const response = await this.makeBackendRequest<any>('/esim/generate', {
+      const response = await this.makeBackendRequest<any>('/esim/generate-esim', {
         method: 'POST',
         body: JSON.stringify({
           session_id: sessionId,
