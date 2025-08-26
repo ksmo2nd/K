@@ -477,11 +477,6 @@ class ApiService {
     return response;
   }
 
-  async getESIMQRCode(esimId: string): Promise<ESIMQRCode> {
-    const response = await this.makeBackendRequest<ESIMQRCode>(`/esim/${esimId}/qr-code`);
-    return response;
-  }
-
   async activateESIM(esimId: string): Promise<any> {
     const response = await this.makeBackendRequest<any>(`/esim/${esimId}/activate`, {
       method: 'POST'
