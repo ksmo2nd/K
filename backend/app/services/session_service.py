@@ -742,8 +742,23 @@ class SessionService:
                 raise ValueError("Session data has been exhausted")
             
             # Activate eSIM for internet browsing
+            esim_id = session.get('esim_id')
+            if not esim_id:
+                # Create eSIM if it doesn't exist
+                esim_result = await self.esim_service.provision_esim(
+                    user_id=user_id,
+                    bundle_size_mb=session['data_mb']
+                )
+                esim_id = esim_result['esim_id']
+                
+                # Update session with new eSIM ID
+                get_supabase_client().table('internet_sessions')\
+                    .update({'esim_id': esim_id})\
+                    .eq('id', session_id)\
+                    .execute()
+            
             esim_activation = await self.esim_service.activate_esim(
-                esim_id=session['esim_id']
+                esim_id=esim_id
             )
             
             # Update session status
