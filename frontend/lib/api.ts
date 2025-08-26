@@ -131,6 +131,44 @@ class ApiService {
     }
   }
 
+  // Helper method to make backend requests with optional auth
+  private async makeOptionalAuthRequest<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      };
+
+      // Try to add auth token if available
+      try {
+        const token = await this.getAuthToken();
+        headers['Authorization'] = `Bearer ${token}`;
+        console.log('🔑 Using auth token for request');
+      } catch (authError) {
+        console.log('⚠️ No auth token available, making request without auth');
+        // Continue without auth token
+      }
+      
+      const response = await fetch(`${BACKEND_URL}/api${endpoint}`, {
+        ...options,
+        headers,
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Backend API request failed:', error);
+      throw error;
+    }
+  }
+
   // Authentication
   async signup(userData: {
     email: string;
@@ -283,19 +321,28 @@ class ApiService {
         params.append('wifi_network', wifiNetwork);
         console.log('🌐 Loading sessions from WiFi network:', wifiNetwork);
       }
+
+      // Get current user ID to pass to backend for personalized sessions
+      try {
+        const userId = await this.getCurrentUserId();
+        params.append('user_id', userId);
+        console.log('👤 Loading sessions for user:', userId);
+      } catch (userError) {
+        console.log('⚠️ No user logged in, loading default sessions');
+        // Continue without user_id - backend will return default sessions
+      }
       
       const endpoint = `/sessions/available${params.toString() ? `?${params.toString()}` : ''}`;
       console.log('🔍 Loading sessions from:', `${BACKEND_URL}/api${endpoint}`);
       console.log('🔧 Backend URL configured:', BACKEND_URL);
       
-      const response = await this.makeBackendRequest<any[]>(endpoint);
+      const response = await this.makeOptionalAuthRequest<any[]>(endpoint);
       console.log('✅ Sessions loaded:', response.length, 'sessions');
       return response;
     } catch (error) {
       console.error('❌ Failed to load sessions:', error);
       console.error('🔧 Backend URL:', BACKEND_URL);
       
-      // Check if it's an auth issue
       if (error instanceof Error && error.message.includes('No auth token')) {
         console.error('🚨 Authentication required but user not logged in');
       }
