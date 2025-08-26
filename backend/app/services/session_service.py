@@ -401,6 +401,26 @@ class SessionService:
                 except ValueError:
                     pass
         
+        # Handle WiFi session IDs (wifi_NetworkName_2gb, etc.)
+        if session_id.startswith('wifi_'):
+            # Extract size from WiFi session ID: wifi_NetworkName_2gb -> 2gb
+            parts = session_id.split('_')
+            if len(parts) >= 3 and parts[-1].endswith('gb'):
+                size_part = parts[-1]  # Get the last part (e.g., "2gb")
+                size_str = size_part.replace('gb', '')
+                try:
+                    size_gb = int(size_str)
+                    print(f"🔍 SESSION DEBUG: Found WiFi session: {size_gb}GB")
+                    return {
+                        'name': f'{size_gb}GB',
+                        'data_mb': size_gb * 1024,
+                        'price_ngn': 0 if size_gb <= 5 else 800,
+                        'price_usd': 0.0 if size_gb <= 5 else 1.92,
+                        'plan_type': 'wifi_download' if size_gb <= 5 else 'unlimited_required'
+                    }
+                except ValueError:
+                    pass
+        
         # Check predefined sessions in pricing
         for name, details in self.pricing.items():
             if name.lower().replace(' ', '_') == session_id:
