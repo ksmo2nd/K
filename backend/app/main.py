@@ -32,6 +32,7 @@ from .routes import (
     activation_router,
     sessions_router
 )
+from .routes.debug import router as debug_router
 from .services.monitoring_service import MonitoringService
 
 # Configure structured logging
