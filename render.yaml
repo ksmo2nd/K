@@ -2,8 +2,19 @@ services:
   - type: web
     name: kswifi-backend
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    buildCommand: |
+      pip install -r requirements.txt
+      ls -la
+      ls -la backend/
+    startCommand: |
+      echo "Starting KSWiFi Backend..."
+      cd backend
+      echo "Current directory: $(pwd)"
+      echo "Contents: $(ls -la)"
+      echo "Python path: $(which python)"
+      python -c "import sys; print('Python version:', sys.version)"
+      python -c "from app.main import app; print('App imported successfully')"
+      uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: SUPABASE_URL
         sync: false
