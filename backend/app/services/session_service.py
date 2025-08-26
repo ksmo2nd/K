@@ -678,6 +678,13 @@ class SessionService:
             print(f"🔍 GET USER SESSIONS DEBUG: user_id = {user_id}")
             print(f"🔍 GET USER SESSIONS DEBUG: Raw response data count: {len(response.data) if response.data else 0}")
             if response.data:
+                status_counts = {}
+                for session in response.data:
+                    status = session.get('status', 'unknown')
+                    status_counts[status] = status_counts.get(status, 0) + 1
+                
+                print(f"🔍 STATUS BREAKDOWN: {status_counts}")
+                
                 for i, session in enumerate(response.data):
                     print(f"🔍 SESSION {i+1}: id={session.get('id')}, status='{session.get('status')}', data_mb={session.get('data_mb')}")
             
