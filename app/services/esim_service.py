@@ -10,7 +10,7 @@ from typing import Dict, Optional, Any
 from datetime import datetime
 
 from ..core.config import settings
-from ..core.database import supabase_client
+from ..core.database import get_supabase_client
 from ..models.enums import ESIMStatus
 
 
@@ -109,7 +109,8 @@ class ESIMService:
                 'expires_at': (datetime.utcnow() + timedelta(days=30)).isoformat()
             }
             
-            response = supabase_client.client.table('esims').insert(esim_data).execute()
+            supabase = get_supabase_client()
+            response = supabase.table('esims').insert(esim_data).execute()
             esim_record = response.data[0] if response.data else None
             
             return {
@@ -133,7 +134,7 @@ class ESIMService:
         """Activate an eSIM (inbuilt or external provider)"""
         try:
             # Get eSIM details from database
-            esim_response = supabase_client.client.table('esims').select('*').eq('id', esim_id).execute()
+            esim_response = get_supabase_client().table('esims').select('*').eq('id', esim_id).execute()
             if not esim_response.data:
                 raise Exception("eSIM not found")
             
@@ -142,7 +143,7 @@ class ESIMService:
             # For inbuilt eSIMs, just update status (no external API call needed)
             if not self.has_external_provider:
                 # Update eSIM status in database
-                supabase_client.client.table('esims').update({
+                get_supabase_client().table('esims').update({
                     'status': ESIMStatus.ACTIVE.value,
                     'activated_at': datetime.utcnow().isoformat()
                 }).eq('id', esim_id).execute()
@@ -183,7 +184,7 @@ class ESIMService:
                 )
                 
                 # Update eSIM status in database
-                supabase_client.client.table('esims').update({
+                get_supabase_client().table('esims').update({
                     'status': ESIMStatus.ACTIVE.value,
                     'activated_at': datetime.utcnow().isoformat()
                 }).eq('id', esim_id).execute()
@@ -201,7 +202,7 @@ class ESIMService:
         """Suspend an eSIM with the provider"""
         try:
             # Get eSIM details
-            esim_response = supabase_client.client.table('esims').select('*').eq('id', esim_id).execute()
+            esim_response = get_supabase_client().table('esims').select('*').eq('id', esim_id).execute()
             if not esim_response.data:
                 raise Exception("eSIM not found")
             
@@ -228,7 +229,7 @@ class ESIMService:
         """Get current data usage from eSIM (inbuilt or external provider)"""
         try:
             # Get eSIM details
-            esim_response = supabase_client.client.table('esims').select('*').eq('id', esim_id).execute()
+            esim_response = get_supabase_client().table('esims').select('*').eq('id', esim_id).execute()
             if not esim_response.data:
                 raise Exception("eSIM not found")
             
@@ -237,7 +238,7 @@ class ESIMService:
             if not self.has_external_provider:
                 # For inbuilt eSIMs, get usage from our database/monitoring
                 # Check for session usage records
-                usage_response = supabase_client.client.table('data_usage')\
+                usage_response = get_supabase_client().table('data_usage')\
                     .select('*')\
                     .eq('esim_id', esim_id)\
                     .order('created_at', desc=True)\
@@ -283,7 +284,7 @@ class ESIMService:
         """Check if eSIM has internet connectivity for browsing"""
         try:
             # Get eSIM details
-            esim_response = supabase_client.client.table('esims').select('*').eq('id', esim_id).execute()
+            esim_response = get_supabase_client().table('esims').select('*').eq('id', esim_id).execute()
             if not esim_response.data:
                 raise Exception("eSIM not found")
             

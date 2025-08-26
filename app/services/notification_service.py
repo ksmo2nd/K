@@ -6,7 +6,7 @@ from typing import Dict, Any, Optional
 import structlog
 from datetime import datetime
 
-from ..core.database import supabase_client
+from ..core.database import get_supabase_client
 
 logger = structlog.get_logger(__name__)
 
@@ -136,7 +136,7 @@ class NotificationService:
             notification_data['read'] = False
             
             # Store in notifications table
-            supabase_client.client.table('notifications').insert(notification_data).execute()
+            get_supabase_client().table('notifications').insert(notification_data).execute()
             
         except Exception as e:
             logger.error(f"Error storing notification: {e}")
@@ -145,7 +145,7 @@ class NotificationService:
         """Send push notification to user's devices"""
         try:
             # Get user's push tokens from database
-            response = supabase_client.client.table('user_devices').select('push_token').eq('user_id', user_id).eq('active', True).execute()
+            response = get_supabase_client().table('user_devices').select('push_token').eq('user_id', user_id).eq('active', True).execute()
             devices = response.data
             
             if not devices:
@@ -172,7 +172,7 @@ class NotificationService:
     async def get_user_notifications(self, user_id: str, limit: int = 50, unread_only: bool = False) -> Dict[str, Any]:
         """Get notifications for a user"""
         try:
-            query = supabase_client.client.table('notifications').select('*').eq('user_id', user_id)
+            query = get_supabase_client().table('notifications').select('*').eq('user_id', user_id)
             
             if unread_only:
                 query = query.eq('read', False)
@@ -181,7 +181,7 @@ class NotificationService:
             notifications = response.data
             
             # Get unread count
-            unread_response = supabase_client.client.table('notifications').select('id', count='exact').eq('user_id', user_id).eq('read', False).execute()
+            unread_response = get_supabase_client().table('notifications').select('id', count='exact').eq('user_id', user_id).eq('read', False).execute()
             unread_count = unread_response.count
             
             return {
@@ -202,7 +202,7 @@ class NotificationService:
     async def mark_notification_read(self, notification_id: str, user_id: str) -> bool:
         """Mark a notification as read"""
         try:
-            supabase_client.client.table('notifications').update({
+            get_supabase_client().table('notifications').update({
                 'read': True,
                 'read_at': datetime.utcnow().isoformat()
             }).eq('id', notification_id).eq('user_id', user_id).execute()
@@ -216,7 +216,7 @@ class NotificationService:
     async def mark_all_notifications_read(self, user_id: str) -> bool:
         """Mark all notifications as read for a user"""
         try:
-            supabase_client.client.table('notifications').update({
+            get_supabase_client().table('notifications').update({
                 'read': True,
                 'read_at': datetime.utcnow().isoformat()
             }).eq('user_id', user_id).eq('read', False).execute()

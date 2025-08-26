@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 
-from ..core.database import supabase_client
+from ..core.database import get_supabase_client
 from ..services.notification_service import NotificationService
 
 router = APIRouter()
@@ -100,14 +100,14 @@ async def register_device(device_data: dict):
         }
         
         # Check if device already exists
-        existing_response = supabase_client.client.table('user_devices').select('id').eq('push_token', push_token).execute()
+        existing_response = get_supabase_client().table('user_devices').select('id').eq('push_token', push_token).execute()
         
         if existing_response.data:
             # Update existing device
-            supabase_client.client.table('user_devices').update(device_record).eq('push_token', push_token).execute()
+            get_supabase_client().table('user_devices').update(device_record).eq('push_token', push_token).execute()
         else:
             # Insert new device
-            supabase_client.client.table('user_devices').insert(device_record).execute()
+            get_supabase_client().table('user_devices').insert(device_record).execute()
         
         return {"status": "success", "message": "Device registered successfully"}
         
@@ -125,7 +125,7 @@ async def unregister_device(device_data: dict):
             raise HTTPException(status_code=400, detail="Missing push_token")
         
         # Mark device as inactive
-        supabase_client.client.table('user_devices').update({'active': False}).eq('push_token', push_token).execute()
+        get_supabase_client().table('user_devices').update({'active': False}).eq('push_token', push_token).execute()
         
         return {"status": "success", "message": "Device unregistered successfully"}
         

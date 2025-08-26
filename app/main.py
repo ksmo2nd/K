@@ -84,17 +84,16 @@ async def lifespan(app: FastAPI):
                     error_type=type(e).__name__)
         raise
     
-    # Database initialization
+    # Supabase HTTP client initialization
     try:
-        logger.info("🗄️  Initializing database connection...")
+        logger.info("🗄️  Initializing Supabase HTTP client...")
         await init_db()
-        logger.info("✅ Database initialized successfully")
+        logger.info("✅ Supabase HTTP client initialized successfully")
         
     except Exception as e:
-        logger.error("❌ Database initialization failed", 
+        logger.error("❌ Supabase initialization failed", 
                     error=str(e), 
-                    error_type=type(e).__name__,
-                    database_url_preview=settings.DATABASE_URL[:50] + "..." if len(settings.DATABASE_URL) > 50 else settings.DATABASE_URL)
+                    error_type=type(e).__name__)
         # Continue anyway - some services might work without DB
         logger.warning("⚠️  Continuing without database - some features may not work")
     
@@ -316,10 +315,10 @@ async def cors_test():
 async def database_health_check():
     """Dedicated Supabase PostgreSQL database health check"""
     try:
-        from .core.database import get_database_health, test_database_connection
+        from .core.database import get_database_health, test_supabase_connection
         
         # Test basic connection
-        await test_database_connection()
+        await test_supabase_connection()
         
         # Get detailed health info
         db_health = await get_database_health()
@@ -353,8 +352,8 @@ async def detailed_health_check():
         
         # Check database
         try:
-            from .core.database import supabase_client
-            test_response = supabase_client.client.table('users').select('id').limit(1).execute()
+            from .core.database import get_supabase_client
+            test_response = get_supabase_client().table('users').select('id').limit(1).execute()
             health_data["components"]["database"] = {
                 "status": "healthy",
                 "response_time": "< 100ms"

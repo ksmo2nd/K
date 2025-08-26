@@ -7,10 +7,10 @@ python-multipart>=0.0.20
 supabase>=2.10.0
 postgrest>=0.16.11
 
-# Database
-asyncpg>=0.29.0
-sqlalchemy[asyncio]>=2.0.43
-psycopg2-binary>=2.9.10
+# Database - Using Supabase HTTP client (no PostgreSQL drivers needed)
+# asyncpg>=0.29.0  # Removed - using HTTP client
+# sqlalchemy[asyncio]>=2.0.43  # Removed - using HTTP client
+# psycopg2-binary>=2.9.10  # Removed - using HTTP client
 
 # Authentication and security
 python-jose[cryptography]>=3.5.0

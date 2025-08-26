@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 import structlog
 
 from ..core.config import settings
-from ..core.database import supabase_client
+from ..core.database import get_supabase_client
 from ..models.enums import DataPackStatus, ESIMStatus
 from .esim_service import ESIMService
 from .notification_service import NotificationService
@@ -52,7 +52,7 @@ class MonitoringService:
         while self._running:
             try:
                 # Get all active data packs
-                response = supabase_client.client.table('data_packs').select('*').eq('status', DataPackStatus.ACTIVE.value).execute()
+                response = get_supabase_client().table('data_packs').select('*').eq('status', DataPackStatus.ACTIVE.value).execute()
                 active_packs = response.data
                 
                 for pack in active_packs:
@@ -109,7 +109,7 @@ class MonitoringService:
         while self._running:
             try:
                 # Get all active eSIMs
-                response = supabase_client.client.table('esims').select('*').eq('status', ESIMStatus.ACTIVE.value).execute()
+                response = get_supabase_client().table('esims').select('*').eq('status', ESIMStatus.ACTIVE.value).execute()
                 active_esims = response.data
                 
                 for esim in active_esims:
@@ -185,7 +185,7 @@ class MonitoringService:
             try:
                 # Find expired packs that are still marked as active
                 current_time = datetime.utcnow().isoformat()
-                response = supabase_client.client.table('data_packs').select('*').eq('status', DataPackStatus.ACTIVE.value).lt('expires_at', current_time).execute()
+                response = get_supabase_client().table('data_packs').select('*').eq('status', DataPackStatus.ACTIVE.value).lt('expires_at', current_time).execute()
                 expired_packs = response.data
                 
                 for pack in expired_packs:
@@ -208,7 +208,7 @@ class MonitoringService:
         while self._running:
             try:
                 # Get all users with active eSIMs
-                response = supabase_client.client.table('esims').select('user_id').eq('status', ESIMStatus.ACTIVE.value).execute()
+                response = get_supabase_client().table('esims').select('user_id').eq('status', ESIMStatus.ACTIVE.value).execute()
                 active_users = list(set([esim['user_id'] for esim in response.data]))
                 
                 for user_id in active_users:
@@ -241,13 +241,13 @@ class MonitoringService:
     
     async def _expire_data_pack(self, pack_id: str):
         """Mark a data pack as expired"""
-        supabase_client.client.table('data_packs').update({
+        get_supabase_client().table('data_packs').update({
             'status': DataPackStatus.EXPIRED.value
         }).eq('id', pack_id).execute()
     
     async def _mark_alert_sent(self, pack_id: str, alert_field: str):
         """Mark that an alert has been sent for a pack"""
-        supabase_client.client.table('data_packs').update({
+        get_supabase_client().table('data_packs').update({
             alert_field: True
         }).eq('id', pack_id).execute()
     
@@ -255,11 +255,11 @@ class MonitoringService:
         """Get monitoring service statistics"""
         try:
             # Get counts of various items being monitored
-            active_packs_response = supabase_client.client.table('data_packs').select('id', count='exact').eq('status', DataPackStatus.ACTIVE.value).execute()
-            active_esims_response = supabase_client.client.table('esims').select('id', count='exact').eq('status', ESIMStatus.ACTIVE.value).execute()
+            active_packs_response = get_supabase_client().table('data_packs').select('id', count='exact').eq('status', DataPackStatus.ACTIVE.value).execute()
+            active_esims_response = get_supabase_client().table('esims').select('id', count='exact').eq('status', ESIMStatus.ACTIVE.value).execute()
             
             # Get recent usage logs
-            recent_logs_response = supabase_client.client.table('usage_logs').select('id', count='exact').gte('created_at', (datetime.utcnow() - timedelta(hours=1)).isoformat()).execute()
+            recent_logs_response = get_supabase_client().table('usage_logs').select('id', count='exact').gte('created_at', (datetime.utcnow() - timedelta(hours=1)).isoformat()).execute()
             
             return {
                 'service_running': self._running,

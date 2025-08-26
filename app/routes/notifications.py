@@ -70,9 +70,9 @@ async def mark_all_notifications_read(user_id: str):
 async def get_unread_count(user_id: str):
     """Get unread notification count for a user"""
     try:
-        from ..core.database import supabase_client
+        from ..core.database import get_supabase_client
         
-        response = supabase_client.client.table('notifications').select('id', count='exact').eq('user_id', user_id).eq('read', False).execute()
+        response = get_supabase_client().table('notifications').select('id', count='exact').eq('user_id', user_id).eq('read', False).execute()
         unread_count = response.count
         
         return {"unread_count": unread_count}

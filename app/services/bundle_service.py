@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 
 from ..core.config import settings
-from ..core.database import supabase_client
+from ..core.database import get_supabase_client
 from ..models.enums import DataPackStatus
 
 
@@ -128,7 +128,7 @@ class BundleService:
                 'expires_at': expires_at.isoformat()
             }
             
-            response = supabase_client.client.table('data_packs').insert(pack_data).execute()
+            response = get_supabase_client().table('data_packs').insert(pack_data).execute()
             pack_record = response.data[0] if response.data else None
             
             return {
@@ -303,7 +303,7 @@ class BundleService:
         """Activate a purchased data pack for use"""
         try:
             # Verify pack belongs to user
-            pack_response = supabase_client.client.table('data_packs').select('*').eq('id', pack_id).eq('user_id', user_id).execute()
+            pack_response = get_supabase_client().table('data_packs').select('*').eq('id', pack_id).eq('user_id', user_id).execute()
             if not pack_response.data:
                 raise Exception("Data pack not found or doesn't belong to user")
             
@@ -316,9 +316,9 @@ class BundleService:
             
             # Use database function to activate pack
             if esim_id:
-                supabase_client.client.rpc('activate_data_pack', {'pack_id': pack_id, 'esim_id': esim_id}).execute()
+                get_supabase_client().rpc('activate_data_pack', {'pack_id': pack_id, 'esim_id': esim_id}).execute()
             else:
-                supabase_client.client.rpc('activate_data_pack', {'pack_id': pack_id}).execute()
+                get_supabase_client().rpc('activate_data_pack', {'pack_id': pack_id}).execute()
             
             return {
                 'success': True,
@@ -336,12 +336,12 @@ class BundleService:
         """Deactivate a data pack"""
         try:
             # Verify pack belongs to user
-            pack_response = supabase_client.client.table('data_packs').select('*').eq('id', pack_id).eq('user_id', user_id).execute()
+            pack_response = get_supabase_client().table('data_packs').select('*').eq('id', pack_id).eq('user_id', user_id).execute()
             if not pack_response.data:
                 raise Exception("Data pack not found or doesn't belong to user")
             
             # Use database function to deactivate pack
-            supabase_client.client.rpc('deactivate_data_pack', {'pack_id': pack_id}).execute()
+            get_supabase_client().rpc('deactivate_data_pack', {'pack_id': pack_id}).execute()
             
             return {
                 'success': True,
@@ -357,7 +357,7 @@ class BundleService:
         try:
             # Get purchased but inactive packs that haven't expired
             current_time = datetime.utcnow().isoformat()
-            response = supabase_client.client.table('data_packs').select('*').eq('user_id', user_id).eq('is_active', False).gt('expires_at', current_time).execute()
+            response = get_supabase_client().table('data_packs').select('*').eq('user_id', user_id).eq('is_active', False).gt('expires_at', current_time).execute()
             
             activatable_packs = []
             for pack in response.data:
@@ -381,7 +381,7 @@ class BundleService:
     async def get_active_pack(self, user_id: str) -> Dict[str, Any]:
         """Get currently active data pack for user"""
         try:
-            response = supabase_client.client.table('data_packs').select('*').eq('user_id', user_id).eq('is_active', True).execute()
+            response = get_supabase_client().table('data_packs').select('*').eq('user_id', user_id).eq('is_active', True).execute()
             
             if not response.data:
                 return None

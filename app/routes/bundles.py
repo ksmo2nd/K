@@ -109,7 +109,7 @@ async def get_user_bundle_summary(user_id: str):
 async def get_user_packs(user_id: str, status: Optional[str] = None):
     """Get user's data packs"""
     try:
-        from ..core.database import supabase_client
+        from ..core.database import get_supabase_client
         packs = await supabase_client.get_user_data_packs(user_id, status)
         return {
             "packs": packs,
@@ -123,9 +123,9 @@ async def get_user_packs(user_id: str, status: Optional[str] = None):
 async def get_usage_history(user_id: str, limit: int = 50):
     """Get user's data usage history"""
     try:
-        from ..core.database import supabase_client
+        from ..core.database import get_supabase_client
         
-        response = supabase_client.client.table('usage_logs').select('*').eq('user_id', user_id).order('created_at', desc=True).limit(limit).execute()
+        response = get_supabase_client().table('usage_logs').select('*').eq('user_id', user_id).order('created_at', desc=True).limit(limit).execute()
         usage_history = response.data
         
         return {

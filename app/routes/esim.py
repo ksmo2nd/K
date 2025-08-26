@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 
 from ..services.esim_service import ESIMService
 from ..core.auth import get_current_user_id
-from ..core.database import supabase_client
+from ..core.database import get_supabase_client
 
 router = APIRouter()
 esim_service = ESIMService()
@@ -83,10 +83,10 @@ async def get_esim_usage(esim_id: str):
 async def get_esim_qr_code(esim_id: str):
     """Get QR code and setup information for an eSIM"""
     try:
-        from ..core.database import supabase_client
+        from ..core.database import get_supabase_client
         
         # Get eSIM details
-        esim_response = supabase_client.client.table('esims').select('*').eq('id', esim_id).execute()
+        esim_response = get_supabase_client().table('esims').select('*').eq('id', esim_id).execute()
         if not esim_response.data:
             raise HTTPException(status_code=404, detail="eSIM not found")
         
@@ -124,7 +124,7 @@ async def get_esim_qr_code(esim_id: str):
 async def get_user_esims(user_id: str):
     """Get all eSIMs for a user"""
     try:
-        from ..core.database import supabase_client
+        from ..core.database import get_supabase_client
         esims = await supabase_client.get_user_esims(user_id)
         return {
             "esims": esims,
@@ -138,7 +138,7 @@ async def get_user_esims(user_id: str):
 async def update_esim_config(esim_id: str, config: ESIMConfigRequest):
     """Update eSIM configuration"""
     try:
-        from ..core.database import supabase_client
+        from ..core.database import get_supabase_client
         
         update_data = {}
         if config.apn:
@@ -149,7 +149,7 @@ async def update_esim_config(esim_id: str, config: ESIMConfigRequest):
             update_data['password'] = config.password
         
         if update_data:
-            supabase_client.client.table('esims').update(update_data).eq('id', esim_id).execute()
+            get_supabase_client().table('esims').update(update_data).eq('id', esim_id).execute()
         
         return {"status": "success", "message": "eSIM configuration updated"}
     except Exception as e:
@@ -160,10 +160,10 @@ async def update_esim_config(esim_id: str, config: ESIMConfigRequest):
 async def get_esim_status(esim_id: str):
     """Get detailed status of an eSIM"""
     try:
-        from ..core.database import supabase_client
+        from ..core.database import get_supabase_client
         
         # Get eSIM details
-        esim_response = supabase_client.client.table('esims').select('*').eq('id', esim_id).execute()
+        esim_response = get_supabase_client().table('esims').select('*').eq('id', esim_id).execute()
         if not esim_response.data:
             raise HTTPException(status_code=404, detail="eSIM not found")
         

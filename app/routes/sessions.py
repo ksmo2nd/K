@@ -165,9 +165,9 @@ async def get_session_status(
         user_id = user_data["sub"]
         
         # Get session from database
-        from ..core.database import supabase_client
+        from ..core.database import get_supabase_client
         
-        response = supabase_client.client.table('internet_sessions')\
+        response = get_supabase_client().table('internet_sessions')\
             .select('*')\
             .eq('id', session_id)\
             .eq('user_id', user_id)\
@@ -207,10 +207,10 @@ async def get_free_quota_usage(user_data: dict = Depends(verify_jwt_token)):
     try:
         user_id = user_data["sub"]
         
-        from ..core.database import supabase_client
+        from ..core.database import get_supabase_client
         
         # Call database function to get quota usage
-        response = supabase_client.client.rpc(
+        response = get_supabase_client().rpc(
             'get_user_free_quota_usage', 
             {'user_uuid': user_id}
         ).execute()

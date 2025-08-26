@@ -65,11 +65,11 @@ async def manual_user_sync(request: ManualDataSyncRequest):
 async def manual_usage_check():
     """Manually trigger usage check for all active packs"""
     try:
-        from ..core.database import supabase_client
+        from ..core.database import get_supabase_client
         from ..models.enums import DataPackStatus
         
         # Get all active packs
-        response = supabase_client.client.table('data_packs').select('*').eq('status', DataPackStatus.ACTIVE.value).execute()
+        response = get_supabase_client().table('data_packs').select('*').eq('status', DataPackStatus.ACTIVE.value).execute()
         active_packs = response.data
         
         checked_count = 0
@@ -89,13 +89,13 @@ async def manual_usage_check():
 async def manual_cleanup_expired():
     """Manually trigger cleanup of expired packs"""
     try:
-        from ..core.database import supabase_client
+        from ..core.database import get_supabase_client
         from ..models.enums import DataPackStatus
         from datetime import datetime
         
         # Find expired packs
         current_time = datetime.utcnow().isoformat()
-        response = supabase_client.client.table('data_packs').select('*').eq('status', DataPackStatus.ACTIVE.value).lt('expires_at', current_time).execute()
+        response = get_supabase_client().table('data_packs').select('*').eq('status', DataPackStatus.ACTIVE.value).lt('expires_at', current_time).execute()
         expired_packs = response.data
         
         for pack in expired_packs:
