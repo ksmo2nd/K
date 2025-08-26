@@ -264,8 +264,8 @@ BEGIN
     -- Mark as expired if past expiry date (if set)
     ELSIF NEW.expires_at IS NOT NULL AND NEW.expires_at < NOW() THEN
         NEW.status = 'expired';
-    -- Mark as active if download complete
-    ELSIF NEW.progress_percent >= 100 THEN
+    -- Mark as available if download complete (but only if not already active)
+    ELSIF NEW.progress_percent >= 100 AND OLD.status = 'downloading' THEN
         NEW.status = 'available';
     END IF;
     
