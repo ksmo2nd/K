@@ -39,62 +39,132 @@ class SessionService:
     async def get_available_sessions(self, wifi_network: Optional[str] = None, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
         """Get available session download options from connected WiFi network"""
         
-        # If no WiFi network is provided, return empty list since we need a connection
-        if not wifi_network:
-            return []
+        print(f"🔍 SESSION DEBUG: get_available_sessions called")
+        print(f"🔍 SESSION DEBUG: wifi_network = {wifi_network}")
+        print(f"🔍 SESSION DEBUG: user_id = {user_id}")
         
+        # Always return sessions - don't require WiFi network for testing
         sessions = []
         
         try:
-            # Get sessions from connected WiFi network
-            # Check if this WiFi network has any available sessions in our database
+            print(f"🔍 SESSION DEBUG: Starting session detection...")
+            
+            # Get sessions from connected WiFi network (if provided)
             supabase = get_supabase_client()
+            print(f"🔍 SESSION DEBUG: Supabase client initialized")
             
-            # Query for sessions available on this WiFi network
-            wifi_sessions_response = supabase.table('internet_sessions').select('*').eq('source_network', wifi_network).eq('status', 'available').execute()
-            
-            if wifi_sessions_response.data:
-                # Convert database sessions to API format
-                for session_data in wifi_sessions_response.data:
-                    session = {
-                        'id': session_data['id'],
-                        'name': f"{session_data['data_mb'] // 1024}GB",
-                        'size': f"{session_data['data_mb'] // 1024}GB",
-                        'data_mb': session_data['data_mb'],
-                        'price_ngn': session_data.get('price_ngn', 0),
-                        'price_usd': session_data.get('price_usd', 0.0),
-                        'validity_days': session_data.get('validity_days'),
-                        'plan_type': session_data.get('plan_type', 'standard'),
-                        'is_unlimited': session_data['data_mb'] == -1,
-                        'is_free': session_data.get('price_ngn', 0) == 0,
-                        'description': f"Download {session_data['data_mb'] // 1024}GB from {wifi_network}",
-                        'features': [
-                            f"{session_data['data_mb'] // 1024}GB internet session",
-                            f"Available from {wifi_network}",
-                            "Download to eSIM for offline use",
-                            "No expiry - only when data exhausted"
-                        ],
-                        'source_network': wifi_network,
-                        'network_quality': session_data.get('network_quality', 'good')
-                    }
-                    sessions.append(session)
+            if wifi_network:
+                print(f"🔍 SESSION DEBUG: Checking database for WiFi network: {wifi_network}")
+                # Query for sessions available on this WiFi network
+                wifi_sessions_response = supabase.table('internet_sessions').select('*').eq('source_network', wifi_network).eq('status', 'available').execute()
+                print(f"🔍 SESSION DEBUG: Database query result: {wifi_sessions_response.data}")
+                
+                if wifi_sessions_response.data:
+                    print(f"🔍 SESSION DEBUG: Found {len(wifi_sessions_response.data)} sessions in database")
+                    # Convert database sessions to API format
+                    for session_data in wifi_sessions_response.data:
+                        session = {
+                            'id': session_data['id'],
+                            'name': f"{session_data['data_mb'] // 1024}GB",
+                            'size': f"{session_data['data_mb'] // 1024}GB",
+                            'data_mb': session_data['data_mb'],
+                            'price_ngn': session_data.get('price_ngn', 0),
+                            'price_usd': session_data.get('price_usd', 0.0),
+                            'validity_days': session_data.get('validity_days'),
+                            'plan_type': session_data.get('plan_type', 'standard'),
+                            'is_unlimited': session_data['data_mb'] == -1,
+                            'is_free': session_data.get('price_ngn', 0) == 0,
+                            'description': f"Download {session_data['data_mb'] // 1024}GB from {wifi_network}",
+                            'features': [
+                                f"{session_data['data_mb'] // 1024}GB internet session",
+                                f"Available from {wifi_network}",
+                                "Download to eSIM for offline use",
+                                "No expiry - only when data exhausted"
+                            ],
+                            'source_network': wifi_network,
+                            'network_quality': session_data.get('network_quality', 'good')
+                        }
+                        sessions.append(session)
+                        print(f"🔍 SESSION DEBUG: Added database session: {session['name']}")
+                else:
+                    print(f"🔍 SESSION DEBUG: No sessions found in database, scanning WiFi network...")
+                    # If no sessions found in database, scan the WiFi network for available sessions
+                    detected_sessions = await self._scan_wifi_for_sessions(wifi_network)
+                    sessions.extend(detected_sessions)
+                    print(f"🔍 SESSION DEBUG: Added {len(detected_sessions)} scanned sessions")
             else:
-                # If no sessions found in database, scan the WiFi network for available sessions
-                detected_sessions = await self._scan_wifi_for_sessions(wifi_network)
-                sessions.extend(detected_sessions)
+                print(f"🔍 SESSION DEBUG: No WiFi network provided, generating default sessions...")
+                # Generate default sessions when no WiFi network is specified
+                default_sessions = await self._generate_default_sessions()
+                sessions.extend(default_sessions)
+                print(f"🔍 SESSION DEBUG: Added {len(default_sessions)} default sessions")
+            
+            # Always add fallback session to ensure something is returned
+            if not sessions:
+                print(f"🔍 SESSION DEBUG: No sessions found, adding fallback...")
+                fallback_sessions = await self._get_fallback_sessions(wifi_network or "Unknown")
+                sessions.extend(fallback_sessions)
+                print(f"🔍 SESSION DEBUG: Added {len(fallback_sessions)} fallback sessions")
             
             # Sort by data size
             sessions.sort(key=lambda x: x['data_mb'] if x['data_mb'] != -1 else float('inf'))
             
+            print(f"🔍 SESSION DEBUG: Final sessions count: {len(sessions)}")
+            for session in sessions:
+                print(f"🔍 SESSION DEBUG: - {session['name']}: {session['data_mb']}MB, ${session['price_ngn']} NGN")
+            
             return sessions
             
         except Exception as e:
-            # Fallback: return basic session options if WiFi scanning fails
-            print(f"❌ Error scanning WiFi for sessions: {e}")
-            return await self._get_fallback_sessions(wifi_network)
+            print(f"❌ SESSION ERROR: Exception in get_available_sessions: {str(e)}")
+            print(f"❌ SESSION ERROR: Exception type: {type(e).__name__}")
+            import traceback
+            print(f"❌ SESSION ERROR: Traceback: {traceback.format_exc()}")
+            
+            # Always return fallback sessions even on error
+            print(f"🔍 SESSION DEBUG: Returning fallback sessions due to error...")
+            fallback_sessions = await self._get_fallback_sessions(wifi_network or "Unknown")
+            print(f"🔍 SESSION DEBUG: Fallback sessions: {len(fallback_sessions)}")
+            return fallback_sessions
     
+    async def _generate_default_sessions(self) -> List[Dict[str, Any]]:
+        """Generate default session options when no WiFi network is specified"""
+        print(f"🔍 SESSION DEBUG: Generating default sessions...")
+        
+        sessions = []
+        default_sizes = [1, 2, 3, 5, 10, 20, 50]  # GB
+        
+        for size_gb in default_sizes:
+            is_free = size_gb <= 5
+            session = {
+                'id': f'default_{size_gb}gb',
+                'name': f'{size_gb}GB',
+                'size': f'{size_gb}GB',
+                'data_mb': size_gb * 1024,
+                'price_ngn': 0 if is_free else 800,
+                'price_usd': 0.0 if is_free else 1.92,
+                'validity_days': None,
+                'plan_type': 'default' if is_free else 'unlimited_required',
+                'is_unlimited': False,
+                'is_free': is_free,
+                'description': f'Download {size_gb}GB internet session' + (' - Free' if is_free else ' - Requires unlimited access'),
+                'features': [
+                    f'{size_gb}GB internet session',
+                    'Works with any WiFi connection',
+                    'Download to eSIM for offline use',
+                    'No time expiry - only when data exhausted'
+                ] + (['Free up to 5GB'] if is_free else ['Requires ₦800 unlimited access']),
+                'source_network': 'Any WiFi',
+                'network_quality': 'good'
+            }
+            sessions.append(session)
+            print(f"🔍 SESSION DEBUG: Generated default session: {session['name']}")
+        
+        return sessions
+
     async def _scan_wifi_for_sessions(self, wifi_network: str) -> List[Dict[str, Any]]:
         """Scan the connected WiFi network for available internet sessions"""
+        print(f"🔍 SESSION DEBUG: _scan_wifi_for_sessions called for: {wifi_network}")
         sessions = []
         
         try:
@@ -109,6 +179,7 @@ class SessionService:
             
             # Simulate network capacity detection
             network_capacity_gb = await self._detect_network_capacity(wifi_network)
+            print(f"🔍 SESSION DEBUG: Detected network capacity: {network_capacity_gb}GB")
             
             # Generate available sessions based on network capacity
             available_sizes = []
@@ -120,6 +191,8 @@ class SessionService:
                 available_sizes = [1, 2, 3, 5]
             else:
                 available_sizes = [1, 2]
+            
+            print(f"🔍 SESSION DEBUG: Available sizes for {wifi_network}: {available_sizes}")
             
             for size_gb in available_sizes:
                 session = {
@@ -145,6 +218,7 @@ class SessionService:
                     'network_quality': 'good'
                 }
                 sessions.append(session)
+                print(f"🔍 SESSION DEBUG: Generated WiFi session: {session['name']} from {wifi_network}")
                 
                 # Store detected session in database for future reference
                 await self._store_detected_session(session)
@@ -152,7 +226,9 @@ class SessionService:
             return sessions
             
         except Exception as e:
-            print(f"❌ Error scanning WiFi network {wifi_network}: {e}")
+            print(f"❌ SESSION ERROR: Error scanning WiFi network {wifi_network}: {e}")
+            import traceback
+            print(f"❌ SESSION ERROR: Traceback: {traceback.format_exc()}")
             return []
     
     async def _detect_network_capacity(self, wifi_network: str) -> int:

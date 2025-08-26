@@ -54,8 +54,14 @@ class ESIMService:
     async def provision_esim(self, user_id: str, bundle_size_mb: int) -> Dict[str, Any]:
         """Provision a new eSIM from the provider"""
         try:
+            print(f"🔍 ESIM DEBUG: provision_esim called")
+            print(f"🔍 ESIM DEBUG: user_id = {user_id}")
+            print(f"🔍 ESIM DEBUG: bundle_size_mb = {bundle_size_mb}")
+            print(f"🔍 ESIM DEBUG: has_external_provider = {self.has_external_provider}")
+            
             # Use inbuilt eSIM generation (default) or external provider
             if self.has_external_provider:
+                print(f"🔍 ESIM DEBUG: Using external provider")
                 # External provider
                 provision_data = {
                     'bundle_size': bundle_size_mb,
@@ -77,27 +83,34 @@ class ESIMService:
                 password = provider_response.get('password')
                 
             else:
+                print(f"🔍 ESIM DEBUG: Using inbuilt eSIM generation")
                 # Inbuilt eSIM generation (no phone number, just internet access)
                 import uuid
                 import secrets
                 
+                print(f"🔍 ESIM DEBUG: Generating unique identifiers...")
                 # Generate unique identifiers
                 iccid = f"8991{secrets.randbelow(10**15):015d}"
                 imsi = f"999{secrets.randbelow(10**12):012d}" 
                 msisdn = None  # No phone number for inbuilt eSIMs
+                print(f"🔍 ESIM DEBUG: Generated ICCID: {iccid}")
+                print(f"🔍 ESIM DEBUG: Generated IMSI: {imsi}")
                 
                 # Configure for KSWiFi network server (use actual backend URL)
                 backend_host = settings.BACKEND_URL or "kswifi.onrender.com"
                 if backend_host.startswith("http"):
                     backend_host = backend_host.replace("https://", "").replace("http://", "")
+                print(f"🔍 ESIM DEBUG: Backend host: {backend_host}")
                 
                 # Create proper LPA activation code for KSWiFi network
                 activation_code = f"LPA:1${backend_host}$ks{secrets.token_urlsafe(16)}"
+                print(f"🔍 ESIM DEBUG: Generated activation code: {activation_code}")
                 
                 # Configure APN for internet access through KSWiFi network
                 apn = "internet"  # Standard internet APN
                 username = f"kswifi_{secrets.randbelow(10**6):06d}"
                 password = secrets.token_urlsafe(12)
+                print(f"🔍 ESIM DEBUG: Network config - APN: {apn}, Username: {username}")
                 
                 # Network configuration for internet browsing
                 network_config = {
@@ -107,10 +120,14 @@ class ESIMService:
                     "proxy": None,  # Direct internet access
                     "network_type": "LTE"
                 }
+                print(f"🔍 ESIM DEBUG: Network config: {network_config}")
             
+            print(f"🔍 ESIM DEBUG: Generating QR code...")
             # Generate QR code for the eSIM activation
             qr_image = self._generate_qr_code(activation_code)
+            print(f"🔍 ESIM DEBUG: QR code generated successfully, length: {len(qr_image)}")
             
+            print(f"🔍 ESIM DEBUG: Storing eSIM in database...")
             # Store eSIM in Supabase (now that schema is updated)
             esim_data = {
                 'user_id': user_id,
@@ -127,14 +144,21 @@ class ESIMService:
                 'created_at': datetime.utcnow().isoformat(),
                 'expires_at': (datetime.utcnow() + timedelta(days=30)).isoformat()
             }
+            print(f"🔍 ESIM DEBUG: eSIM data prepared: {list(esim_data.keys())}")
             
             supabase = get_supabase_client()
+            print(f"🔍 ESIM DEBUG: Supabase client obtained")
+            
             response = supabase.table('esims').insert(esim_data).execute()
+            print(f"🔍 ESIM DEBUG: eSIM insert response: {response}")
+            
             esim_record = response.data[0] if response.data else None
+            print(f"🔍 ESIM DEBUG: eSIM record created: {esim_record is not None}")
             
             if not esim_record:
                 raise Exception("Failed to create eSIM record in database")
             
+            print(f"🔍 ESIM DEBUG: Creating data pack...")
             # Create associated data pack to track bundle size and usage
             data_pack_data = {
                 'user_id': user_id,
@@ -150,10 +174,15 @@ class ESIMService:
                 'created_at': datetime.utcnow().isoformat(),
                 'updated_at': datetime.utcnow().isoformat()
             }
+            print(f"🔍 ESIM DEBUG: Data pack data prepared")
             
             pack_response = supabase.table('data_packs').insert(data_pack_data).execute()
-            data_pack_record = pack_response.data[0] if pack_response.data else None
+            print(f"🔍 ESIM DEBUG: Data pack insert response: {pack_response}")
             
+            data_pack_record = pack_response.data[0] if pack_response.data else None
+            print(f"🔍 ESIM DEBUG: Data pack record created: {data_pack_record is not None}")
+            
+            print(f"🔍 ESIM DEBUG: Preparing manual setup instructions...")
             # Prepare manual setup instructions
             manual_setup = {
                 'activation_code': activation_code,
@@ -177,7 +206,8 @@ class ESIMService:
                     'gateway': network_config['gateway']
                 }
             
-            return {
+            print(f"🔍 ESIM DEBUG: Preparing final response...")
+            result = {
                 'esim_id': esim_record['id'],
                 'iccid': esim_record['iccid'],
                 'activation_code': activation_code,
@@ -190,8 +220,15 @@ class ESIMService:
                 'internet_enabled': True
             }
             
+            print(f"🔍 ESIM DEBUG: eSIM provision completed successfully!")
+            print(f"🔍 ESIM DEBUG: Final result keys: {list(result.keys())}")
+            return result
+            
         except Exception as e:
-            print(f"❌ eSIM Provision Error: {str(e)}")
+            print(f"❌ ESIM ERROR: Exception in provision_esim: {str(e)}")
+            print(f"❌ ESIM ERROR: Exception type: {type(e).__name__}")
+            import traceback
+            print(f"❌ ESIM ERROR: Traceback: {traceback.format_exc()}")
             raise Exception(f"Failed to provision eSIM: {str(e)}")
     
     async def activate_esim(self, esim_id: str) -> Dict[str, Any]:
