@@ -414,8 +414,14 @@ class SessionService:
                     'existing_session': True  # Flag to indicate this is an existing session
                 }
             else:
-                print(f"🔍 SESSION DEBUG: UUID session not found in database, will create new session")
-                # Don't throw error, let it fall through to create new session
+                print(f"🔍 SESSION DEBUG: UUID session not found in database, creating default 1GB session")
+                return {
+                    'name': '1GB',
+                    'data_mb': 1024,
+                    'price_ngn': 0,
+                    'price_usd': 0.0,
+                    'plan_type': 'default'
+                }
                 
         except ValueError:
             # Not a UUID, continue with original logic for descriptive session IDs
