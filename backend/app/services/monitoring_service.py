@@ -109,7 +109,7 @@ class MonitoringService:
         while self._running:
             try:
                 # Get all active eSIMs
-                response = get_supabase_client().table('esims').select('*').eq('status', ESIMStatus.ACTIVE.value).execute()
+                response = get_supabase_client().table('esims').select('id, user_id, iccid, status, apn, created_at').eq('status', ESIMStatus.ACTIVE.value).execute()
                 active_esims = response.data
                 
                 for esim in active_esims:

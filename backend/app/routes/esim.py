@@ -86,7 +86,7 @@ async def get_esim_qr_code(esim_id: str):
         from ..core.database import get_supabase_client
         
         # Get eSIM details
-        esim_response = get_supabase_client().table('esims').select('*').eq('id', esim_id).execute()
+        esim_response = get_supabase_client().table('esims').select('id, user_id, iccid, imsi, msisdn, activation_code, qr_code_data, status, apn, username, password, expires_at, created_at').eq('id', esim_id).execute()
         if not esim_response.data:
             raise HTTPException(status_code=404, detail="eSIM not found")
         
@@ -124,9 +124,8 @@ async def get_esim_qr_code(esim_id: str):
 async def get_user_esims(user_id: str):
     """Get all eSIMs for a user"""
     try:
-        from ..core.database import get_supabase_client
         supabase = get_supabase_client()
-        response = supabase.table('esims').select('*').eq('user_id', user_id).execute()
+        response = supabase.table('esims').select('id, iccid, imsi, msisdn, activation_code, qr_code_data, status, apn, expires_at, created_at').eq('user_id', user_id).execute()
         esims = response.data if response.data else []
         return {
             "esims": esims,
@@ -165,7 +164,7 @@ async def get_esim_status(esim_id: str):
         from ..core.database import get_supabase_client
         
         # Get eSIM details
-        esim_response = get_supabase_client().table('esims').select('*').eq('id', esim_id).execute()
+        esim_response = get_supabase_client().table('esims').select('id, user_id, iccid, imsi, msisdn, activation_code, qr_code_data, status, apn, username, password, expires_at, created_at').eq('id', esim_id).execute()
         if not esim_response.data:
             raise HTTPException(status_code=404, detail="eSIM not found")
         
