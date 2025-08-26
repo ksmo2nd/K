@@ -14,10 +14,10 @@ def test_connection_with_url():
     # URL encode the password
     encoded_password = urllib.parse.quote_plus(password)
     
-    DATABASE_URL = f"postgresql://postgres:{encoded_password}@db.tmxdpjmtjqvizkldvylo.supabase.co:5432/postgres"
+    DATABASE_URL = f"postgresql://postgres:{encoded_password}@db.tmxdpjm.supabase.co:5432/postgres?sslmode=require"
     
     print("🔍 Testing Supabase Database Connection...")
-    print(f"📡 Host: db.tmxdpjmtjqvizkldvylo.supabase.co")
+    print(f"📡 Host: db.tmxdpjm.supabase.co")
     print(f"🔑 Password (encoded): {encoded_password}")
     print(f"🌐 Full URL: {DATABASE_URL}")
     print()
@@ -102,11 +102,12 @@ def test_connection_with_params():
     
     try:
         connection = psycopg2.connect(
-            host="db.tmxdpjmtjqvizkldvylo.supabase.co",
+            host="db.tmxdpjm.supabase.co",
             port=5432,
             user="postgres",
             password="OLAmilekan@$112",
-            database="postgres"
+            database="postgres",
+            sslmode="require"
         )
         print("✅ Parameter-based connection successful!")
         connection.close()
