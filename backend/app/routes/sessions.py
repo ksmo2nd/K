@@ -125,15 +125,14 @@ async def activate_session(
 
 
 @router.get("/sessions/my-sessions", response_model=List[UserSession])
-async def get_my_sessions():
-    """Get all sessions for the current user - returns empty array if not authenticated"""
+async def get_my_sessions(user_data: dict = Depends(verify_jwt_token)):
+    """Get all sessions for the current user"""
     try:
-        # For now, just return empty array since auth is causing issues
-        # TODO: Implement proper user session retrieval once auth is working
-        return []
+        user_id = user_data["sub"]
+        sessions = await session_service.get_user_sessions(user_id)
+        return sessions
     except Exception as e:
-        # Return empty array instead of error
-        return []
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/sessions/track-usage")
@@ -205,19 +204,30 @@ async def get_session_status(
 
 
 @router.get("/sessions/quota/free")
-async def get_free_quota_usage():
-    """Get user's free session quota usage for current month - no auth required"""
+async def get_free_quota_usage(user_data: dict = Depends(verify_jwt_token)):
+    """Get user's free session quota usage for current month"""
     try:
-        # Return default quota for all users (no auth required)
+        user_id = user_data["sub"]
+        
+        from ..core.database import get_supabase_client
+        
+        # Call database function to get quota usage
+        response = get_supabase_client().rpc(
+            'get_user_free_quota_usage', 
+            {'user_uuid': user_id}
+        ).execute()
+        
+        used_mb = response.data if response.data else 0
         limit_mb = 5 * 1024  # 5GB limit
+        
         return {
             "success": True,
             "data": {
-                "used_mb": 0,
+                "used_mb": used_mb,
                 "limit_mb": limit_mb,
-                "remaining_mb": limit_mb,
-                "percentage_used": 0,
-                "can_download_free": True
+                "remaining_mb": max(0, limit_mb - used_mb),
+                "percentage_used": round((used_mb / limit_mb) * 100, 1) if limit_mb > 0 else 0,
+                "can_download_free": used_mb < limit_mb
             }
         }
         

@@ -29,6 +29,7 @@ async def verify_jwt_token(credentials: HTTPAuthorizationCredentials = Depends(s
             user_response = supabase.auth.get_user(token)
             if user_response.user:
                 return {
+                    "sub": user_response.user.id,  # Use 'sub' field as expected by endpoints
                     "user_id": user_response.user.id,
                     "email": user_response.user.email,
                     "token": token
