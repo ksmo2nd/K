@@ -208,15 +208,21 @@ export default function KSWiFiApp() {
     try {
       // Get user's downloaded sessions
       const sessions = await apiService.getMySessions()
+      console.log('🔍 ESIM SETUP DEBUG: Total sessions:', sessions.length)
+      console.log('🔍 ESIM SETUP DEBUG: Sessions:', sessions.map(s => ({ id: s.id, status: s.status, can_activate: s.can_activate })))
+      
       const availableSessions = sessions.filter(session => session.can_activate)
+      console.log('🔍 ESIM SETUP DEBUG: Available sessions for eSIM:', availableSessions.length)
 
       if (availableSessions.length === 0) {
+        console.log('🔍 ESIM SETUP DEBUG: No sessions with can_activate=true')
         showNotification("info", "No Data Packs Available", "Download a session first, then generate eSIM")
         return
       }
 
       // Use the first available session for eSIM generation
       const session = availableSessions[0]
+      console.log('🔍 ESIM SETUP DEBUG: Using session:', { id: session.id, status: session.status, data_mb: session.data_mb })
       await handleGenerateESIM(session.id, session.data_mb)
       
     } catch (error: any) {
