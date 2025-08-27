@@ -4,6 +4,7 @@ WiFi captive portal service for public network access
 
 import secrets
 import qrcode
+import qrcode.image.pil
 import io
 import base64
 from typing import Dict, Optional, Any, List
@@ -141,25 +142,43 @@ class WiFiCaptiveService:
         return wifi_password
     
     def generate_wifi_qr_code(self, wifi_qr_data: str) -> str:
-        """Generate QR code image for WiFi connection"""
+        """Generate QR code image for WiFi connection with proper contrast"""
         
+        print(f"🔍 QR DEBUG: Generating QR for data: {wifi_qr_data}")
+        
+        # Create QR code with optimal settings for WiFi QR codes
         qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=10,
-            border=4,
+            version=None,  # Auto-determine version based on data
+            error_correction=qrcode.constants.ERROR_CORRECT_M,  # Medium error correction for better readability
+            box_size=12,  # Larger box size for better scanning
+            border=6,     # Larger border for better recognition
         )
         
         qr.add_data(wifi_qr_data)
         qr.make(fit=True)
         
-        # Create QR code image
-        img = qr.make_image(fill_color="black", back_color="white")
+        print(f"🔍 QR DEBUG: QR version used: {qr.version}, modules: {qr.modules_count}")
         
-        # Convert to base64
+        # Create QR code image with explicit black/white colors
+        from PIL import Image
+        img = qr.make_image(
+            fill_color="#000000",    # Pure black
+            back_color="#FFFFFF",    # Pure white
+            image_factory=qrcode.image.pil.PilImage
+        )
+        
+        # Ensure image is in RGB mode for better compatibility
+        if img.mode != 'RGB':
+            img = img.convert('RGB')
+        
+        print(f"🔍 QR DEBUG: Image mode: {img.mode}, size: {img.size}")
+        
+        # Convert to base64 with high quality PNG
         buffer = io.BytesIO()
-        img.save(buffer, format='PNG')
+        img.save(buffer, format='PNG', optimize=False, compress_level=1)
         img_str = base64.b64encode(buffer.getvalue()).decode()
+        
+        print(f"🔍 QR DEBUG: Generated QR code, base64 length: {len(img_str)}")
         
         return f"data:image/png;base64,{img_str}"
     

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Display Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .qr-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .qr-image {
+            max-width: 300px;
+            height: auto;
+            border: none;
+        }
+        .issue-example {
+            background: yellow;  /* This could cause yellow appearance */
+            padding: 10px;
+        }
+        .correct-example {
+            background: white;
+            padding: 10px;
+        }
+        .debug-info {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 QR Code Display Test</h1>
+    
+    <div class="qr-container">
+        <h2>Test QR Code Generation</h2>
+        <p>Click the button to generate and display a WiFi QR code:</p>
+        <button onclick="generateQR()">Generate WiFi QR Code</button>
+        <div id="qr-result"></div>
+    </div>
+    
+    <div class="qr-container">
+        <h2>❌ Potential Issue: Yellow Background</h2>
+        <p>If your container has a yellow background, QR codes might appear yellow:</p>
+        <div class="issue-example">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==" 
+                 alt="Test QR" class="qr-image" style="background: white; width: 200px; height: 200px;">
+        </div>
+    </div>
+    
+    <div class="qr-container">
+        <h2>✅ Correct: White Background</h2>
+        <p>QR codes should be displayed on white backgrounds:</p>
+        <div class="correct-example">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==" 
+                 alt="Test QR" class="qr-image" style="background: white; width: 200px; height: 200px;">
+        </div>
+    </div>
+
+    <script>
+        async function generateQR() {
+            try {
+                const response = await fetch('/api/wifi/generate-qr', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // Add your auth header here if needed
+                        // 'Authorization': 'Bearer your-token'
+                    },
+                    body: JSON.stringify({
+                        session_id: 'test-session-' + Date.now(),
+                        data_limit_mb: 1000
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const qrData = data.data;
+                    
+                    document.getElementById('qr-result').innerHTML = `
+                        <h3>✅ QR Code Generated Successfully</h3>
+                        <div style="background: white; padding: 20px; display: inline-block; border-radius: 8px;">
+                            <img src="${qrData.qr_code_image}" alt="WiFi QR Code" class="qr-image">
+                        </div>
+                        <div class="debug-info">
+                            <strong>Network:</strong> ${qrData.network_name}<br>
+                            <strong>Security:</strong> ${qrData.wifi_security}<br>
+                            <strong>Data Limit:</strong> ${qrData.data_limit_mb} MB<br>
+                            <strong>QR Data:</strong> ${qrData.qr_code_data}<br>
+                            <strong>Image Data:</strong> ${qrData.qr_code_image.substring(0, 100)}...
+                        </div>
+                    `;
+                } else {
+                    throw new Error('QR generation failed');
+                }
+                
+            } catch (error) {
+                document.getElementById('qr-result').innerHTML = `
+                    <h3>❌ Error</h3>
+                    <p style="color: red;">${error.message}</p>
+                    <p><strong>Troubleshooting:</strong></p>
+                    <ul>
+                        <li>Make sure your backend server is running</li>
+                        <li>Check if you need authentication headers</li>
+                        <li>Verify the API endpoint is correct</li>
+                        <li>Check browser console for more details</li>
+                    </ul>
+                `;
+                console.error('QR Generation Error:', error);
+            }
+        }
+        
+        // Test with sample QR code data
+        function showSampleQR() {
+            // This is a sample WiFi QR code for testing
+            const sampleQRData = "WIFI:T:WPA;S:TestNetwork;P:TestPassword123;H:false;;";
+            
+            // You can use an online QR generator to create a test image
+            // For now, we'll show the data format
+            document.getElementById('qr-result').innerHTML = `
+                <h3>📱 Sample WiFi QR Format</h3>
+                <div class="debug-info">
+                    <strong>QR Data:</strong> ${sampleQRData}
+                </div>
+                <p>This is the format your QR codes should contain.</p>
+            `;
+        }
+        
+        // Show sample on page load
+        showSampleQR();
+    </script>
+</body>
+</html>
