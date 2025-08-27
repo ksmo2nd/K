@@ -236,7 +236,7 @@ export default function KSWiFiApp() {
       const result = await apiService.generateDualESIMOptions(
         session.id, 
         session.data_mb, 
-        password
+        password || undefined
       )
       
       console.log('✅ DUAL eSIM DEBUG: Options generated:', result)
