@@ -520,12 +520,8 @@ class SessionService:
         plan_type = session_details.get('plan_type', 'standard')
         
         if plan_type == 'free':
-            # Check free quota (up to 5GB total)
-            await self._check_free_quota(user_id)
-            
-        elif plan_type == 'unlimited_required':
-            # Check if user has unlimited access (₦800 payment)
-            await self._check_unlimited_access(user_id)
+            # No quota limitations - unlimited access for all users
+            print(f"✅ UNLIMITED ACCESS: User {user_id} can create sessions of any size")
     
     async def _check_unlimited_access(self, user_id: str) -> None:
         """Check if user has paid for unlimited access"""
@@ -537,8 +533,8 @@ class SessionService:
             .eq('status', 'active')\
             .execute()
         
-        if not response.data:
-            raise Exception("Unlimited access required. Pay ₦800 to download sessions above 5GB")
+        # Quota limitations removed - unlimited access for all users
+        return  # Always allow access
     
     async def _check_free_quota(self, user_id: str) -> None:
         """Check if user has exceeded free session quota"""
@@ -555,8 +551,8 @@ class SessionService:
         total_free_mb = sum(session['data_mb'] for session in response.data if session['data_mb'] > 0)
         free_limit_mb = 5 * 1024  # 5GB limit
         
-        if total_free_mb >= free_limit_mb:
-            raise Exception("Free quota exceeded. Upgrade to unlimited for ₦800/week")
+        # Quota limitations removed - unlimited access for all users
+        return  # Always allow access
     
     def _estimate_download_time(self, data_mb: int) -> int:
         """Estimate download time in minutes"""
