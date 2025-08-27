@@ -261,29 +261,9 @@ class SessionService:
     
     async def _store_detected_session(self, session: Dict[str, Any]) -> None:
         """Store detected session in database for future reference"""
-        try:
-            supabase = get_supabase_client()
-            
-            session_data = {
-                'id': session['id'],
-                'session_id': session['session_name'],  # Use session_name for session_id field
-                'session_name': session['name'],  # Use name for session_name field
-                'data_mb': session['data_mb'],
-                'price_ngn': session['price_ngn'],
-                'price_usd': session['price_usd'],
-                'source_network': session['source_network'],
-                'network_quality': session['network_quality'],
-                'plan_type': session['plan_type'],
-                'status': 'available',
-                'created_at': datetime.utcnow().isoformat(),
-                'updated_at': datetime.utcnow().isoformat()
-            }
-            
-            # Insert or update session
-            supabase.table('internet_sessions').upsert(session_data).execute()
-            
-        except Exception as e:
-            print(f"❌ Error storing detected session: {e}")
+        # Don't store these sessions in database - they're just for display
+        # The actual sessions will be created when user starts download
+        print(f"🔍 SESSION DEBUG: Skipping database storage for session: {session['name']} (display only)")
     
     async def _get_fallback_sessions(self, wifi_network: str) -> List[Dict[str, Any]]:
         """Get fallback sessions when WiFi scanning fails"""
@@ -731,8 +711,8 @@ class SessionService:
                 'progress_percent': 100,
                 'download_completed_at': datetime.utcnow().isoformat(),
                 'esim_id': esim_id,
-                'expires_at': None,  # No expiry - only when data is exhausted
-                'data_remaining_mb': session['data_mb'] if session['data_mb'] != -1 else 100 * 1024  # 100GB for unlimited
+                'expires_at': None  # No expiry - only when data is exhausted
+                # data_remaining_mb calculated in application, not stored in DB
             }
             
             get_supabase_client().table('internet_sessions')\
@@ -793,7 +773,7 @@ class SessionService:
                     "expires_at": session.get('expires_at'),
                     "is_active": session.get('status') == 'active',
                     "can_activate": can_activate,
-                    "data_remaining_mb": session.get('data_remaining_mb', data_mb if data_mb != -1 else 100 * 1024)
+                    "data_remaining_mb": max(0, data_mb - session.get('data_used_mb', 0)) if data_mb != -1 else 100 * 1024
                 })
             
             activatable_count = sum(1 for s in sessions if s['can_activate'])
@@ -822,7 +802,7 @@ class SessionService:
                 raise ValueError("Session must be downloaded before activation")
             
             # Check if session data is exhausted
-            data_remaining = session.get('data_remaining_mb', session.get('data_mb', 0))
+            data_remaining = max(0, session.get('data_mb', 0) - session.get('data_used_mb', 0))
             if data_remaining <= 0:
                 raise ValueError("Session data has been exhausted")
             
@@ -875,7 +855,7 @@ class SessionService:
                 'message': 'Session activated - Internet browsing enabled',
                 'session_id': session_id,
                 'esim_activation': esim_activation,
-                'data_remaining_mb': session.get('data_remaining_mb', session['data_mb']) if session['data_mb'] > 0 else 100*1024,
+                'data_remaining_mb': max(0, session['data_mb'] - session.get('data_used_mb', 0)) if session['data_mb'] > 0 else 100*1024,
                 'internet_access': {
                     'enabled': True,
                     'data_available': True,
@@ -884,7 +864,7 @@ class SessionService:
                 },
                 'usage_info': {
                     'data_used_mb': session.get('data_used_mb', 0),
-                    'data_remaining_mb': session.get('data_remaining_mb', session['data_mb']) if session['data_mb'] > 0 else 100*1024,
+                    'data_remaining_mb': max(0, session['data_mb'] - session.get('data_used_mb', 0)) if session['data_mb'] > 0 else 100*1024,
                     'expires_when': 'data_exhausted',
                     'no_time_limit': True
                 },
@@ -939,7 +919,7 @@ class SessionService:
             return {
                 'status': 'success',
                 'data_used_mb': new_usage,
-                'data_remaining_mb': max(0, session['data_mb'] - new_usage) if session['data_mb'] > 0 else 999999,
+                'data_remaining_mb': max(0, session['data_mb'] - session.get('data_used_mb', 0)) if session['data_mb'] > 0 else 999999,
                 'is_exhausted': is_exhausted
             }
             

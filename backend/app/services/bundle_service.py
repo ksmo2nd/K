@@ -181,7 +181,7 @@ class BundleService:
                 usage_from_pack = min(remaining_usage, available_mb)
                 
                 # Calculate cost for this usage
-                pack_rate = pack['price'] / pack['total_data_mb']
+                pack_rate = pack['price_ngn'] / pack['data_mb']
                 usage_cost = usage_from_pack * pack_rate
                 
                 total_cost += usage_cost
@@ -283,9 +283,9 @@ class BundleService:
             summary = {
                 'total_packs': len(all_packs),
                 'active_packs': len([p for p in all_packs if p['status'] == DataPackStatus.ACTIVE.value]),
-                'total_data_mb': sum(p['total_data_mb'] for p in all_packs),
+                'total_data_mb': sum(p['data_mb'] for p in all_packs),
                 'used_data_mb': sum(p['used_data_mb'] for p in all_packs),
-                'remaining_data_mb': sum(p['remaining_data_mb'] for p in all_packs if p['status'] == DataPackStatus.ACTIVE.value),
+                'remaining_data_mb': sum(max(0, p['data_mb'] - p['used_data_mb']) for p in all_packs if p['status'] == DataPackStatus.ACTIVE.value),
                 'total_spent_usd': sum(p['price'] for p in all_packs),
                 'by_status': {}
             }
@@ -295,7 +295,7 @@ class BundleService:
                 status_packs = [p for p in all_packs if p['status'] == status.value]
                 summary['by_status'][status.value] = {
                     'count': len(status_packs),
-                    'total_data_mb': sum(p['total_data_mb'] for p in status_packs),
+                    'total_data_mb': sum(p['data_mb'] for p in status_packs),
                     'total_spent_usd': sum(p['price'] for p in status_packs)
                 }
             
@@ -370,7 +370,7 @@ class BundleService:
                     'pack_id': pack['id'],
                     'name': pack['name'],
                     'plan_type': pack.get('plan_type', 'standard'),
-                    'data_mb': pack['total_data_mb'],
+                    'data_mb': pack['data_mb'],
                     'is_unlimited': pack.get('plan_type') == 'unlimited',
                     'price': pack['price'],
                     'currency': pack['currency'],
@@ -396,9 +396,9 @@ class BundleService:
                 'pack_id': pack['id'],
                 'name': pack['name'],
                 'plan_type': pack.get('plan_type', 'standard'),
-                'data_mb': pack['total_data_mb'],
+                'data_mb': pack['data_mb'],
                 'used_mb': pack['used_data_mb'],
-                'remaining_mb': pack['remaining_data_mb'],
+                'remaining_mb': max(0, pack['data_mb'] - pack['used_data_mb']),
                 'is_unlimited': pack.get('plan_type') == 'unlimited',
                 'activated_at': pack.get('activated_at'),
                 'expires_at': pack['expires_at']

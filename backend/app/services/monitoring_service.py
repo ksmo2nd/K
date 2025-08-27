@@ -70,7 +70,7 @@ class MonitoringService:
         """Check individual pack usage and send alerts"""
         try:
             remaining_mb = pack.get('remaining_data_mb', 0)
-            total_mb = pack.get('total_data_mb', 0)
+            total_mb = pack.get('data_mb', 0)
             user_id = pack.get('user_id')
             pack_id = pack.get('id')
             
