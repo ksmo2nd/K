@@ -337,6 +337,39 @@ class SessionService:
         
         return features
     
+    async def _ensure_user_exists(self, user_id: str):
+        """Ensure user exists in database, create if needed"""
+        try:
+            print(f"🔍 SESSION DEBUG: Checking if user exists: {user_id}")
+            # Check if user exists
+            user_response = get_supabase_client().table('users').select('id').eq('id', user_id).execute()
+            if not user_response.data:
+                print(f"🔍 SESSION DEBUG: User not found, creating user record...")
+                # Create basic user record
+                user_data = {
+                    'id': user_id,
+                    'email': f"user_{user_id[:8]}@kswifi.app",
+                    'first_name': 'KSWiFi',
+                    'last_name': 'User',
+                    'created_at': datetime.utcnow().isoformat(),
+                    'updated_at': datetime.utcnow().isoformat()
+                }
+                user_create_response = get_supabase_client().table('users').insert(user_data).execute()
+                print(f"🔍 SESSION DEBUG: User create response: {user_create_response}")
+                
+                if user_create_response.data:
+                    print(f"🔍 SESSION DEBUG: User created successfully: {user_create_response.data[0]['id']}")
+                else:
+                    print(f"❌ SESSION ERROR: Failed to create user - no data returned")
+                    raise Exception("Failed to create user record")
+            else:
+                print(f"🔍 SESSION DEBUG: User exists: {user_response.data[0]['id']}")
+        except Exception as user_error:
+            print(f"❌ SESSION ERROR: User creation/verification failed: {user_error}")
+            print(f"❌ SESSION ERROR: User error type: {type(user_error).__name__}")
+            # Don't continue if user creation fails - it will cause foreign key errors
+            raise Exception(f"Cannot create session: User {user_id} does not exist and could not be created: {str(user_error)}")
+    
     async def start_session_download(
         self, 
         user_id: str, 
@@ -345,6 +378,9 @@ class SessionService:
     ) -> Dict[str, Any]:
         """Start downloading an internet session from connected WiFi"""
         try:
+            # Ensure user exists in database (create if needed)
+            await self._ensure_user_exists(user_id)
+            
             # Parse session details
             session_details = await self._get_session_details(session_id, user_id)
             
