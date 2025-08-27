@@ -387,20 +387,39 @@ class ESIMService:
                     last_updated = datetime.utcnow().isoformat()
                 
                 # Get bundle size from associated data pack
-                pack_response = get_supabase_client().table('data_packs')\
-                    .select('data_mb, remaining_data_mb')\
-                    .eq('user_id', esim['user_id'])\
-                    .eq('status', 'active')\
-                    .order('created_at', desc=True)\
-                    .limit(1)\
-                    .execute()
+                try:
+                    pack_response = get_supabase_client().table('data_packs')\
+                        .select('total_data_mb, used_data_mb, remaining_data_mb')\
+                        .eq('user_id', esim['user_id'])\
+                        .eq('status', 'active')\
+                        .order('created_at', desc=True)\
+                        .limit(1)\
+                        .execute()
+                except Exception as db_error:
+                    # Fallback if remaining_data_mb column doesn't exist
+                    try:
+                        pack_response = get_supabase_client().table('data_packs')\
+                            .select('total_data_mb, used_data_mb')\
+                            .eq('user_id', esim['user_id'])\
+                            .eq('status', 'active')\
+                            .order('created_at', desc=True)\
+                            .limit(1)\
+                            .execute()
+                    except Exception:
+                        pack_response = type('obj', (object,), {'data': []})()
                 
                 total_data_mb = 0
                 remaining_data_mb = 0
                 if pack_response.data:
                     pack = pack_response.data[0]
-                    total_data_mb = pack.get('data_mb', 0)
-                    remaining_data_mb = pack.get('remaining_data_mb', 0)
+                    total_data_mb = pack.get('total_data_mb', 0)
+                    # Calculate remaining_data_mb if not present
+                    if 'remaining_data_mb' in pack and pack['remaining_data_mb'] is not None:
+                        remaining_data_mb = pack['remaining_data_mb']
+                    else:
+                        # Fallback calculation
+                        used_mb = pack.get('used_data_mb', 0)
+                        remaining_data_mb = max(0, total_data_mb - used_mb)
                 
                 return {
                     'iccid': esim['iccid'],

@@ -606,7 +606,7 @@ class ApiService {
     try {
       // Check both Supabase and backend
       const supabaseHealth = await supabase.from('users').select('id').limit(1);
-      const backendHealth = await this.makeBackendRequest<any>('/monitoring/health');
+      const backendHealth = await this.makeBackendRequest<any>('/health');
       
       return {
         status: 'healthy',

@@ -203,3 +203,37 @@ async def get_session_status(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/sessions/quota/free")
+async def get_free_quota_status(user_data: dict = Depends(verify_jwt_token)):
+    """Get user's free quota status"""
+    try:
+        user_id = user_data.get('user_id') or user_data.get('sub')
+        
+        # Get user's total data usage
+        from ..core.database import get_supabase_client
+        
+        # Get total data from all sessions
+        sessions_response = get_supabase_client().table('internet_sessions')\
+            .select('data_mb')\
+            .eq('user_id', user_id)\
+            .execute()
+        
+        total_used_mb = sum(session.get('data_mb', 0) for session in sessions_response.data)
+        free_quota_mb = 5120  # 5GB free quota
+        remaining_mb = max(0, free_quota_mb - total_used_mb)
+        
+        return {
+            "success": True,
+            "data": {
+                "total_quota_mb": free_quota_mb,
+                "used_mb": total_used_mb,
+                "remaining_mb": remaining_mb,
+                "quota_exhausted": remaining_mb <= 0,
+                "usage_percentage": min(100, (total_used_mb / free_quota_mb) * 100)
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
