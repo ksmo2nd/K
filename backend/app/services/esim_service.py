@@ -18,22 +18,13 @@ class ESIMService:
     """Service for eSIM operations and provider integration"""
     
     def __init__(self):
-        # External provider credentials (optional - we have inbuilt eSIM generation)
-        self.api_url = settings.ESIM_PROVIDER_API_URL
-        self.api_key = settings.ESIM_PROVIDER_API_KEY
-        self.username = settings.ESIM_PROVIDER_USERNAME
-        self.password = settings.ESIM_PROVIDER_PASSWORD
-        
-        # Check if external provider is configured
-        self.has_external_provider = all([
-            self.api_url, self.api_key, self.username, self.password
-        ])
+        # KSWiFi uses inbuilt eSIM generation only
+        pass
     
     async def _make_api_request(self, method: str, endpoint: str, data: Dict = None) -> Dict:
         """Make authenticated request to eSIM provider API"""
         # This is for external providers only - KSWiFi uses inbuilt eSIMs
-        if not self.has_external_provider:
-            raise Exception("External eSIM provider not configured - using inbuilt eSIM system")
+        raise Exception("External eSIM provider not supported - KSWiFi uses inbuilt eSIM generation only")
         
         headers = {
             'Authorization': f'Bearer {self.api_key}',
@@ -57,62 +48,37 @@ class ESIMService:
             print(f"🔍 ESIM DEBUG: provision_esim called")
             print(f"🔍 ESIM DEBUG: user_id = {user_id}")
             print(f"🔍 ESIM DEBUG: bundle_size_mb = {bundle_size_mb}")
-            print(f"🔍 ESIM DEBUG: has_external_provider = {self.has_external_provider}")
+            print(f"🔍 ESIM DEBUG: Using KSWiFi inbuilt eSIM generation")
             
-            # Use inbuilt eSIM generation (default) or external provider
-            if self.has_external_provider:
-                print(f"🔍 ESIM DEBUG: Using external provider")
-                # External provider
-                provision_data = {
-                    'bundle_size': bundle_size_mb,
-                    'user_reference': user_id
-                }
-                
-                provider_response = await self._make_api_request(
-                    'POST', 
-                    'esims/provision', 
-                    provision_data
-                )
-                
-                iccid = provider_response.get('iccid')
-                imsi = provider_response.get('imsi') 
-                msisdn = provider_response.get('msisdn')
-                activation_code = provider_response.get('activation_code')
-                apn = provider_response.get('apn', 'internet')
-                username = provider_response.get('username')
-                password = provider_response.get('password')
-                
-            else:
-                print(f"🔍 ESIM DEBUG: Using inbuilt eSIM generation")
-                # Inbuilt eSIM generation (no phone number, just internet access)
-                import uuid
-                import secrets
-                
-                print(f"🔍 ESIM DEBUG: Generating unique identifiers...")
-                # Generate unique identifiers
-                iccid = f"8991{secrets.randbelow(10**15):015d}"
-                imsi = f"999{secrets.randbelow(10**12):012d}" 
-                msisdn = None  # No phone number for inbuilt eSIMs
-                print(f"🔍 ESIM DEBUG: Generated ICCID: {iccid}")
-                print(f"🔍 ESIM DEBUG: Generated IMSI: {imsi}")
-                
-                # Configure for KSWiFi network server (use actual backend URL)
-                backend_host = settings.BACKEND_URL or "kswifi.onrender.com"
-                if backend_host.startswith("http"):
-                    backend_host = backend_host.replace("https://", "").replace("http://", "")
-                print(f"🔍 ESIM DEBUG: Backend host: {backend_host}")
-                
-                # Create proper LPA activation code for KSWiFi network
-                activation_code = f"LPA:1${backend_host}$ks{secrets.token_urlsafe(16)}"
-                print(f"🔍 ESIM DEBUG: Generated activation code: {activation_code}")
-                
-                # Configure APN for internet access through KSWiFi network
-                apn = "internet"  # Standard internet APN
-                username = f"kswifi_{secrets.randbelow(10**6):06d}"
-                password = secrets.token_urlsafe(12)
-                print(f"🔍 ESIM DEBUG: Network config - APN: {apn}, Username: {username}")
-                
-                # Network configuration for internet browsing
+            # KSWiFi inbuilt eSIM generation (no phone number, just internet access)
+            import uuid
+            import secrets
+            
+            print(f"🔍 ESIM DEBUG: Generating unique identifiers...")
+            # Generate unique identifiers
+            iccid = f"8991{secrets.randbelow(10**15):015d}"
+            imsi = f"999{secrets.randbelow(10**12):012d}" 
+            msisdn = None  # No phone number for inbuilt eSIMs
+            print(f"🔍 ESIM DEBUG: Generated ICCID: {iccid}")
+            print(f"🔍 ESIM DEBUG: Generated IMSI: {imsi}")
+
+            # Configure for KSWiFi network server (use actual backend URL)
+            backend_host = settings.BACKEND_URL or "kswifi.onrender.com"
+            if backend_host.startswith("http"):
+                backend_host = backend_host.replace("https://", "").replace("http://", "")
+            print(f"🔍 ESIM DEBUG: Backend host: {backend_host}")
+            
+            # Create proper LPA activation code for KSWiFi network
+            activation_code = f"LPA:1${backend_host}$ks{secrets.token_urlsafe(16)}"
+            print(f"🔍 ESIM DEBUG: Generated activation code: {activation_code}")
+            
+            # Configure APN for internet access through KSWiFi network
+            apn = "internet"  # Standard internet APN
+            username = f"kswifi_{secrets.randbelow(10**6):06d}"
+            password = secrets.token_urlsafe(12)
+            print(f"🔍 ESIM DEBUG: Network config - APN: {apn}, Username: {username}")
+            
+            # Network configuration for internet browsing
                 network_config = {
                     "gateway": f"{backend_host}",
                     "dns_primary": "8.8.8.8",
