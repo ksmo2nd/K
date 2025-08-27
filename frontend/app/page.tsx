@@ -211,18 +211,19 @@ export default function KSWiFiApp() {
       console.log('🔍 ESIM SETUP DEBUG: Total sessions:', sessions.length)
       console.log('🔍 ESIM SETUP DEBUG: Sessions:', sessions.map(s => ({ id: s.id, status: s.status, can_activate: s.can_activate })))
       
-      const availableSessions = sessions.filter(session => session.can_activate)
-      console.log('🔍 ESIM SETUP DEBUG: Available sessions for eSIM:', availableSessions.length)
+      // Look for ACTIVE sessions (not can_activate) for eSIM generation
+      const activeSessions = sessions.filter(session => session.status === 'active')
+      console.log('🔍 ESIM SETUP DEBUG: Active sessions for eSIM:', activeSessions.length)
 
-      if (availableSessions.length === 0) {
-        console.log('🔍 ESIM SETUP DEBUG: No sessions with can_activate=true')
-        showNotification("info", "No Data Packs Available", "Download a session first, then generate eSIM")
+      if (activeSessions.length === 0) {
+        console.log('🔍 ESIM SETUP DEBUG: No active sessions found')
+        showNotification("info", "No Active Sessions", "Please activate a data pack first, then generate eSIM QR code")
         return
       }
 
-      // Use the first available session for eSIM generation
-      const session = availableSessions[0]
-      console.log('🔍 ESIM SETUP DEBUG: Using session:', { id: session.id, status: session.status, data_mb: session.data_mb })
+      // Use the first active session for eSIM generation
+      const session = activeSessions[0]
+      console.log('🔍 ESIM SETUP DEBUG: Using active session:', { id: session.id, status: session.status, data_mb: session.data_mb })
       await handleGenerateESIM(session.id, session.data_mb)
       
     } catch (error: any) {
@@ -287,7 +288,20 @@ export default function KSWiFiApp() {
     try {
       // Get user's downloaded sessions
       const sessions = await apiService.getMySessions()
+      console.log('🔍 FRONTEND: All sessions:', sessions)
+      
       const availableSessions = sessions.filter(session => session.can_activate)
+      const activeSessions = sessions.filter(session => session.status === 'active')
+      
+      console.log('🔍 FRONTEND: Available sessions:', availableSessions)
+      console.log('🔍 FRONTEND: Active sessions:', activeSessions)
+
+      // Check if user already has active sessions
+      if (activeSessions.length > 0) {
+        const activeSession = activeSessions[0]
+        showNotification("info", "Session Already Active", `You have an active ${activeSession.data_mb}MB session. Generate eSIM to use it for internet access.`)
+        return
+      }
 
       if (availableSessions.length === 0) {
         showNotification("info", "No Data Packs Available", "Download a session first, then activate it here")
@@ -299,7 +313,7 @@ export default function KSWiFiApp() {
         const session = availableSessions[0]
         await apiService.activateSession(session.id)
         setSessionsRefreshTrigger(prev => prev + 1)
-        showNotification("success", "Data Pack Activated!", `${session.size} session is now active`)
+        showNotification("success", "Data Pack Activated!", `${session.data_mb}MB session is now active`)
       } else {
         // If multiple sessions, show a selection
         showNotification("info", "Multiple Sessions Available", "Check 'My Sessions' below to choose which one to activate")
