@@ -15,6 +15,23 @@ dual_esim_service = DualESIMService()
 wifi_service = WiFiCaptiveService()
 
 
+@router.get("/health")
+async def dual_esim_health():
+    """Health check for dual eSIM system"""
+    return {
+        "status": "healthy",
+        "service": "Dual eSIM System",
+        "endpoints": [
+            "/generate-options",
+            "/validate-private-access", 
+            "/history",
+            "/activate",
+            "/captive/portal",
+            "/captive/connect"
+        ]
+    }
+
+
 class GenerateESIMOptionsRequest(BaseModel):
     session_id: str
     bundle_size_mb: int
@@ -49,7 +66,9 @@ async def generate_esim_options(
 ):
     """Generate eSIM options (public WiFi + private osmo if password provided)"""
     try:
-        print(f"🔄 API: Generating eSIM options for user {user_id}")
+        print(f"🔄 DUAL eSIM API: Request received")
+        print(f"🔄 DUAL eSIM API: User ID: {user_id}")
+        print(f"🔄 DUAL eSIM API: Request data: {request.dict()}")
         
         options = await dual_esim_service.generate_esim_options(
             user_id=user_id,
@@ -58,6 +77,8 @@ async def generate_esim_options(
             access_password=request.access_password
         )
         
+        print(f"✅ DUAL eSIM API: Options generated successfully")
+        
         return {
             "success": True,
             "data": options,
@@ -65,7 +86,10 @@ async def generate_esim_options(
         }
         
     except Exception as e:
-        print(f"❌ API ERROR: {str(e)}")
+        print(f"❌ DUAL eSIM API ERROR: {str(e)}")
+        print(f"❌ DUAL eSIM API ERROR TYPE: {type(e).__name__}")
+        import traceback
+        print(f"❌ DUAL eSIM API TRACEBACK: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
