@@ -32,7 +32,8 @@ from .routes import (
     activation_router,
     sessions_router
 )
-from .routes.dual_esim import router as dual_esim_router
+from .routes.wifi import router as wifi_router
+# Removed dual_esim_router - using WiFi QR system instead
 from .routes.debug import router as debug_router
 from .services.monitoring_service import MonitoringService
 
@@ -188,7 +189,7 @@ async def general_exception_handler(request, exc):
 app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(bundles_router, prefix="/api/bundles", tags=["Data Bundles"])
 app.include_router(esim_router, prefix="/api/esim", tags=["eSIM Management"])
-app.include_router(dual_esim_router, prefix="/api/dual-esim", tags=["Dual eSIM System"])
+app.include_router(wifi_router, prefix="/api/wifi", tags=["WiFi QR System"])
 app.include_router(monitoring_router, prefix="/api/monitoring", tags=["Monitoring"])
 app.include_router(notifications_router, prefix="/api/notifications", tags=["Notifications"])
 app.include_router(activation_router, tags=["Data Pack Activation"])

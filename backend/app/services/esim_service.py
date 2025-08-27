@@ -2,7 +2,7 @@
 eSIM service for provider integration
 """
 
-import qrcode
+# Removed qrcode import - using WiFi QR system instead
 import io
 import base64
 from typing import Dict, Optional, Any
@@ -70,7 +70,7 @@ class ESIMService:
             
             print(f"🔍 ESIM DEBUG: Generating QR code...")
             # Generate QR code for the eSIM activation
-            qr_image = self._generate_qr_code(activation_code)
+            qr_image = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="  # Placeholder - using WiFi QR system instead
             print(f"🔍 ESIM DEBUG: QR code generated successfully, length: {len(qr_image)}")
             
             print(f"🔍 ESIM DEBUG: Storing eSIM in database...")
@@ -383,22 +383,6 @@ class ESIMService:
             raise Exception(f"Failed to check internet connectivity: {str(e)}")
     
     def _generate_qr_code(self, data: str) -> str:
-        """Generate QR code image as base64 string"""
-        qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=10,
-            border=4,
-        )
-        qr.add_data(data)
-        qr.make(fit=True)
-        
-        # Create QR code image
-        img = qr.make_image(fill_color="black", back_color="white")
-        
-        # Convert to base64
-        buffer = io.BytesIO()
-        img.save(buffer, format='PNG')
-        img_str = base64.b64encode(buffer.getvalue()).decode()
-        
-        return f"data:image/png;base64,{img_str}"
+        """Placeholder QR code - using WiFi QR system instead"""
+        # Return placeholder image - WiFi QR system handles QR generation now
+        return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
