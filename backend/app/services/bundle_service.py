@@ -117,7 +117,7 @@ class BundleService:
                 'user_id': user_id,
                 'name': pack_name,
                 'data_mb': total_data_mb,  # Use data_mb instead of total_data_mb
-                'used_data_mb': 0,
+                'used_data_mb': 0,  # Matches schema
                 # remaining_data_mb is GENERATED - don't include it
                 'price_ngn': price_ngn,
                 'price_usd': price_usd,
@@ -236,7 +236,7 @@ class BundleService:
                 
                 # Update in database
                 update_data = {
-                    'used_data_mb': new_used,
+                    'used_data_mb': new_used,  # Matches schema
                     # remaining_data_mb is GENERATED - don't update it
                     'status': new_status
                 }
@@ -286,7 +286,7 @@ class BundleService:
                 'total_data_mb': sum(p['data_mb'] for p in all_packs),
                 'used_data_mb': sum(p['used_data_mb'] for p in all_packs),
                 'remaining_data_mb': sum(max(0, p['data_mb'] - p['used_data_mb']) for p in all_packs if p['status'] == DataPackStatus.ACTIVE.value),
-                'total_spent_usd': sum(p['price'] for p in all_packs),
+                'total_spent_ngn': sum(p['price_ngn'] for p in all_packs),
                 'by_status': {}
             }
             
@@ -296,7 +296,7 @@ class BundleService:
                 summary['by_status'][status.value] = {
                     'count': len(status_packs),
                     'total_data_mb': sum(p['data_mb'] for p in status_packs),
-                    'total_spent_usd': sum(p['price'] for p in status_packs)
+                    'total_spent_ngn': sum(p['price_ngn'] for p in status_packs)
                 }
             
             return summary

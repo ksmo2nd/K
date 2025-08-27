@@ -24,7 +24,7 @@ class NotificationService:
                 'type': 'low_data_alert',
                 'title': 'Low Data Balance Warning',
                 'message': f'Your data pack has only {remaining_mb:.1f}MB ({percentage_remaining:.1f}%) remaining.',
-                'data': {
+                'metadata': {
                     'pack_id': pack_id,
                     'remaining_mb': remaining_mb,
                     'total_mb': total_mb,
@@ -49,7 +49,7 @@ class NotificationService:
                 'type': 'usage_threshold_alert',
                 'title': f'{threshold_percent}% Data Used',
                 'message': f'You have used {threshold_percent}% of your data pack. Consider monitoring your usage.',
-                'data': {
+                'metadata': {
                     'pack_id': pack_id,
                     'threshold_percent': threshold_percent
                 },
@@ -72,7 +72,7 @@ class NotificationService:
                 'type': 'pack_expired',
                 'title': 'Data Pack Expired',
                 'message': 'One of your data packs has expired. Purchase a new pack to continue using data.',
-                'data': {
+                'metadata': {
                     'pack_id': pack_id
                 },
                 'priority': 'high'
@@ -94,7 +94,7 @@ class NotificationService:
                 'type': 'esim_activated',
                 'title': 'eSIM Activated Successfully',
                 'message': 'Your eSIM has been activated and is ready to use.',
-                'data': {
+                'metadata': {
                     'esim_id': esim_id
                 },
                 'priority': 'medium'
@@ -116,7 +116,7 @@ class NotificationService:
                 'type': 'welcome',
                 'title': 'Welcome to KSWiFi!',
                 'message': 'Welcome to KSWiFi! You can now purchase data packs and manage your eSIMs.',
-                'data': {},
+                'metadata': {},
                 'priority': 'low'
             }
             

@@ -92,12 +92,11 @@ class MonitoringService:
             # Check usage percentage thresholds
             usage_percent = ((total_mb - remaining_mb) / total_mb) * 100 if total_mb > 0 else 0
             
-            if usage_percent >= 90 and not pack.get('alert_90_sent'):
+            # Simplified alert logic - no tracking to match current schema
+            if usage_percent >= 90:
                 await self.notification_service.send_usage_threshold_alert(user_id, pack_id, 90)
-                await self._mark_alert_sent(pack_id, 'alert_90_sent')
-            elif usage_percent >= 75 and not pack.get('alert_75_sent'):
+            elif usage_percent >= 75:
                 await self.notification_service.send_usage_threshold_alert(user_id, pack_id, 75)
-                await self._mark_alert_sent(pack_id, 'alert_75_sent')
                 
         except Exception as e:
             logger.error(f"Error checking pack usage for pack {pack.get('id')}: {e}")
@@ -245,11 +244,7 @@ class MonitoringService:
             'status': DataPackStatus.EXPIRED.value
         }).eq('id', pack_id).execute()
     
-    async def _mark_alert_sent(self, pack_id: str, alert_field: str):
-        """Mark that an alert has been sent for a pack"""
-        get_supabase_client().table('data_packs').update({
-            alert_field: True
-        }).eq('id', pack_id).execute()
+    # _mark_alert_sent method removed - alert tracking disabled to match schema
     
     async def get_monitoring_stats(self) -> Dict[str, Any]:
         """Get monitoring service statistics"""

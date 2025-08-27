@@ -831,7 +831,7 @@ class SessionService:
             update_data = {
                 'status': SessionStatus.ACTIVE.value,
                 'activated_at': datetime.utcnow().isoformat(),
-                'used_data_mb': 0
+                'data_used_mb': 0  # Use data_used_mb to match schema
             }
             print(f"🔍 ACTIVATION: Update data: {update_data}")
             
@@ -905,7 +905,7 @@ class SessionService:
             # Update usage
             get_supabase_client().table('internet_sessions')\
                 .update({
-                    'used_data_mb': new_usage,
+                    'data_used_mb': new_usage,  # Use data_used_mb to match schema
                     'status': new_status,
                     'last_usage_at': datetime.utcnow().isoformat()
                 })\
