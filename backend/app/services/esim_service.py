@@ -2,7 +2,6 @@
 eSIM service for provider integration
 """
 
-import httpx
 import qrcode
 import io
 import base64
@@ -21,26 +20,7 @@ class ESIMService:
         # KSWiFi uses inbuilt eSIM generation only
         pass
     
-    async def _make_api_request(self, method: str, endpoint: str, data: Dict = None) -> Dict:
-        """Make authenticated request to eSIM provider API"""
-        # This is for external providers only - KSWiFi uses inbuilt eSIMs
-        raise Exception("External eSIM provider not supported - KSWiFi uses inbuilt eSIM generation only")
-        
-        headers = {
-            'Authorization': f'Bearer {self.api_key}',
-            'Content-Type': 'application/json'
-        }
-        
-        async with httpx.AsyncClient() as client:
-            response = await client.request(
-                method=method,
-                url=f"{self.api_url}/{endpoint}",
-                headers=headers,
-                json=data,
-                auth=(self.username, self.password) if self.username else None
-            )
-            response.raise_for_status()
-            return response.json()
+    # External provider API removed - KSWiFi uses inbuilt eSIM generation only
     
     async def provision_esim(self, user_id: str, bundle_size_mb: int) -> Dict[str, Any]:
         """Provision a new eSIM from the provider"""
@@ -79,14 +59,14 @@ class ESIMService:
             print(f"🔍 ESIM DEBUG: Network config - APN: {apn}, Username: {username}")
             
             # Network configuration for internet browsing
-                network_config = {
-                    "gateway": f"{backend_host}",
-                    "dns_primary": "8.8.8.8",
-                    "dns_secondary": "8.8.4.4",
-                    "proxy": None,  # Direct internet access
-                    "network_type": "LTE"
-                }
-                print(f"🔍 ESIM DEBUG: Network config: {network_config}")
+            network_config = {
+                "gateway": f"{backend_host}",
+                "dns_primary": "8.8.8.8",
+                "dns_secondary": "8.8.4.4",
+                "proxy": None,  # Direct internet access
+                "network_type": "LTE"
+            }
+            print(f"🔍 ESIM DEBUG: Network config: {network_config}")
             
             print(f"🔍 ESIM DEBUG: Generating QR code...")
             # Generate QR code for the eSIM activation
