@@ -388,7 +388,7 @@ class ESIMService:
                 
                 # Get bundle size from associated data pack
                 pack_response = get_supabase_client().table('data_packs')\
-                    .select('data_mb, remaining_data_mb')\
+                    .select('data_mb, used_data_mb')\
                     .eq('user_id', esim['user_id'])\
                     .eq('status', 'active')\
                     .order('created_at', desc=True)\
@@ -400,7 +400,8 @@ class ESIMService:
                 if pack_response.data:
                     pack = pack_response.data[0]
                     total_data_mb = pack.get('data_mb', 0)
-                    remaining_data_mb = pack.get('remaining_data_mb', 0)
+                    used_data_mb = pack.get('used_data_mb', 0)
+                    remaining_data_mb = max(0, total_data_mb - used_data_mb)  # Calculate dynamically
                 
                 return {
                     'iccid': esim['iccid'],

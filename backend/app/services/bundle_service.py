@@ -173,7 +173,7 @@ class BundleService:
                 if remaining_usage <= 0:
                     break
                 
-                available_mb = pack['remaining_data_mb']
+                available_mb = max(0, pack['data_mb'] - pack['used_data_mb'])  # Calculate dynamically
                 if available_mb <= 0:
                     continue
                 
@@ -222,7 +222,7 @@ class BundleService:
                 if remaining_usage <= 0:
                     break
                 
-                available_mb = pack['remaining_data_mb']
+                available_mb = max(0, pack['data_mb'] - pack['used_data_mb'])  # Calculate dynamically
                 if available_mb <= 0:
                     continue
                 
@@ -231,7 +231,7 @@ class BundleService:
                 
                 # Update pack usage
                 new_used = pack['used_data_mb'] + usage_from_pack
-                new_remaining = pack['remaining_data_mb'] - usage_from_pack
+                new_remaining = max(0, pack['data_mb'] - new_used)  # Calculate dynamically
                 new_status = DataPackStatus.EXHAUSTED.value if new_remaining <= 0 else DataPackStatus.ACTIVE.value
                 
                 # Update in database
