@@ -21,6 +21,7 @@ import { SecurityIndicator } from "@/components/security-indicator"
 import { HelpCenter } from "@/components/help-center"
 import { AboutApp } from "@/components/about-app"
 import { ESIMQRPopup } from "@/components/esim-qr-popup"
+import { DualESIMPopup } from "@/components/dual-esim-popup"
 import { apiService } from "@/lib/api"
 import { toast } from "sonner"
 import {
@@ -73,6 +74,11 @@ export default function KSWiFiApp() {
   // eSIM QR popup state
   const [showESIMPopup, setShowESIMPopup] = useState(false)
   const [esimData, setESIMData] = useState<any>(null)
+  
+  // Dual eSIM popup state
+  const [showDualESIMPopup, setShowDualESIMPopup] = useState(false)
+  const [dualESIMData, setDualESIMData] = useState<any>(null)
+  const [privatePassword, setPrivatePassword] = useState<string>("")
 
   // Check for URL messages (like password reset success)
   useEffect(() => {
@@ -206,30 +212,52 @@ export default function KSWiFiApp() {
     }
 
     try {
-      // Get user's downloaded sessions
+      // Get user's active sessions
       const sessions = await apiService.getMySessions()
-      console.log('🔍 ESIM SETUP DEBUG: Total sessions:', sessions.length)
-      console.log('🔍 ESIM SETUP DEBUG: Sessions:', sessions.map(s => ({ id: s.id, status: s.status, can_activate: s.can_activate })))
+      console.log('🔍 DUAL eSIM DEBUG: Total sessions:', sessions.length)
       
-      // Look for ACTIVE sessions (not can_activate) for eSIM generation
       const activeSessions = sessions.filter(session => session.status === 'active')
-      console.log('🔍 ESIM SETUP DEBUG: Active sessions for eSIM:', activeSessions.length)
+      console.log('🔍 DUAL eSIM DEBUG: Active sessions:', activeSessions.length)
 
       if (activeSessions.length === 0) {
-        console.log('🔍 ESIM SETUP DEBUG: No active sessions found')
-        showNotification("info", "No Active Sessions", "Please activate a data pack first, then generate eSIM QR code")
+        showNotification("info", "No Active Sessions", "Please activate a data pack first, then generate eSIM options")
         return
       }
 
-      // Use the first active session for eSIM generation
+      // Use the first active session
       const session = activeSessions[0]
-      console.log('🔍 ESIM SETUP DEBUG: Using active session:', { id: session.id, status: session.status, data_mb: session.data_mb })
-      await handleGenerateESIM(session.id, session.data_mb)
+      console.log('🔍 DUAL eSIM DEBUG: Using session:', { id: session.id, data_mb: session.data_mb })
+      
+      // Show password prompt for private access
+      const password = await showPasswordPrompt()
+      
+      // Generate dual eSIM options
+      console.log('🔍 DUAL eSIM DEBUG: Generating options with password:', !!password)
+      const result = await apiService.generateDualESIMOptions(
+        session.id, 
+        session.data_mb, 
+        password
+      )
+      
+      console.log('✅ DUAL eSIM DEBUG: Options generated:', result)
+      
+      // Show dual eSIM popup
+      setDualESIMData(result)
+      setShowDualESIMPopup(true)
       
     } catch (error: any) {
-      console.error('Error setting up eSIM:', error)
-      showNotification("warning", "eSIM Setup Failed", error.message || "Failed to setup eSIM")
+      console.error('❌ DUAL eSIM ERROR:', error)
+      showNotification("warning", "eSIM Setup Failed", error.message || "Failed to generate eSIM options")
     }
+  }
+
+  const showPasswordPrompt = (): Promise<string | null> => {
+    return new Promise((resolve) => {
+      const password = prompt(
+        "🔒 Private eSIM Access (Optional)\n\nEnter password for private eSIM profiles:\n(Leave empty for public WiFi only)"
+      )
+      resolve(password?.trim() || null)
+    })
   }
 
   const handleGenerateESIM = async (sessionId?: string, dataSizeMB?: number) => {
@@ -277,6 +305,12 @@ export default function KSWiFiApp() {
   const closeESIMPopup = () => {
     setShowESIMPopup(false)
     setESIMData(null)
+  }
+
+  const closeDualESIMPopup = () => {
+    setShowDualESIMPopup(false)
+    setDualESIMData(null)
+    setPrivatePassword("")
   }
 
   const handleDataPackActivation = async () => {
@@ -581,6 +615,13 @@ export default function KSWiFiApp() {
         isOpen={showESIMPopup}
         onClose={closeESIMPopup}
         esimData={esimData}
+      />
+
+      {/* Dual eSIM Options Popup */}
+      <DualESIMPopup
+        isOpen={showDualESIMPopup}
+        onClose={closeDualESIMPopup}
+        esimData={dualESIMData}
       />
     </div>
   )

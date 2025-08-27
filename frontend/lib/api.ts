@@ -622,6 +622,48 @@ class ApiService {
       };
     }
   }
+
+  // =====================================================
+  // 🔒🌐 DUAL eSIM SYSTEM METHODS
+  // =====================================================
+
+  async generateDualESIMOptions(sessionId: string, bundleSizeMb: number, accessPassword?: string): Promise<any> {
+    const response = await this.makeBackendRequest<any>('/dual-esim/generate-options', {
+      method: 'POST',
+      body: JSON.stringify({
+        session_id: sessionId,
+        bundle_size_mb: bundleSizeMb,
+        access_password: accessPassword
+      })
+    });
+    return response;
+  }
+
+  async validatePrivateAccess(password: string): Promise<any> {
+    const response = await this.makeBackendRequest<any>('/dual-esim/validate-private-access', {
+      method: 'POST',
+      body: JSON.stringify({
+        password: password
+      })
+    });
+    return response;
+  }
+
+  async getDualESIMHistory(): Promise<any> {
+    const response = await this.makeBackendRequest<any>('/dual-esim/history');
+    return response;
+  }
+
+  async activateDualESIM(esimType: string, esimId: string): Promise<any> {
+    const response = await this.makeBackendRequest<any>('/dual-esim/activate', {
+      method: 'POST',
+      body: JSON.stringify({
+        esim_type: esimType,
+        esim_id: esimId
+      })
+    });
+    return response;
+  }
 }
 
 export const apiService = new ApiService();
