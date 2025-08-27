@@ -30,7 +30,7 @@ class NotificationService:
                     'total_mb': total_mb,
                     'percentage_remaining': percentage_remaining
                 },
-                'priority': 'high'
+                # 'priority': 'high'  # Column not in schema
             }
             
             await self._store_notification(notification_data)
@@ -53,7 +53,7 @@ class NotificationService:
                     'pack_id': pack_id,
                     'threshold_percent': threshold_percent
                 },
-                'priority': 'medium'
+                # 'priority': 'medium'  # Column not in schema
             }
             
             await self._store_notification(notification_data)
@@ -75,7 +75,7 @@ class NotificationService:
                 'metadata': {
                     'pack_id': pack_id
                 },
-                'priority': 'high'
+                # 'priority': 'high'  # Column not in schema
             }
             
             await self._store_notification(notification_data)
@@ -97,7 +97,7 @@ class NotificationService:
                 'metadata': {
                     'esim_id': esim_id
                 },
-                'priority': 'medium'
+                # 'priority': 'medium'  # Column not in schema
             }
             
             await self._store_notification(notification_data)
@@ -117,7 +117,7 @@ class NotificationService:
                 'title': 'Welcome to KSWiFi!',
                 'message': 'Welcome to KSWiFi! You can now purchase data packs and manage your eSIMs.',
                 'metadata': {},
-                'priority': 'low'
+                # 'priority': 'low'  # Column not in schema
             }
             
             await self._store_notification(notification_data)

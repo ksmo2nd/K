@@ -69,7 +69,7 @@ class MonitoringService:
     async def _check_pack_usage(self, pack: Dict[str, Any]):
         """Check individual pack usage and send alerts"""
         try:
-            remaining_mb = pack.get('remaining_data_mb', 0)
+            remaining_mb = max(0, pack.get('data_mb', 0) - pack.get('used_data_mb', 0))  # Calculate from schema fields
             total_mb = pack.get('data_mb', 0)
             user_id = pack.get('user_id')
             pack_id = pack.get('id')
@@ -84,10 +84,12 @@ class MonitoringService:
                 )
             
             # Check if pack has expired
-            expires_at = datetime.fromisoformat(pack.get('expires_at').replace('Z', '+00:00'))
-            if expires_at <= datetime.now(expires_at.tzinfo):
-                await self._expire_data_pack(pack_id)
-                await self.notification_service.send_pack_expired_notification(user_id, pack_id)
+            expires_at_str = pack.get('expires_at')
+            if expires_at_str:
+                expires_at = datetime.fromisoformat(expires_at_str.replace('Z', '+00:00'))
+                if expires_at <= datetime.now(expires_at.tzinfo):
+                    await self._expire_data_pack(pack_id)
+                    await self.notification_service.send_pack_expired_notification(user_id, pack_id)
             
             # Check usage percentage thresholds
             usage_percent = ((total_mb - remaining_mb) / total_mb) * 100 if total_mb > 0 else 0
@@ -144,7 +146,9 @@ class MonitoringService:
             data_used_mb = usage_data.get('data_used_mb', 0)
             
             # Find active data packs for this user
-            packs = await supabase_client.get_user_data_packs(user_id, DataPackStatus.ACTIVE.value)
+            # Get active data packs for user (simplified to match schema)
+            response = get_supabase_client().table('data_packs').select('*').eq('user_id', user_id).eq('status', DataPackStatus.ACTIVE.value).execute()
+            packs = response.data if response.data else []
             
             if packs:
                 # Use the first active pack (you could implement more sophisticated logic)
@@ -154,24 +158,23 @@ class MonitoringService:
                 # Only update if there's new usage
                 if data_used_mb > current_used:
                     new_usage = data_used_mb - current_used
-                    new_remaining = pack.get('remaining_data_mb', 0) - new_usage
+                    new_remaining = max(0, pack.get('data_mb', 0) - pack.get('used_data_mb', 0)) - new_usage
                     
-                    await supabase_client.update_data_pack_usage(
-                        pack['id'],
-                        data_used_mb,
-                        max(0, new_remaining),
-                        DataPackStatus.EXHAUSTED.value if new_remaining <= 0 else DataPackStatus.ACTIVE.value
-                    )
+                    # Update data pack usage directly
+                    get_supabase_client().table('data_packs').update({
+                        'used_data_mb': data_used_mb,
+                        'status': DataPackStatus.EXHAUSTED.value if new_remaining <= 0 else DataPackStatus.ACTIVE.value
+                    }).eq('id', pack['id']).execute()
                     
-                    # Log the usage
-                    await supabase_client.log_data_usage(
-                        user_id,
-                        pack['id'],
-                        new_usage,
-                        session_duration=usage_data.get('session_duration'),
-                        location=usage_data.get('location'),
-                        device_info=f"eSIM {esim.get('iccid')}"
-                    )
+                    # Log the usage directly
+                    get_supabase_client().table('usage_logs').insert({
+                        'user_id': user_id,
+                        'data_pack_id': pack['id'],
+                        'data_used_mb': new_usage,
+                        'usage_type': 'esim_data_usage',
+                        'device_info': {'esim_iccid': esim.get('iccid')},
+                        'created_at': datetime.utcnow().isoformat()
+                    }).execute()
                     
         except Exception as e:
             logger.error(f"Error updating eSIM data usage: {e}")
@@ -225,7 +228,9 @@ class MonitoringService:
         """Sync provider data for a specific user"""
         try:
             # Get user's active eSIMs
-            user_esims = await supabase_client.get_user_esims(user_id)
+            # Get user eSIMs directly
+            response = get_supabase_client().table('esims').select('*').eq('user_id', user_id).execute()
+            user_esims = response.data if response.data else []
             active_esims = [esim for esim in user_esims if esim['status'] == ESIMStatus.ACTIVE.value]
             
             for esim in active_esims:
