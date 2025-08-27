@@ -378,11 +378,10 @@ async def generate_esim(
                 "id": str(uuid.uuid4()),
                 "user_id": current_user_id,
                 "name": f"KSWiFi Data Pack - {request.data_pack_size_mb}MB",
-                "total_data_mb": float(request.data_pack_size_mb),
-                "used_data_mb": 0.0,
-                "remaining_data_mb": float(request.data_pack_size_mb),
-                "price": 0.0,  # Free for downloaded sessions
-                "currency": "NGN",
+                "data_mb": int(request.data_pack_size_mb),  # Use data_mb instead of total_data_mb
+                "used_data_mb": 0,
+                # remaining_data_mb is GENERATED - don't include it
+                "price_ngn": 0,  # Free for downloaded sessions
                 "status": "active",
                 "created_at": datetime.utcnow().isoformat(),
                 "updated_at": datetime.utcnow().isoformat()

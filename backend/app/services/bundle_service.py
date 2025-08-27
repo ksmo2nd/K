@@ -116,13 +116,11 @@ class BundleService:
             pack_data = {
                 'user_id': user_id,
                 'name': pack_name,
-                'total_data_mb': total_data_mb,
+                'data_mb': total_data_mb,  # Use data_mb instead of total_data_mb
                 'used_data_mb': 0,
-                'remaining_data_mb': remaining_data_mb,
-                'price': price_ngn if currency == 'NGN' else price_usd,
+                # remaining_data_mb is GENERATED - don't include it
                 'price_ngn': price_ngn,
-                'currency': currency,
-                'plan_type': plan_type,
+                'price_usd': price_usd,
                 'status': DataPackStatus.ACTIVE.value,
                 'is_active': False,  # Purchased but not activated yet
                 'expires_at': expires_at.isoformat()
@@ -239,7 +237,7 @@ class BundleService:
                 # Update in database
                 update_data = {
                     'used_data_mb': new_used,
-                    'remaining_data_mb': new_remaining,
+                    # remaining_data_mb is GENERATED - don't update it
                     'status': new_status
                 }
                 supabase.table('data_packs').update(update_data).eq('id', pack['id']).execute()
