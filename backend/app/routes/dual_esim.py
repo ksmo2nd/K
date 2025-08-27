@@ -191,30 +191,75 @@ async def generate_esim_options(
 ):
     """Generate eSIM options (public WiFi + private osmo if password provided)"""
     try:
-        print(f"🔄 DUAL eSIM API: Request received")
-        print(f"🔄 DUAL eSIM API: User ID: {user_id}")
-        print(f"🔄 DUAL eSIM API: Request data: {request.dict()}")
+        print(f"🔄 POST DUAL eSIM: Request received")
+        print(f"🔄 POST DUAL eSIM: User ID: {user_id}")
+        print(f"🔄 POST DUAL eSIM: Request data: {request.dict()}")
         
-        options = await dual_esim_service.generate_esim_options(
-            user_id=user_id,
-            session_id=request.session_id,
-            bundle_size_mb=request.bundle_size_mb,
-            access_password=request.access_password
-        )
+        # Use the same logic as the GET test endpoint
+        session_id = request.session_id
+        bundle_size_mb = request.bundle_size_mb
+        access_password = request.access_password
         
-        print(f"✅ DUAL eSIM API: Options generated successfully")
+        # Generate SM-DP+ compatible activation code
+        activation_code = f"LPA:1$kswifi.onrender.com${session_id}"
+        
+        # Create iPhone-compatible response
+        esim_data = {
+            "public_wifi": {
+                "type": "public_wifi",
+                "activation_code": activation_code,
+                "matching_id": session_id,
+                "qr_code": activation_code,  # iPhone scans this
+                "instructions": [
+                    "Open iPhone Settings",
+                    "Go to Cellular > Add Cellular Plan", 
+                    "Scan the QR code below",
+                    "Follow iPhone setup prompts"
+                ],
+                "access_method": "Public WiFi Portal"
+            }
+        }
+        
+        # Add private eSIM if password provided
+        if access_password == "OLAmilekan@$112":
+            private_activation = f"LPA:1$kswifi.onrender.com$private_{session_id}"
+            esim_data["private_osmo"] = {
+                "type": "private_osmo",
+                "activation_code": private_activation,
+                "matching_id": f"private_{session_id}",
+                "qr_code": private_activation,
+                "instructions": [
+                    "Open iPhone Settings",
+                    "Go to Cellular > Add Cellular Plan",
+                    "Scan the private QR code below", 
+                    "Enjoy premium network access"
+                ],
+                "access_method": "Private Network (Password Protected)"
+            }
+        
+        summary = {
+            "total_options": len(esim_data),
+            "session_id": session_id,
+            "bundle_size_mb": bundle_size_mb,
+            "status": "ready_for_activation"
+        }
+        
+        print(f"✅ POST DUAL eSIM: Generated {len(esim_data)} options")
         
         return {
             "success": True,
-            "data": options,
-            "message": f"Generated {options['summary']['total_options']} eSIM options"
+            "data": {
+                "options": esim_data,
+                "summary": summary
+            },
+            "message": f"Generated {len(esim_data)} eSIM activation options"
         }
         
     except Exception as e:
-        print(f"❌ DUAL eSIM API ERROR: {str(e)}")
-        print(f"❌ DUAL eSIM API ERROR TYPE: {type(e).__name__}")
+        print(f"❌ POST DUAL eSIM ERROR: {str(e)}")
+        print(f"❌ POST DUAL eSIM ERROR TYPE: {type(e).__name__}")
         import traceback
-        print(f"❌ DUAL eSIM API TRACEBACK: {traceback.format_exc()}")
+        print(f"❌ POST DUAL eSIM TRACEBACK: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
