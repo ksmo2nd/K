@@ -233,6 +233,12 @@ export default function KSWiFiApp() {
       
       // Generate dual eSIM options
       console.log('🔍 DUAL eSIM DEBUG: Generating options with password:', !!password)
+      console.log('🔍 DUAL eSIM DEBUG: Request data:', {
+        session_id: session.id,
+        bundle_size_mb: session.data_mb,
+        has_password: !!password
+      })
+      
       const result = await apiService.generateDualESIMOptions(
         session.id, 
         session.data_mb, 
@@ -240,6 +246,8 @@ export default function KSWiFiApp() {
       )
       
       console.log('✅ DUAL eSIM DEBUG: Options generated:', result)
+      console.log('✅ DUAL eSIM DEBUG: Result type:', typeof result)
+      console.log('✅ DUAL eSIM DEBUG: Result keys:', Object.keys(result || {}))
       
       // Show dual eSIM popup
       setDualESIMData(result)
@@ -247,7 +255,23 @@ export default function KSWiFiApp() {
       
     } catch (error: any) {
       console.error('❌ DUAL eSIM ERROR:', error)
-      showNotification("warning", "eSIM Setup Failed", error.message || "Failed to generate eSIM options")
+      console.error('❌ DUAL eSIM ERROR DETAILS:', JSON.stringify(error, null, 2))
+      
+      let errorMessage = "Failed to generate eSIM options"
+      
+      if (error?.message) {
+        errorMessage = error.message
+      } else if (error?.detail) {
+        errorMessage = error.detail
+      } else if (typeof error === 'string') {
+        errorMessage = error
+      } else if (error?.response?.data?.detail) {
+        errorMessage = error.response.data.detail
+      } else if (error?.data?.message) {
+        errorMessage = error.data.message
+      }
+      
+      showNotification("warning", "eSIM Setup Failed", errorMessage)
     }
   }
 
