@@ -402,16 +402,24 @@ async def generate_esim(
             "activation_code": activation_code,
             "qr_code_data": lpa_string,
             "qr_code_image": qr_image_base64,
+            "bundle_size_mb": int(request.data_pack_size_mb),
+            "status": "provisioned",
             "data_pack_id": data_pack_id,
             "profile_data": esim_profile_data,
-            "installation_instructions": [
-                "1. Open Settings on your device",
-                "2. Go to Cellular/Mobile Data",
-                "3. Tap 'Add eSIM'",
-                "4. Scan the QR code or enter activation code",
-                "5. Follow device prompts to install",
-                "6. KSWiFi network will appear in your carrier list"
-            ],
+            "manual_setup": {
+                "activation_code": activation_code,
+                "apn": "kswifi.data",
+                "username": "",
+                "password": "",
+                "instructions": [
+                    "1. Open Settings on your device",
+                    "2. Go to Cellular/Mobile Data",
+                    "3. Tap 'Add eSIM'",
+                    "4. Scan the QR code or enter activation code",
+                    "5. Follow device prompts to install",
+                    "6. KSWiFi network will appear in your carrier list"
+                ]
+            },
             "message": "eSIM profile generated successfully. Scan QR code to install on your device."
         }
         
