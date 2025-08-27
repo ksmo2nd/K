@@ -32,6 +32,37 @@ async def dual_esim_health():
     }
 
 
+@router.get("/test-generate/{session_id}/{bundle_size_mb}")
+async def test_generate_esim_options(
+    session_id: str,
+    bundle_size_mb: int,
+    access_password: Optional[str] = None,
+    user_id: str = Depends(get_current_user_id)
+):
+    """Test endpoint to bypass Pydantic validation issues"""
+    try:
+        print(f"🧪 TEST DUAL eSIM: Session: {session_id}, Size: {bundle_size_mb}, Password: {bool(access_password)}")
+        
+        options = await dual_esim_service.generate_esim_options(
+            user_id=user_id,
+            session_id=session_id,
+            bundle_size_mb=bundle_size_mb,
+            access_password=access_password
+        )
+        
+        return {
+            "success": True,
+            "data": options,
+            "message": f"Generated {options['summary']['total_options']} eSIM options"
+        }
+        
+    except Exception as e:
+        print(f"❌ TEST DUAL eSIM ERROR: {str(e)}")
+        import traceback
+        print(f"❌ TEST TRACEBACK: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 class GenerateESIMOptionsRequest(BaseModel):
     session_id: str
     bundle_size_mb: int

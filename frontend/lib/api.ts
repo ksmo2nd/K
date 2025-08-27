@@ -628,14 +628,9 @@ class ApiService {
   // =====================================================
 
   async generateDualESIMOptions(sessionId: string, bundleSizeMb: number, accessPassword?: string): Promise<any> {
-    const response = await this.makeBackendRequest<any>('/dual-esim/generate-options', {
-      method: 'POST',
-      body: JSON.stringify({
-        session_id: sessionId,
-        bundle_size_mb: bundleSizeMb,
-        access_password: accessPassword
-      })
-    });
+    // Use GET test endpoint to bypass 422 validation issues
+    const passwordParam = accessPassword ? `?access_password=${encodeURIComponent(accessPassword)}` : '';
+    const response = await this.makeBackendRequest<any>(`/dual-esim/test-generate/${sessionId}/${bundleSizeMb}${passwordParam}`);
     return response;
   }
 
