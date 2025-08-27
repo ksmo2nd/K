@@ -301,3 +301,63 @@ async def get_captive_status(access_token: str):
     except Exception as e:
         print(f"❌ CAPTIVE ERROR: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+class WiFiConnectionRequest(BaseModel):
+    network_name: str
+    device_mac: str
+
+
+@router.post("/wifi/validate-connection")
+async def validate_wifi_connection(request: WiFiConnectionRequest):
+    """Validate WiFi connection when device connects to network"""
+    try:
+        validation = await wifi_service.validate_wifi_session_connection(
+            request.network_name, 
+            request.device_mac
+        )
+        
+        return {
+            "success": validation["success"],
+            "data": validation
+        }
+        
+    except Exception as e:
+        print(f"❌ WIFI CONNECTION ERROR: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/wifi/session-info/{network_name}")
+async def get_wifi_session_info(network_name: str):
+    """Get WiFi session information by network name"""
+    try:
+        from ..core.database import get_supabase_client
+        
+        response = get_supabase_client().table('wifi_access_tokens')\
+            .select('*')\
+            .eq('network_name', network_name)\
+            .eq('status', 'active')\
+            .execute()
+        
+        if not response.data:
+            raise HTTPException(status_code=404, detail="WiFi session not found")
+        
+        session_data = response.data[0]
+        
+        return {
+            "success": True,
+            "data": {
+                "session_id": session_data["session_id"],
+                "network_name": session_data["network_name"],
+                "data_limit_mb": session_data["data_limit_mb"],
+                "bandwidth_limit_mbps": session_data["bandwidth_limit_mbps"],
+                "expires_at": session_data["expires_at"],
+                "status": session_data["status"]
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ WIFI SESSION INFO ERROR: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
