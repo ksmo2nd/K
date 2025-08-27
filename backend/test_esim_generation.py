@@ -25,7 +25,7 @@ async def test_esim_generation():
         # Test 2: Create service
         print("\n2️⃣ Creating eSIM service...")
         esim_service = ESIMService()
-        print(f"✅ Service created, external provider: {esim_service.has_external_provider}")
+        print(f"✅ Service created, using KSWiFi inbuilt eSIM generation")
         
         # Test 3: Test database connection
         print("\n3️⃣ Testing database connection...")

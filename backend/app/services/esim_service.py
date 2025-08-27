@@ -176,14 +176,14 @@ class ESIMService:
                 ]
             }
             
-            if not self.has_external_provider:
-                manual_setup['network_info'] = {
-                    'provider': 'KSWiFi Network',
-                    'type': 'Internet Data Plan',
-                    'coverage': 'Global Internet Access',
-                    'bundle_size_mb': bundle_size_mb,
-                    'gateway': network_config['gateway']
-                }
+            # KSWiFi inbuilt eSIM network info
+            manual_setup['network_info'] = {
+                'provider': 'KSWiFi Network',
+                'type': 'Internet Data Plan',
+                'coverage': 'Global Internet Access',
+                'bundle_size_mb': bundle_size_mb,
+                'gateway': network_config['gateway']
+            }
             
             print(f"🔍 ESIM DEBUG: Preparing final response...")
             result = {
@@ -220,14 +220,13 @@ class ESIMService:
             
             esim = esim_response.data[0]
             
-            # For inbuilt eSIMs, just update status (no external API call needed)
-            if not self.has_external_provider:
-                # Update eSIM status in database
-                get_supabase_client().table('esims').update({
-                    'status': ESIMStatus.ACTIVE.value
-                }).eq('id', esim_id).execute()
-                
-                return {
+            # KSWiFi inbuilt eSIMs - update status in database
+            # Update eSIM status in database
+            get_supabase_client().table('esims').update({
+                'status': ESIMStatus.ACTIVE.value
+            }).eq('id', esim_id).execute()
+            
+            return {
                     'status': 'activated',
                     'message': 'eSIM activated successfully - Internet browsing enabled',
                     'activation_code': esim['activation_code'],
@@ -248,28 +247,6 @@ class ESIMService:
                         'Start browsing immediately'
                     ]
                 }
-            else:
-                # External provider activation
-                activation_data = {
-                    'iccid': esim['iccid'],
-                    'activation_code': esim['activation_code']
-                }
-                
-                provider_response = await self._make_api_request(
-                    'POST',
-                    f"esims/{esim['iccid']}/activate",
-                    activation_data
-                )
-                
-                # Update eSIM status in database
-                get_supabase_client().table('esims').update({
-                    'status': ESIMStatus.ACTIVE.value
-                }).eq('id', esim_id).execute()
-                
-                return {
-                    'status': 'activated',
-                    'provider_response': provider_response
-                }
             
         except Exception as e:
             raise Exception(f"Failed to activate eSIM: {str(e)}")
@@ -284,13 +261,7 @@ class ESIMService:
             
             esim = esim_response.data[0]
             
-            # Call provider API to suspend
-            provider_response = await self._make_api_request(
-                'POST',
-                f"esims/{esim['iccid']}/suspend"
-            )
-            
-            # Update status in database
+            # KSWiFi inbuilt eSIM - update status in database
             supabase = get_supabase_client()
             supabase.table('esims').update({
                 'status': ESIMStatus.SUSPENDED.value
@@ -298,7 +269,8 @@ class ESIMService:
             
             return {
                 'status': 'suspended',
-                'provider_response': provider_response
+                'message': 'eSIM suspended successfully',
+                'esim_id': esim_id
             }
             
         except Exception as e:
@@ -314,83 +286,67 @@ class ESIMService:
             
             esim = esim_response.data[0]
             
-            if not self.has_external_provider:
-                # For inbuilt eSIMs, get usage from our database/monitoring
-                # Check for session usage records
-                usage_response = get_supabase_client().table('data_usage')\
-                    .select('*')\
-                    .eq('esim_id', esim_id)\
+            # KSWiFi inbuilt eSIMs - get usage from our database/monitoring
+            # Check for session usage records
+            usage_response = get_supabase_client().table('data_usage')\
+                .select('*')\
+                .eq('esim_id', esim_id)\
+                .order('created_at', desc=True)\
+                .limit(1)\
+                .execute()
+            
+            if usage_response.data:
+                latest_usage = usage_response.data[0]
+                data_used_mb = latest_usage.get('data_used_mb', 0)
+                last_updated = latest_usage.get('created_at')
+            else:
+                data_used_mb = 0
+                last_updated = datetime.utcnow().isoformat()
+            
+            # Get bundle size from associated data pack
+            try:
+                pack_response = get_supabase_client().table('data_packs')\
+                    .select('total_data_mb, used_data_mb, remaining_data_mb')\
+                    .eq('user_id', esim['user_id'])\
+                    .eq('status', 'active')\
                     .order('created_at', desc=True)\
                     .limit(1)\
                     .execute()
-                
-                if usage_response.data:
-                    latest_usage = usage_response.data[0]
-                    data_used_mb = latest_usage.get('data_used_mb', 0)
-                    last_updated = latest_usage.get('created_at')
-                else:
-                    data_used_mb = 0
-                    last_updated = datetime.utcnow().isoformat()
-                
-                # Get bundle size from associated data pack
+            except Exception as db_error:
+                # Fallback if remaining_data_mb column doesn't exist
                 try:
                     pack_response = get_supabase_client().table('data_packs')\
-                        .select('total_data_mb, used_data_mb, remaining_data_mb')\
+                        .select('total_data_mb, used_data_mb')\
                         .eq('user_id', esim['user_id'])\
                         .eq('status', 'active')\
                         .order('created_at', desc=True)\
                         .limit(1)\
                         .execute()
-                except Exception as db_error:
-                    # Fallback if remaining_data_mb column doesn't exist
-                    try:
-                        pack_response = get_supabase_client().table('data_packs')\
-                            .select('total_data_mb, used_data_mb')\
-                            .eq('user_id', esim['user_id'])\
-                            .eq('status', 'active')\
-                            .order('created_at', desc=True)\
-                            .limit(1)\
-                            .execute()
-                    except Exception:
-                        pack_response = type('obj', (object,), {'data': []})()
-                
-                total_data_mb = 0
-                remaining_data_mb = 0
-                if pack_response.data:
-                    pack = pack_response.data[0]
-                    total_data_mb = pack.get('total_data_mb', 0)
-                    # Calculate remaining_data_mb if not present
-                    if 'remaining_data_mb' in pack and pack['remaining_data_mb'] is not None:
-                        remaining_data_mb = pack['remaining_data_mb']
-                    else:
-                        # Fallback calculation
-                        used_mb = pack.get('used_data_mb', 0)
-                        remaining_data_mb = max(0, total_data_mb - used_mb)
-                
-                return {
-                    'iccid': esim['iccid'],
-                    'data_used_mb': data_used_mb,
-                    'data_remaining_mb': remaining_data_mb,
-                    'total_data_mb': total_data_mb,
-                    'last_updated': last_updated,
-                    'status': esim['status'],
-                    'is_inbuilt': True
-                }
-            else:
-                # Get usage from external provider
-                usage_response = await self._make_api_request(
-                    'GET',
-                    f"esims/{esim['iccid']}/usage"
-                )
-                
-                return {
-                    'iccid': esim['iccid'],
-                    'data_used_mb': usage_response.get('data_used_mb', 0),
-                    'last_updated': usage_response.get('last_updated'),
-                    'session_duration': usage_response.get('session_duration'),
-                    'location': usage_response.get('location'),
-                    'is_inbuilt': False
-                }
+                except Exception:
+                    pack_response = type('obj', (object,), {'data': []})()
+            
+            total_data_mb = 0
+            remaining_data_mb = 0
+            if pack_response.data:
+                pack = pack_response.data[0]
+                total_data_mb = pack.get('total_data_mb', 0)
+                # Calculate remaining_data_mb if not present
+                if 'remaining_data_mb' in pack and pack['remaining_data_mb'] is not None:
+                    remaining_data_mb = pack['remaining_data_mb']
+                else:
+                    # Fallback calculation
+                    used_mb = pack.get('used_data_mb', 0)
+                    remaining_data_mb = max(0, total_data_mb - used_mb)
+            
+            return {
+                'iccid': esim['iccid'],
+                'data_used_mb': data_used_mb,
+                'data_remaining_mb': remaining_data_mb,
+                'total_data_mb': total_data_mb,
+                'last_updated': last_updated,
+                'status': esim['status'],
+                'is_inbuilt': True
+            }
             
         except Exception as e:
             raise Exception(f"Failed to get eSIM usage: {str(e)}")
@@ -408,30 +364,20 @@ class ESIMService:
             # Check if eSIM is active
             is_active = esim['status'] == ESIMStatus.ACTIVE.value
             
-            # For inbuilt eSIMs, connectivity is ready when active
-            if not self.has_external_provider:
-                return {
-                    'esim_id': esim_id,
-                    'internet_ready': is_active,
-                    'connectivity_status': 'ready' if is_active else 'inactive',
-                    'apn_configured': True,
-                    'data_connection': 'available' if is_active else 'unavailable',
-                    'browsing_enabled': is_active,
-                    'network_type': 'LTE/5G',
-                    'connection_details': {
-                        'apn': esim['apn'],
-                        'iccid': esim['iccid']
-                    }
+            # KSWiFi inbuilt eSIMs - connectivity is ready when active
+            return {
+                'esim_id': esim_id,
+                'internet_ready': is_active,
+                'connectivity_status': 'ready' if is_active else 'inactive',
+                'apn_configured': True,
+                'data_connection': 'available' if is_active else 'unavailable',
+                'browsing_enabled': is_active,
+                'network_type': 'LTE/5G',
+                'connection_details': {
+                    'apn': esim['apn'],
+                    'iccid': esim['iccid']
                 }
-            else:
-                # For external providers, we might need to check with the provider
-                # For now, assume ready if active
-                return {
-                    'esim_id': esim_id,
-                    'internet_ready': is_active,
-                    'connectivity_status': 'ready' if is_active else 'inactive',
-                    'browsing_enabled': is_active
-                }
+            }
                 
         except Exception as e:
             raise Exception(f"Failed to check internet connectivity: {str(e)}")
