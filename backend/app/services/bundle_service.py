@@ -320,10 +320,20 @@ class BundleService:
                 raise Exception("Data pack has expired")
             
             # Use database function to activate pack
-            if esim_id:
-                get_supabase_client().rpc('activate_data_pack', {'pack_id': pack_id, 'esim_id': esim_id}).execute()
-            else:
-                get_supabase_client().rpc('activate_data_pack', {'pack_id': pack_id}).execute()
+            print(f"🔍 ACTIVATION DEBUG: Activating pack {pack_id} for user {user_id}")
+            print(f"🔍 ACTIVATION DEBUG: eSIM ID: {esim_id}")
+            
+            try:
+                if esim_id:
+                    result = get_supabase_client().rpc('activate_data_pack', {'pack_id': pack_id, 'esim_id': esim_id}).execute()
+                else:
+                    result = get_supabase_client().rpc('activate_data_pack', {'pack_id': pack_id}).execute()
+                
+                print(f"🔍 ACTIVATION DEBUG: RPC result: {result}")
+                
+            except Exception as rpc_error:
+                print(f"❌ ACTIVATION ERROR: RPC function failed: {str(rpc_error)}")
+                raise Exception(f"Database activation failed: {str(rpc_error)}")
             
             return {
                 'success': True,
