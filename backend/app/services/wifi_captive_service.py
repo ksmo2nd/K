@@ -39,9 +39,10 @@ class WiFiCaptiveService:
             # Generate QR code data (direct WiFi connection with encrypted password)
             wifi_qr_data = self._generate_wifi_qr_data(access_token)
             
-            # Extract WiFi credentials from QR data
-            wifi_password = self._generate_session_wifi_password(access_token)
-            session_network_name = f"KSWiFi_Global_{access_token[-8:]}"
+            # Use REAL WiFi password from settings
+            wifi_password = settings.WIFI_PASSWORD
+            # Use the REAL network name from settings
+            session_network_name = settings.WIFI_SSID
             
             # Create token record with WiFi credentials
             token_record = {
@@ -80,8 +81,8 @@ class WiFiCaptiveService:
                 "captive_portal_url": captive_portal_url,
                 "wifi_qr_data": wifi_qr_data,
                 "network_name": session_network_name,
-                "wifi_password": wifi_password,  # Encrypted in QR, visible for debugging
-                "wifi_security": "WPA2",
+                "wifi_password": wifi_password,  # Real WiFi password from settings
+                "wifi_security": settings.WIFI_SECURITY,
                 "data_limit_mb": data_limit_mb,
                 "time_limit_minutes": None,  # No time limit
                 "auto_disconnect": False,
@@ -95,29 +96,36 @@ class WiFiCaptiveService:
             raise Exception(f"Failed to create WiFi access token: {str(e)}")
     
     def _generate_wifi_qr_data(self, access_token: str) -> str:
-        """Generate WiFi QR code data with encrypted password for direct connection"""
+        """Generate WiFi QR code data with REAL network credentials for direct connection"""
         
-        # Generate unique, secure WiFi password for this session
-        wifi_password = self._generate_session_wifi_password(access_token)
+        # Use REAL WiFi network credentials from settings
+        real_ssid = settings.WIFI_SSID  # e.g., "KSWiFi_Public"
+        real_password = settings.WIFI_PASSWORD  # e.g., "KSWiFi2024"
+        security_type = settings.WIFI_SECURITY  # e.g., "WPA2"
         
-        # Create unique WiFi network name with session identifier
-        session_network_name = f"KSWiFi_Global_{access_token[-8:]}"
+        # Convert security type for QR format
+        qr_security = "WPA" if security_type in ["WPA2", "WPA3"] else security_type
+        if security_type == "nopass":
+            qr_security = "nopass"
         
         wifi_config = {
-            "type": "wifi_secure",
-            "network": session_network_name,
-            "security": "WPA2",  # Secure network with encrypted password
-            "password": wifi_password,
+            "type": "wifi_real",
+            "network": real_ssid,
+            "security": security_type,
+            "password": real_password,
             "portal_url": f"https://{self.captive_portal_domain}/connect?token={access_token}",
             "token": access_token,
             "auto_connect": True
         }
         
-        # Standard WiFi QR format with WPA2 security and encrypted password
+        # Standard WiFi QR format with REAL network credentials
         # Format: WIFI:T:WPA;S:network_name;P:password;H:false;;
-        wifi_qr_string = f"WIFI:T:WPA;S:{session_network_name};P:{wifi_password};H:false;;"
+        if security_type == "nopass":
+            wifi_qr_string = f"WIFI:T:nopass;S:{real_ssid};;"
+        else:
+            wifi_qr_string = f"WIFI:T:{qr_security};S:{real_ssid};P:{real_password};H:false;;"
         
-        print(f"🔐 WIFI QR: Generated secure WiFi QR for network {session_network_name}")
+        print(f"🔐 WIFI QR: Generated REAL WiFi QR for network '{real_ssid}' with {security_type} security")
         
         return wifi_qr_string
     

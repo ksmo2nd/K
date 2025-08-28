@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     # Backend URL for eSIM configuration
     BACKEND_URL: Optional[str] = Field(default=None, description="Backend URL for eSIM network configuration (e.g., https://kswifi.onrender.com)")
     
+    # WiFi Network Configuration - SET THESE TO YOUR ACTUAL WIFI NETWORK
+    WIFI_SSID: str = Field(default="KSWiFi_Public", description="Real WiFi network SSID that server controls")
+    WIFI_PASSWORD: str = Field(default="KSWiFi2024", description="Real WiFi network password")
+    WIFI_SECURITY: str = Field(default="WPA2", description="WiFi security type (WPA2, WPA3, WEP, or nopass)")
+    
     # Supabase Configuration - PUT YOUR REAL SUPABASE CREDENTIALS HERE
     SUPABASE_URL: str = Field(..., description="Supabase project URL - Get from https://supabase.com/dashboard")
     SUPABASE_KEY: str = Field(..., description="Supabase service role key - Get from project settings")
