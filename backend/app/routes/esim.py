@@ -323,22 +323,25 @@ async def generate_esim(
             # Return in eSIM format for frontend compatibility
             return {
                 "success": True,
-                "data": {
-                    "esim_id": result["token_id"],
-                    "qr_code": qr_image,  # This is the actual WiFi QR code
-                    "qr_data": result["wifi_qr_data"],
-                    "network_name": result["network_name"],
-                    "wifi_security": result["wifi_security"],
-                    "activation_instructions": [
+                "esim_id": result["token_id"],
+                "session_id": request.session_id,
+                "qr_code_image": qr_image,  # Frontend expects this field name
+                "activation_code": result["wifi_qr_data"],  # WiFi QR data as activation code
+                "bundle_size_mb": request.data_pack_size_mb,
+                "status": "ready_for_activation",
+                "manual_setup": {
+                    "activation_code": result["wifi_qr_data"],
+                    "apn": result["network_name"],
+                    "username": "",
+                    "password": "",
+                    "instructions": [
                         "1. Scan this QR code with your device camera",
                         "2. Your device will automatically connect to WiFi",
                         "3. Start browsing the internet immediately",
                         "4. No additional setup required"
-                    ],
-                    "session_id": request.session_id,
-                    "data_limit_mb": request.data_pack_size_mb,
-                    "access_type": "wifi_qr"
-                }
+                    ]
+                },
+                "message": f"WiFi QR code generated! Network: {result['network_name']}"
             }
         else:
             raise Exception("Failed to generate WiFi QR code")
