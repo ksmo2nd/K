@@ -64,13 +64,24 @@ class WiFiCaptiveService:
                 "expires_at": (datetime.utcnow() + timedelta(days=30)).isoformat()  # 30-day expiry
             }
             
-            # Store in database
-            response = get_supabase_client().table('wifi_access_tokens').insert(token_record).execute()
+            # Store in database with detailed error handling
+            print(f"🔍 DB DEBUG: Attempting to insert token_record: {token_record}")
             
-            if not response.data:
-                raise Exception("Failed to create WiFi access token")
-            
-            stored_token = response.data[0]
+            try:
+                response = get_supabase_client().table('wifi_access_tokens').insert(token_record).execute()
+                print(f"🔍 DB DEBUG: Insert response: {response}")
+                
+                if not response.data:
+                    print(f"❌ DB ERROR: No data returned from insert. Response: {response}")
+                    raise Exception("Failed to create WiFi access token - no data returned")
+                
+                stored_token = response.data[0]
+                print(f"🔍 DB DEBUG: Token stored successfully with ID: {stored_token['id']}")
+                
+            except Exception as db_error:
+                print(f"❌ DB ERROR: Database insertion failed: {str(db_error)}")
+                print(f"❌ DB ERROR: Token record was: {token_record}")
+                raise Exception(f"Database error: {str(db_error)}")
             
             print(f"🌐 WIFI DEBUG: Token created with ID: {stored_token['id']}")
             
@@ -126,6 +137,7 @@ class WiFiCaptiveService:
             wifi_qr_string = f"WIFI:T:{qr_security};S:{real_ssid};P:{real_password};H:false;;"
         
         print(f"🔐 WIFI QR: Generated REAL WiFi QR for network '{real_ssid}' with {security_type} security")
+        print(f"🔐 WIFI QR DATA: {wifi_qr_string}")
         
         return wifi_qr_string
     
