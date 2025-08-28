@@ -311,7 +311,7 @@ async def generate_esim(
         result = await wifi_service.create_wifi_access_token(
             user_id=current_user_id,
             session_id=request.session_id,
-            data_limit_mb=request.data_pack_size_mb
+            data_limit_mb=request.bundle_size_mb
         )
         
         if result["success"]:
@@ -336,7 +336,7 @@ async def generate_esim(
                         "4. No additional setup required"
                     ],
                     "session_id": request.session_id,
-                    "data_limit_mb": request.data_pack_size_mb,
+                    "data_limit_mb": request.bundle_size_mb,
                     "access_type": "wifi_qr"
                 }
             }
@@ -346,3 +346,137 @@ async def generate_esim(
     except Exception as e:
         print(f"❌ ESIM->WIFI QR ERROR: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# Old eSIM code removed - now using WiFi QR system
+        esim_id = str(uuid.uuid4())
+        
+        # Generate ICCID (Integrated Circuit Card Identifier) - 19-20 digits
+        # Format: 89 (telecom) + 999 (KSWiFi country code) + 99 (issuer) + 12-digit serial + check digit
+        iccid_base = f"89999991{secrets.randbelow(10**12):012d}"
+        # Simple Luhn check digit calculation
+        iccid = iccid_base + str(_calculate_luhn_check_digit(iccid_base))
+        
+        # Generate IMSI (International Mobile Subscriber Identity) - 15 digits
+        # Format: MCC (999) + MNC (99) + MSIN (10 digits) for KSWiFi virtual network
+        imsi = f"99999{secrets.randbelow(10**10):010d}"
+        
+        # Generate activation code (32-character unique identifier)
+        activation_code = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(32))
+        
+        # Create eSIM profile data (LPA format for installable eSIM)
+        # This is a simplified profile that mobile OS can recognize as a valid eSIM
+        esim_profile_data = {
+            "eid": f"89999{secrets.randbelow(10**27):027d}",  # eUICC Identifier
+            "iccid": iccid,
+            "imsi": imsi,
+            "msisdn": None,  # NULL phone number as requested
+            "carrier_name": request.carrier_name,
+            "carrier_plmn": request.carrier_plmn,
+            "apn": "kswifi.data",
+            "authentication": "none",
+            "profile_name": f"KSWiFi Data Pack",
+            "profile_nickname": f"KSWiFi-{activation_code[:8]}",
+            "activation_code": activation_code,
+            "network_access_domain": "kswifi.network"
+        }
+        
+        # Create LPA (Local Profile Assistant) format string for QR code
+        # This follows eSIM specification format that mobile devices can install
+        lpa_string = (
+            f"LPA:1${request.carrier_plmn}.kswifi.co$"
+            f"{activation_code}$"
+            f"{request.carrier_name}"
+        )
+        
+        # Generate QR code for eSIM installation
+        qr_image_base64 = esim_service._generate_qr_code(lpa_string)
+        
+        # Store eSIM profile in Supabase
+        esim_data = {
+            "id": esim_id,
+            "user_id": current_user_id,
+            "iccid": iccid,
+            "imsi": imsi,
+            "msisdn": None,  # NULL phone number
+            "activation_code": activation_code,
+            "qr_code_data": lpa_string,
+            "status": "pending",
+            "apn": "kswifi.data",
+            "username": None,
+            "password": None,
+            "created_at": datetime.utcnow().isoformat(),
+            "updated_at": datetime.utcnow().isoformat()
+        }
+        
+        # Insert eSIM into database
+        esim_response = get_supabase_client().table("esims").insert(esim_data).execute()
+        
+        if not esim_response.data:
+            raise HTTPException(status_code=500, detail="Failed to store eSIM profile")
+        
+        # If session_id provided, link it to a data pack
+        data_pack_id = None
+        if request.session_id:
+            # Create associated data pack for this eSIM
+            data_pack_data = {
+                "id": str(uuid.uuid4()),
+                "user_id": current_user_id,
+                "name": f"KSWiFi Data Pack - {request.data_pack_size_mb}MB",
+                "data_mb": int(request.data_pack_size_mb),  # Use data_mb instead of total_data_mb
+                "used_data_mb": 0,  # Matches schema
+                # remaining_data_mb is GENERATED - don't include it
+                "price_ngn": 0,  # Free for downloaded sessions
+                "status": "active",
+                "created_at": datetime.utcnow().isoformat(),
+                "updated_at": datetime.utcnow().isoformat()
+            }
+            
+            pack_response = get_supabase_client().table("data_packs").insert(data_pack_data).execute()
+            if pack_response.data:
+                data_pack_id = data_pack_data["id"]
+        
+        # Return eSIM profile and QR code for installation
+        return {
+            "success": True,
+            "esim_id": esim_id,
+            "iccid": iccid,
+            "imsi": imsi,
+            "carrier_name": request.carrier_name,
+            "carrier_plmn": request.carrier_plmn,
+            "activation_code": activation_code,
+            "qr_code_data": lpa_string,
+            "qr_code_image": qr_image_base64,
+            "bundle_size_mb": int(request.data_pack_size_mb),
+            "status": "provisioned",
+            "data_pack_id": data_pack_id,
+            "profile_data": esim_profile_data,
+            "manual_setup": {
+                "activation_code": activation_code,
+                "apn": "kswifi.data",
+                "username": "",
+                "password": "",
+                "instructions": [
+                    "1. Open Settings on your device",
+                    "2. Go to Cellular/Mobile Data",
+                    "3. Tap 'Add eSIM'",
+                    "4. Scan the QR code or enter activation code",
+                    "5. Follow device prompts to install",
+                    "6. KSWiFi network will appear in your carrier list"
+                ]
+            },
+            "message": "eSIM profile generated successfully. Scan QR code to install on your device."
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating eSIM: {str(e)}")
+
+
+def _calculate_luhn_check_digit(number_string: str) -> int:
+    """Calculate Luhn check digit for ICCID validation"""
+    digits = [int(d) for d in number_string]
+    for i in range(len(digits) - 1, -1, -2):
+        digits[i] *= 2
+        if digits[i] > 9:
+            digits[i] -= 9
+    return (10 - (sum(digits) % 10)) % 10
