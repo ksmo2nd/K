@@ -38,6 +38,21 @@ async def generate_wifi_qr(
 ):
     """Generate WiFi QR code with encrypted password for automatic connection"""
     try:
+        print(f"🔍 WIFI QR REQUEST: user_id={user_id}, session_id={request.session_id}, data_limit={request.data_limit_mb}")
+        
+        # Verify session exists and belongs to user
+        session_response = get_supabase_client().table('internet_sessions')\
+            .select('*')\
+            .eq('id', request.session_id)\
+            .eq('user_id', user_id)\
+            .execute()
+        
+        if not session_response.data:
+            raise HTTPException(status_code=404, detail="Session not found or access denied")
+        
+        session_data = session_response.data[0]
+        print(f"🔍 SESSION FOUND: status={session_data.get('status')}, data_mb={session_data.get('data_mb')}")
+        
         result = await wifi_service.create_wifi_access_token(
             user_id=user_id,
             session_id=request.session_id,
@@ -193,4 +208,62 @@ async def delete_wifi_session(
         raise
     except Exception as e:
         print(f"❌ DELETE SESSION ERROR: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/generate-qr-for-session/{session_id}")
+async def generate_qr_for_session(
+    session_id: str,
+    user_id: str = Depends(get_current_user_id)
+):
+    """Generate WiFi QR code for an existing active session"""
+    try:
+        print(f"🔍 GENERATE QR FOR SESSION: user_id={user_id}, session_id={session_id}")
+        
+        # Get session details
+        session_response = get_supabase_client().table('internet_sessions')\
+            .select('*')\
+            .eq('id', session_id)\
+            .eq('user_id', user_id)\
+            .execute()
+        
+        if not session_response.data:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        session = session_response.data[0]
+        data_mb = session.get('data_mb', 1024)
+        
+        print(f"🔍 SESSION DATA: status={session.get('status')}, data_mb={data_mb}")
+        
+        # Generate WiFi QR for this session
+        result = await wifi_service.create_wifi_access_token(
+            user_id=user_id,
+            session_id=session_id,
+            data_limit_mb=data_mb
+        )
+        
+        if result["success"]:
+            # Generate the actual QR code image
+            qr_image = wifi_service.generate_wifi_qr_code(result["wifi_qr_data"])
+            
+            return {
+                "success": True,
+                "data": {
+                    "qr_code_image": qr_image,
+                    "qr_code_data": result["wifi_qr_data"],
+                    "network_name": result["network_name"],
+                    "wifi_security": result["wifi_security"],
+                    "data_limit_mb": result["data_limit_mb"],
+                    "session_id": session_id,
+                    "session_status": session.get('status'),
+                    "message": f"WiFi QR generated for {session.get('status')} session"
+                }
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Failed to generate WiFi QR code")
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ GENERATE QR FOR SESSION ERROR: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

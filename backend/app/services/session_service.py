@@ -753,9 +753,10 @@ class SessionService:
                 else:
                     size_display = f"{data_mb}MB"
                 
-                # Determine if session can be activated (available but not already active)
+                # Determine if session can be activated for WiFi QR generation
                 status = session.get('status', 'downloading')
-                can_activate = status == 'available'  # Only available sessions, excludes active/downloading/etc
+                # Active sessions can generate WiFi QR codes, available sessions can be activated
+                can_activate = status in ['available', 'active']
                 
                 print(f"🔍 SESSION PROCESSING: status='{status}', can_activate={can_activate}")
                 
