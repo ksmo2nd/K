@@ -22,8 +22,8 @@ class Settings(BaseSettings):
     BACKEND_URL: Optional[str] = Field(default=None, description="Backend URL for eSIM network configuration (e.g., https://kswifi.onrender.com)")
     
     # WiFi Network Configuration - SET VIA ENVIRONMENT VARIABLES
-    WIFI_SSID: str = Field(..., description="Real WiFi network SSID that server controls")
-    WIFI_PASSWORD: str = Field(..., description="Real WiFi network password") 
+    WIFI_SSID: str = Field(default="KSWIFI", description="Real WiFi network SSID that server controls")
+    WIFI_PASSWORD: str = Field(default="OLAmilekan@$112", description="Real WiFi network password") 
     WIFI_SECURITY: str = Field(default="WPA2", description="WiFi security type (WPA2, WPA3, WEP, or nopass)")
     
     # Supabase Configuration - PUT YOUR REAL SUPABASE CREDENTIALS HERE

@@ -1,4 +1,4 @@
--- Complete WiFi Tables Migration - SAFE TO RUN
+-- Safe WiFi Tables Migration - Compatible with all PostgreSQL versions
 -- This will create all necessary tables for WiFi QR system
 -- Won't destroy existing tables
 
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS public.wifi_access_tokens (
     expires_at TIMESTAMP WITH TIME ZONE,
     used_at TIMESTAMP WITH TIME ZONE,
     
-    -- New WiFi-specific columns
+    -- WiFi-specific columns
     wifi_password TEXT,
     wifi_security TEXT DEFAULT 'WPA2' CHECK (wifi_security IN ('WPA2', 'WPA3', 'WEP', 'nopass')),
     auto_disconnect BOOLEAN DEFAULT false,
@@ -54,14 +54,20 @@ CREATE INDEX IF NOT EXISTS idx_wifi_device_connections_device_mac ON wifi_device
 ALTER TABLE public.wifi_access_tokens ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.wifi_device_connections ENABLE ROW LEVEL SECURITY;
 
--- 5. Create RLS policies
-CREATE POLICY IF NOT EXISTS "Users can manage their own WiFi tokens" ON public.wifi_access_tokens
+-- 5. Drop existing policies if they exist (safe approach)
+DROP POLICY IF EXISTS "Users can manage their own WiFi tokens" ON public.wifi_access_tokens;
+DROP POLICY IF EXISTS "Service role can manage all WiFi tokens" ON public.wifi_access_tokens;
+DROP POLICY IF EXISTS "Users can view their device connections" ON public.wifi_device_connections;
+DROP POLICY IF EXISTS "Service role can manage all device connections" ON public.wifi_device_connections;
+
+-- 6. Create RLS policies (without IF NOT EXISTS)
+CREATE POLICY "Users can manage their own WiFi tokens" ON public.wifi_access_tokens
     FOR ALL USING (auth.uid() = user_id);
 
-CREATE POLICY IF NOT EXISTS "Service role can manage all WiFi tokens" ON public.wifi_access_tokens
+CREATE POLICY "Service role can manage all WiFi tokens" ON public.wifi_access_tokens
     FOR ALL USING (true);
 
-CREATE POLICY IF NOT EXISTS "Users can view their device connections" ON public.wifi_device_connections
+CREATE POLICY "Users can view their device connections" ON public.wifi_device_connections
     FOR SELECT USING (
         EXISTS (
             SELECT 1 FROM wifi_access_tokens 
@@ -69,15 +75,18 @@ CREATE POLICY IF NOT EXISTS "Users can view their device connections" ON public.
         )
     );
 
-CREATE POLICY IF NOT EXISTS "Service role can manage all device connections" ON public.wifi_device_connections
+CREATE POLICY "Service role can manage all device connections" ON public.wifi_device_connections
     FOR ALL USING (true);
 
--- 6. Verify tables were created
+-- 7. Verify tables were created
 SELECT 
-    table_name,
-    column_name,
-    data_type,
-    is_nullable
+    'wifi_access_tokens' as table_name,
+    COUNT(*) as column_count
 FROM information_schema.columns 
-WHERE table_name IN ('wifi_access_tokens', 'wifi_device_connections')
-ORDER BY table_name, ordinal_position;
+WHERE table_name = 'wifi_access_tokens'
+UNION ALL
+SELECT 
+    'wifi_device_connections' as table_name,
+    COUNT(*) as column_count
+FROM information_schema.columns 
+WHERE table_name = 'wifi_device_connections';
