@@ -21,10 +21,17 @@ class Settings(BaseSettings):
     # Backend URL for eSIM configuration
     BACKEND_URL: Optional[str] = Field(default=None, description="Backend URL for eSIM network configuration (e.g., https://kswifi.onrender.com)")
     
-    # WiFi Network Configuration - SET VIA ENVIRONMENT VARIABLES
+    # WiFi Network Configuration - LEGACY (keeping for backward compatibility)
     WIFI_SSID: str = Field(default="KSWIFI", description="Real WiFi network SSID that server controls")
     WIFI_PASSWORD: str = Field(default="OLAmilekan@$112", description="Real WiFi network password") 
     WIFI_SECURITY: str = Field(default="WPA2", description="WiFi security type (WPA2, WPA3, WEP, or nopass)")
+    
+    # KSWiFi Connect VPN Configuration - SET VIA ENVIRONMENT VARIABLES
+    VPN_SERVER_IP: Optional[str] = Field(default=None, description="VPN server public IP address")
+    VPN_SERVER_PORT: int = Field(default=51820, description="VPN server port")
+    VPN_SERVER_PUBLIC_KEY: Optional[str] = Field(default=None, description="VPN server WireGuard public key")
+    VPN_NETWORK: str = Field(default="10.8.0.0/24", description="VPN client IP range")
+    VPN_DNS_SERVERS: str = Field(default="8.8.8.8,8.8.4.4", description="DNS servers for VPN clients")
     
     # Supabase Configuration - PUT YOUR REAL SUPABASE CREDENTIALS HERE
     SUPABASE_URL: str = Field(..., description="Supabase project URL - Get from https://supabase.com/dashboard")

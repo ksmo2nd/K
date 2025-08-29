@@ -298,54 +298,47 @@ async def generate_esim(
     current_user_id: str = Depends(get_current_user_id)
 ) -> Dict[str, Any]:
     """
-    Generate WiFi QR code for session access - redirected from old eSIM endpoint
+    Generate KSWiFi Connect profile for session access - redirected from old eSIM endpoint
     """
     try:
-        print(f"🔍 ESIM->WIFI REDIRECT: Generating WiFi QR for session {request.session_id}")
+        print(f"🔍 ESIM->CONNECT REDIRECT: Generating KSWiFi Connect profile for session {request.session_id}")
         
-        # Import WiFi service
-        from ..services.wifi_captive_service import WiFiCaptiveService
-        wifi_service = WiFiCaptiveService()
+        # Import KSWiFi Connect service
+        from ..services.kswifi_connect_service import KSWiFiConnectService
+        connect_service = KSWiFiConnectService()
         
-        # Generate WiFi QR code instead of eSIM
-        result = await wifi_service.create_wifi_access_token(
+        # Generate KSWiFi Connect profile instead of eSIM
+        result = await connect_service.generate_connect_profile(
             user_id=current_user_id,
             session_id=request.session_id,
-            data_limit_mb=request.data_pack_size_mb
+            data_limit_mb=request.data_pack_size_mb,
+            time_limit_hours=24
         )
         
         if result["success"]:
-            # Generate the actual QR code image
-            qr_image = wifi_service.generate_wifi_qr_code(result["wifi_qr_data"])
-            
-            print(f"🔍 WIFI QR GENERATED: network={result['network_name']}, qr_length={len(qr_image)}")
+            print(f"🔍 CONNECT PROFILE GENERATED: connect_id={result['connect_id']}, qr_length={len(result['profile_qr'])}")
             
             # Return in eSIM format for frontend compatibility
             return {
                 "success": True,
-                "esim_id": result["token_id"],
+                "esim_id": result["connect_id"],  # Connect ID as eSIM ID
                 "session_id": request.session_id,
-                "qr_code_image": qr_image,  # Frontend expects this field name
-                "activation_code": result["wifi_qr_data"],  # WiFi QR data as activation code
+                "qr_code_image": result["profile_qr"],  # VPN profile QR as eSIM QR
+                "activation_code": "KSWiFi Connect Profile",  # User-friendly description
                 "bundle_size_mb": request.data_pack_size_mb,
                 "status": "ready_for_activation",
                 "manual_setup": {
-                    "activation_code": result["wifi_qr_data"],
-                    "apn": result["network_name"],
+                    "activation_code": "Automatic via QR code",
+                    "apn": "KSWiFi Connect",
                     "username": "",
                     "password": "",
-                    "instructions": [
-                        "1. Scan this QR code with your device camera",
-                        "2. Your device will automatically connect to WiFi",
-                        "3. Start browsing the internet immediately",
-                        "4. No additional setup required"
-                    ]
+                    "instructions": result["setup_instructions"]
                 },
-                "message": f"WiFi QR code generated! Network: {result['network_name']}"
+                "message": "KSWiFi Connect profile generated! Scan QR code for instant global internet access."
             }
         else:
-            raise Exception("Failed to generate WiFi QR code")
+            raise Exception("Failed to generate KSWiFi Connect profile")
             
     except Exception as e:
-        print(f"❌ ESIM->WIFI QR ERROR: {str(e)}")
+        print(f"❌ ESIM->CONNECT ERROR: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
