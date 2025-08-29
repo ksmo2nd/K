@@ -100,8 +100,14 @@ class KSWiFiConnectService:
                 # Reuse existing profile
                 stored_profile = existing_response.data[0]
                 logger.info(f"🔍 Reusing existing connect profile: {stored_profile['id']}")
-                # Use existing profile's VPN config
+                # Use existing profile's data
                 vpn_config = stored_profile['vpn_config']
+                client_ip = stored_profile['client_ip']
+                # Update client_keys to match existing profile
+                client_keys = {
+                    "public_key": stored_profile['client_public_key'],
+                    "private_key": stored_profile['client_private_key']
+                }
             else:
                 # Create new profile
                 profile_record = {
@@ -150,7 +156,7 @@ class KSWiFiConnectService:
                 "vpn_config": vpn_config,  # For debugging
                 "session_id": session_id,
                 "data_limit_mb": data_limit_mb,
-                "bandwidth_limit_mbps": profile_record["bandwidth_limit_mbps"],
+                "bandwidth_limit_mbps": stored_profile.get("bandwidth_limit_mbps", 10),
                 "expires_at": stored_profile["expires_at"],
                 "client_ip": client_ip,
                 "setup_instructions": [
