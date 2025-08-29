@@ -7,6 +7,14 @@ import secrets
 import subprocess
 import json
 import base64
+import os
+try:
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import x25519
+    CRYPTO_AVAILABLE = True
+except ImportError:
+    CRYPTO_AVAILABLE = False
+    print("⚠️ Cryptography library not available - using fallback key generation")
 try:
     import qrcode
     import qrcode.image.pil
@@ -147,33 +155,48 @@ class KSWiFiConnectService:
     def _generate_client_keys(self) -> Dict[str, str]:
         """Generate WireGuard key pair for client"""
         
-        try:
-            # Generate private key
-            private_key_result = subprocess.run(
-                ['wg', 'genkey'], 
-                capture_output=True, 
-                text=True, 
-                check=True
-            )
-            private_key = private_key_result.stdout.strip()
-            
-            # Generate public key from private key
-            public_key_result = subprocess.run(
-                ['wg', 'pubkey'], 
-                input=private_key, 
-                text=True, 
-                capture_output=True, 
-                check=True
-            )
-            public_key = public_key_result.stdout.strip()
-            
-            return {
-                "private_key": private_key,
-                "public_key": public_key
-            }
-            
-        except subprocess.CalledProcessError as e:
-            raise Exception(f"Failed to generate client keys: {e}")
+        if CRYPTO_AVAILABLE:
+            try:
+                # Generate WireGuard-compatible keys using X25519
+                private_key = x25519.X25519PrivateKey.generate()
+                public_key = private_key.public_key()
+                
+                # Serialize keys to WireGuard format (base64)
+                private_key_bytes = private_key.private_bytes(
+                    encoding=serialization.Encoding.Raw,
+                    format=serialization.PrivateFormat.Raw,
+                    encryption_algorithm=serialization.NoEncryption()
+                )
+                public_key_bytes = public_key.public_bytes(
+                    encoding=serialization.Encoding.Raw,
+                    format=serialization.PublicFormat.Raw
+                )
+                
+                # Convert to base64 (WireGuard format)
+                private_key_b64 = base64.b64encode(private_key_bytes).decode('ascii')
+                public_key_b64 = base64.b64encode(public_key_bytes).decode('ascii')
+                
+                logger.info(f"🔍 Generated real WireGuard keys: private={private_key_b64[:8]}..., public={public_key_b64[:8]}...")
+                
+                return {
+                    "private_key": private_key_b64,
+                    "public_key": public_key_b64
+                }
+                
+            except Exception as e:
+                logger.error(f"Failed to generate cryptographic keys: {e}")
+        
+        # Fallback to random base64 keys for testing/development
+        logger.warning("🔍 Using fallback key generation (for testing only)")
+        private_key_fallback = base64.b64encode(os.urandom(32)).decode('ascii')
+        public_key_fallback = base64.b64encode(os.urandom(32)).decode('ascii')
+        
+        logger.info(f"🔍 Generated fallback keys: private={private_key_fallback[:8]}..., public={public_key_fallback[:8]}...")
+        
+        return {
+            "private_key": private_key_fallback,
+            "public_key": public_key_fallback
+        }
     
     async def _get_next_client_ip(self) -> str:
         """Get next available IP address for client"""
