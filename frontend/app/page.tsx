@@ -580,7 +580,7 @@ export default function KSWiFiApp() {
       <ConnectQRPopup
         isOpen={showESIMPopup}
         onClose={closeESIMPopup}
-        esimData={esimData}
+        connectData={esimData}
       />
     </div>
   )

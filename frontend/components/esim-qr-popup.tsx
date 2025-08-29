@@ -9,7 +9,7 @@ import { toast } from "sonner"
 interface ConnectQRPopupProps {
   isOpen: boolean
   onClose: () => void
-  data: {
+  connectData?: {
     success: boolean
     esim_id: string  // Keep as esim_id for backward compatibility
     session_id?: string
@@ -26,11 +26,12 @@ interface ConnectQRPopupProps {
     }
     message: string
   } | null
+  esimData?: any  // Backward compatibility
 }
 
-export function ConnectQRPopup({ isOpen, onClose, data, esimData }: ConnectQRPopupProps & { esimData?: any }) {
+export function ConnectQRPopup({ isOpen, onClose, connectData, esimData }: ConnectQRPopupProps) {
   // Support both prop names for backward compatibility
-  const data = data || esimData
+  const data = connectData || esimData
   const [activeTab, setActiveTab] = useState<'qr' | 'manual'>('qr')
   const [copied, setCopied] = useState<string | null>(null)
 
@@ -143,7 +144,7 @@ export function ConnectQRPopup({ isOpen, onClose, data, esimData }: ConnectQRPop
               <div className="text-left space-y-2">
                 <h4 className="font-medium text-gray-900">Setup Instructions:</h4>
                 <ol className="text-sm text-gray-600 space-y-1">
-                  {data.manual_setup.instructions.map((instruction, index) => (
+                  {data.manual_setup.instructions.map((instruction: string, index: number) => (
                     <li key={index} className="flex gap-2">
                       <span className="text-blue-600 font-medium">{index + 1}.</span>
                       <span>{instruction}</span>
@@ -272,7 +273,7 @@ export function ConnectQRPopup({ isOpen, onClose, data, esimData }: ConnectQRPop
               <div className="pt-2 border-t">
                 <h4 className="font-medium text-gray-900 mb-2">Manual Setup Steps:</h4>
                 <ol className="text-sm text-gray-600 space-y-1">
-                  {data.manual_setup.instructions.map((instruction, index) => (
+                  {data.manual_setup.instructions.map((instruction: string, index: number) => (
                     <li key={index} className="flex gap-2">
                       <span className="text-blue-600 font-medium">{index + 1}.</span>
                       <span>{instruction}</span>
