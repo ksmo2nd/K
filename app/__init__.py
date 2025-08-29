@@ -1,3 +1,0 @@
-"""
-KSWiFi Backend Application Package
-"""
