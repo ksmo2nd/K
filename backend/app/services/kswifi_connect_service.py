@@ -89,31 +89,46 @@ class KSWiFiConnectService:
                 data_limit_mb
             )
             
-            # Store connect profile in database
-            profile_record = {
-                "user_id": user_id,
-                "session_id": session_id,
-                "access_token": access_token,
-                "profile_type": "kswifi_connect",
-                "client_public_key": client_keys["public_key"],
-                "client_private_key": client_keys["private_key"],  # Encrypted in real implementation
-                "client_ip": client_ip,
-                "vpn_config": vpn_config,
-                "data_limit_mb": data_limit_mb,
-                "data_used_mb": 0,
-                "bandwidth_limit_mbps": self._get_bandwidth_limit(data_limit_mb),
-                "status": "active",
-                "expires_at": (datetime.utcnow() + timedelta(hours=time_limit_hours)).isoformat(),
-                "created_at": datetime.utcnow().isoformat()
-            }
+            # Check if active profile already exists for this session
+            existing_response = get_supabase_client().table('kswifi_connect_profiles')\
+                .select('*')\
+                .eq('session_id', session_id)\
+                .eq('status', 'active')\
+                .execute()
             
-            # Store in database
-            response = get_supabase_client().table('kswifi_connect_profiles').insert(profile_record).execute()
-            
-            if not response.data:
-                raise Exception("Failed to create connect profile")
-            
-            stored_profile = response.data[0]
+            if existing_response.data:
+                # Reuse existing profile
+                stored_profile = existing_response.data[0]
+                logger.info(f"🔍 Reusing existing connect profile: {stored_profile['id']}")
+                # Use existing profile's VPN config
+                vpn_config = stored_profile['vpn_config']
+            else:
+                # Create new profile
+                profile_record = {
+                    "user_id": user_id,
+                    "session_id": session_id,
+                    "access_token": access_token,
+                    "profile_type": "kswifi_connect",
+                    "client_public_key": client_keys["public_key"],
+                    "client_private_key": client_keys["private_key"],  # Encrypted in real implementation
+                    "client_ip": client_ip,
+                    "vpn_config": vpn_config,
+                    "data_limit_mb": data_limit_mb,
+                    "data_used_mb": 0,
+                    "bandwidth_limit_mbps": self._get_bandwidth_limit(data_limit_mb),
+                    "status": "active",
+                    "expires_at": (datetime.utcnow() + timedelta(hours=time_limit_hours)).isoformat(),
+                    "created_at": datetime.utcnow().isoformat()
+                }
+                
+                # Store in database
+                response = get_supabase_client().table('kswifi_connect_profiles').insert(profile_record).execute()
+                
+                if not response.data:
+                    raise Exception("Failed to create connect profile")
+                
+                stored_profile = response.data[0]
+                logger.info(f"🔍 Created new connect profile: {stored_profile['id']}")
             
             # Add client to VPN server
             await self._add_client_to_vpn_server(
