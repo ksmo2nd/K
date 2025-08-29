@@ -20,7 +20,7 @@ import { SecurityProvider, useAppSecurity } from "@/lib/security-context"
 import { SecurityIndicator } from "@/components/security-indicator"
 import { HelpCenter } from "@/components/help-center"
 import { AboutApp } from "@/components/about-app"
-import { ESIMQRPopup } from "@/components/esim-qr-popup"
+import { ConnectQRPopup } from "@/components/esim-qr-popup"
 import { apiService } from "@/lib/api"
 import { toast } from "sonner"
 import {
@@ -234,17 +234,17 @@ export default function KSWiFiApp() {
 
   const handleGenerateESIM = async (sessionId?: string, dataSizeMB?: number) => {
     try {
-      console.log('🔄 Generating eSIM QR code...', { sessionId, dataSizeMB })
+      console.log('🔄 Generating Connect Code...', { sessionId, dataSizeMB })
       
       // Show loading toast
-      const loadingToast = toast.loading('Generating eSIM QR code...', {
-        description: 'Please wait while we prepare your eSIM'
+      const loadingToast = toast.loading('Generating Connect Code...', {
+        description: 'Please wait while we prepare your KSWiFi Connect profile'
       })
       
-      // Generate eSIM QR code
+      // Generate KSWiFi Connect QR code
       const result = await apiService.generateESIM(sessionId, dataSizeMB)
       
-      console.log('✅ eSIM generated successfully:', result)
+      console.log('✅ Connect Code generated successfully:', result)
       console.log('🔍 ESIM DEBUG: result.success =', result.success)
       console.log('🔍 ESIM DEBUG: result keys =', Object.keys(result))
       
@@ -258,17 +258,17 @@ export default function KSWiFiApp() {
         setShowESIMPopup(true)
         console.log('🔍 ESIM DEBUG: showESIMPopup set to true')
         
-        toast.success('eSIM QR Code Generated!', {
-          description: 'Scan the QR code to activate your eSIM'
+        toast.success('Connect Code Generated!', {
+          description: 'Scan the QR code to activate your KSWiFi Connect profile'
         })
       } else {
-        throw new Error('eSIM generation failed')
+        throw new Error('Connect Code generation failed')
       }
       
     } catch (error: any) {
-      console.error('❌ eSIM generation error:', error)
+      console.error('❌ Connect Code generation error:', error)
       
-      toast.error('Failed to generate eSIM', {
+      toast.error('Failed to generate Connect Code', {
         description: error?.message || 'Please try again later'
       })
     }
@@ -299,7 +299,7 @@ export default function KSWiFiApp() {
       // Check if user already has active sessions
       if (activeSessions.length > 0) {
         const activeSession = activeSessions[0]
-        showNotification("info", "Session Already Active", `You have an active ${activeSession.data_mb}MB session. Generate eSIM to use it for internet access.`)
+        showNotification("info", "Session Already Active", `You have an active ${activeSession.data_mb}MB session. Generate Connect Code to use it for internet access.`)
         return
       }
 
@@ -504,8 +504,8 @@ export default function KSWiFiApp() {
           <div className="mt-4">
             <ActionButton
               icon={QrCode}
-              label="Setup eSIM"
-              description="Generate QR Code"
+              label="Setup Connect"
+              description="Generate Connect Code"
               onClick={handleESIMSetup}
               variant="secondary"
             />
@@ -576,8 +576,8 @@ export default function KSWiFiApp() {
         />
       )}
 
-      {/* eSIM QR Code Popup */}
-      <ESIMQRPopup
+      {/* KSWiFi Connect QR Code Popup */}
+      <ConnectQRPopup
         isOpen={showESIMPopup}
         onClose={closeESIMPopup}
         esimData={esimData}

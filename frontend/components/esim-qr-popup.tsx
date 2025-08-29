@@ -9,7 +9,7 @@ import { toast } from "sonner"
 interface ConnectQRPopupProps {
   isOpen: boolean
   onClose: () => void
-  connectData: {
+  data: {
     success: boolean
     esim_id: string  // Keep as esim_id for backward compatibility
     session_id?: string
@@ -28,14 +28,16 @@ interface ConnectQRPopupProps {
   } | null
 }
 
-export function ConnectQRPopup({ isOpen, onClose, connectData }: ConnectQRPopupProps) {
+export function ConnectQRPopup({ isOpen, onClose, data, esimData }: ConnectQRPopupProps & { esimData?: any }) {
+  // Support both prop names for backward compatibility
+  const data = data || esimData
   const [activeTab, setActiveTab] = useState<'qr' | 'manual'>('qr')
   const [copied, setCopied] = useState<string | null>(null)
 
-  console.log('🔍 POPUP DEBUG: ConnectQRPopup rendered with:', { isOpen, connectData: !!connectData })
+  console.log('🔍 POPUP DEBUG: ConnectQRPopup rendered with:', { isOpen, data: !!data })
   
-  if (!isOpen || !connectData) {
-    console.log('🔍 POPUP DEBUG: Popup not showing - isOpen:', isOpen, 'connectData:', !!connectData)
+  if (!isOpen || !data) {
+    console.log('🔍 POPUP DEBUG: Popup not showing - isOpen:', isOpen, 'data:', !!data)
     return null
   }
   
@@ -55,8 +57,8 @@ export function ConnectQRPopup({ isOpen, onClose, connectData }: ConnectQRPopupP
   const downloadQRCode = () => {
     try {
       const link = document.createElement('a')
-      link.href = connectData.qr_code_image
-      link.download = `kswifi-connect-${connectData.esim_id.slice(0, 8)}.png`
+      link.href = data.qr_code_image
+      link.download = `kswifi-connect-${data.esim_id.slice(0, 8)}.png`
       link.click()
       toast.success("QR code downloaded!")
     } catch (error) {
@@ -75,7 +77,7 @@ export function ConnectQRPopup({ isOpen, onClose, connectData }: ConnectQRPopupP
             </div>
             <div>
               <h3 className="font-semibold text-gray-900">KSWiFi Connect Ready!</h3>
-              <p className="text-sm text-gray-500">{connectData.bundle_size_mb / 1024}GB Internet Access</p>
+              <p className="text-sm text-gray-500">{data.bundle_size_mb / 1024}GB Internet Access</p>
             </div>
           </div>
           <Button
@@ -94,7 +96,7 @@ export function ConnectQRPopup({ isOpen, onClose, connectData }: ConnectQRPopupP
             <CheckCircle className="w-4 h-4" />
             <span className="text-sm font-medium">Generation Successful</span>
           </div>
-          <p className="text-sm text-gray-600">{connectData.message}</p>
+          <p className="text-sm text-gray-600">{data.message}</p>
         </div>
 
         {/* Tabs */}
@@ -131,7 +133,7 @@ export function ConnectQRPopup({ isOpen, onClose, connectData }: ConnectQRPopupP
               {/* QR Code */}
               <div className="bg-white p-4 rounded-lg border-2 border-dashed border-gray-200">
                 <img 
-                  src={connectData.qr_code_image} 
+                  src={data.qr_code_image} 
                   alt="KSWiFi Connect QR Code" 
                   className="w-48 h-48 mx-auto"
                 />
@@ -141,7 +143,7 @@ export function ConnectQRPopup({ isOpen, onClose, connectData }: ConnectQRPopupP
               <div className="text-left space-y-2">
                 <h4 className="font-medium text-gray-900">Setup Instructions:</h4>
                 <ol className="text-sm text-gray-600 space-y-1">
-                  {connectData.manual_setup.instructions.map((instruction, index) => (
+                  {data.manual_setup.instructions.map((instruction, index) => (
                     <li key={index} className="flex gap-2">
                       <span className="text-blue-600 font-medium">{index + 1}.</span>
                       <span>{instruction}</span>
@@ -158,7 +160,7 @@ export function ConnectQRPopup({ isOpen, onClose, connectData }: ConnectQRPopupP
                 </Button>
                 <Button 
                   variant="outline" 
-                  onClick={() => copyToClipboard(connectData.activation_code, 'Activation Code')}
+                  onClick={() => copyToClipboard(data.activation_code, 'Activation Code')}
                   className="flex-1"
                   size="sm"
                 >
@@ -181,12 +183,12 @@ export function ConnectQRPopup({ isOpen, onClose, connectData }: ConnectQRPopupP
                   </label>
                   <div className="flex items-center gap-2">
                     <code className="flex-1 p-2 bg-gray-50 rounded text-xs font-mono break-all">
-                      {connectData.manual_setup.activation_code}
+                      {data.manual_setup.activation_code}
                     </code>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => copyToClipboard(connectData.manual_setup.activation_code, 'Activation Code')}
+                      onClick={() => copyToClipboard(data.manual_setup.activation_code, 'Activation Code')}
                     >
                       {copied === 'Activation Code' ? (
                         <CheckCircle className="w-4 h-4 text-green-500" />
@@ -204,12 +206,12 @@ export function ConnectQRPopup({ isOpen, onClose, connectData }: ConnectQRPopupP
                     </label>
                     <div className="flex items-center gap-2">
                       <code className="flex-1 p-2 bg-gray-50 rounded text-xs">
-                        {connectData.manual_setup.apn}
+                        {data.manual_setup.apn}
                       </code>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => copyToClipboard(connectData.manual_setup.apn, 'APN')}
+                        onClick={() => copyToClipboard(data.manual_setup.apn, 'APN')}
                       >
                         {copied === 'APN' ? (
                           <CheckCircle className="w-4 h-4 text-green-500" />
@@ -226,12 +228,12 @@ export function ConnectQRPopup({ isOpen, onClose, connectData }: ConnectQRPopupP
                     </label>
                     <div className="flex items-center gap-2">
                       <code className="flex-1 p-2 bg-gray-50 rounded text-xs">
-                        {connectData.manual_setup.username}
+                        {data.manual_setup.username}
                       </code>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => copyToClipboard(connectData.manual_setup.username, 'Username')}
+                        onClick={() => copyToClipboard(data.manual_setup.username, 'Username')}
                       >
                         {copied === 'Username' ? (
                           <CheckCircle className="w-4 h-4 text-green-500" />
@@ -249,12 +251,12 @@ export function ConnectQRPopup({ isOpen, onClose, connectData }: ConnectQRPopupP
                   </label>
                   <div className="flex items-center gap-2">
                     <code className="flex-1 p-2 bg-gray-50 rounded text-xs">
-                      {connectData.manual_setup.password}
+                      {data.manual_setup.password}
                     </code>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => copyToClipboard(connectData.manual_setup.password, 'Password')}
+                      onClick={() => copyToClipboard(data.manual_setup.password, 'Password')}
                     >
                       {copied === 'Password' ? (
                         <CheckCircle className="w-4 h-4 text-green-500" />
@@ -270,7 +272,7 @@ export function ConnectQRPopup({ isOpen, onClose, connectData }: ConnectQRPopupP
               <div className="pt-2 border-t">
                 <h4 className="font-medium text-gray-900 mb-2">Manual Setup Steps:</h4>
                 <ol className="text-sm text-gray-600 space-y-1">
-                  {connectData.manual_setup.instructions.map((instruction, index) => (
+                  {data.manual_setup.instructions.map((instruction, index) => (
                     <li key={index} className="flex gap-2">
                       <span className="text-blue-600 font-medium">{index + 1}.</span>
                       <span>{instruction}</span>
@@ -293,3 +295,6 @@ export function ConnectQRPopup({ isOpen, onClose, connectData }: ConnectQRPopupP
     </div>
   )
 }
+
+// Export with old name for backward compatibility
+export const ESIMQRPopup = ConnectQRPopup
