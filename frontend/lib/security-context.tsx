@@ -158,7 +158,7 @@ export function SecurityProvider({ children }: { children: React.ReactNode }) {
     
     // Data usage recommendations
     recommendations.push('Only download data packs on trusted networks')
-    recommendations.push('Verify eSIM QR codes before installation')
+    recommendations.push('Verify KSWiFi Connect QR codes before installation')
     
     return recommendations
   }

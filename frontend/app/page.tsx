@@ -20,7 +20,7 @@ import { SecurityProvider, useAppSecurity } from "@/lib/security-context"
 import { SecurityIndicator } from "@/components/security-indicator"
 import { HelpCenter } from "@/components/help-center"
 import { AboutApp } from "@/components/about-app"
-import { ConnectQRPopup } from "@/components/esim-qr-popup"
+import { ConnectQRPopup } from "@/components/connect-qr-popup"
 import { apiService } from "@/lib/api"
 import { toast } from "sonner"
 import {

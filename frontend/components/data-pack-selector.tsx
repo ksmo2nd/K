@@ -44,7 +44,7 @@ export function DataPackSelector({ onSelect, onCancel }: DataPackSelectorProps) 
       <div className="w-full max-w-sm bg-background rounded-lg p-6 space-y-6">
         <div className="text-center">
           <h2 className="text-xl font-semibold text-foreground">Buy Data Credits</h2>
-          <p className="text-sm text-muted-foreground mt-1">Buy data credits to use later with eSIM</p>
+          <p className="text-sm text-muted-foreground mt-1">Buy data credits to use later with KSWiFi Connect</p>
         </div>
 
         <div className="space-y-3">

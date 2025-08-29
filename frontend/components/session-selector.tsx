@@ -189,7 +189,7 @@ export function SessionSelector({ onSessionDownload }: SessionSelectorProps) {
           <CardTitle className="text-xl font-semibold text-foreground">Download Internet Sessions</CardTitle>
         </div>
         <p className="text-sm text-muted-foreground">
-          Download internet sessions on WiFi to use later offline via eSIM
+          Download internet sessions on WiFi to use later globally via KSWiFi Connect
         </p>
       </CardHeader>
 
@@ -203,7 +203,7 @@ export function SessionSelector({ onSessionDownload }: SessionSelectorProps) {
             </div>
             <Progress value={downloadProgress} className="h-3 mb-2" />
             <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Transferring to eSIM storage</span>
+              <span>Preparing Connect Profile</span>
               <span>{Math.round(downloadProgress)}% complete</span>
             </div>
           </div>
@@ -270,7 +270,7 @@ export function SessionSelector({ onSessionDownload }: SessionSelectorProps) {
                         </div>
                         <div className="flex items-center space-x-1">
                           <Smartphone className="h-3 w-3" />
-                          <span>Activate via eSIM</span>
+                          <span>Activate via KSWiFi Connect</span>
                         </div>
                         <div className="flex items-center space-x-1">
                           <Shield className="h-3 w-3" />
@@ -337,9 +337,9 @@ export function SessionSelector({ onSessionDownload }: SessionSelectorProps) {
               <p>
                 1. Connect to WiFi and download an internet session
                 <br />
-                2. Session is stored on your phone's eSIM chip
+                2. Session is stored as a KSWiFi Connect profile
                 <br />
-                3. When offline, activate the eSIM to use your downloaded session
+                3. When offline, activate the profile to use your downloaded session
                 <br />
                 4. Browse normally until the session is finished
               </p>

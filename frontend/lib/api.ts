@@ -580,7 +580,7 @@ class ApiService {
     message: string;
   }> {
     console.log('🔍 API: Generating KSWiFi Connect QR code', { sessionId, dataPackSizeMb });
-    console.log('🔍 API: Calling endpoint /esim/generate-esim');
+    console.log('🔍 API: Calling KSWiFi Connect generation endpoint');
     
     try {
       const response = await this.makeBackendRequest<any>('/esim/generate-esim', {

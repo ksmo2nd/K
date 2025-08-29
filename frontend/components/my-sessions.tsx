@@ -109,7 +109,7 @@ export function MySessions({ refreshTrigger = 0 }: MySessionsProps) {
       case 'downloading':
         return 'Downloading'
       case 'transferring':
-        return 'Transferring to eSIM'
+        return 'Preparing Connect Profile'
       case 'stored':
         return 'Ready to activate'
       case 'active':
@@ -262,7 +262,7 @@ export function MySessions({ refreshTrigger = 0 }: MySessionsProps) {
                           <Progress value={session.progress_percent} className="h-2 mb-1" />
                           <div className="flex justify-between text-xs text-muted-foreground">
                             <span>
-                              {session.status === 'downloading' ? 'Downloading session...' : 'Transferring to eSIM...'}
+                              {session.status === 'downloading' ? 'Downloading session...' : 'Preparing Connect Profile...'}
                             </span>
                             <span>{session.progress_percent}%</span>
                           </div>
@@ -356,7 +356,7 @@ export function MySessions({ refreshTrigger = 0 }: MySessionsProps) {
               <div className="text-sm text-foreground">
                 <p className="font-medium mb-1">Ready to go offline?</p>
                 <p className="text-muted-foreground">
-                  Click "Activate" to enable your downloaded session. You'll get a QR code to add the eSIM to your phone, 
+                  Click "Activate" to enable your downloaded session. You'll get a QR code to add the KSWiFi Connect profile to your phone, 
                   then you can use the internet even without WiFi!
                 </p>
               </div>

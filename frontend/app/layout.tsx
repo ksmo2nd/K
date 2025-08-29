@@ -6,8 +6,8 @@ import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'KSWiFi - Virtual eSIM Data Manager',
-  description: 'Download data packs on WiFi, activate anywhere with eSIM',
+  title: 'KSWiFi - Global Internet Access',
+  description: 'Download data packs on WiFi, access globally with KSWiFi Connect',
   generator: 'KSWiFi',
 }
 
