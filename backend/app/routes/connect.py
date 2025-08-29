@@ -9,7 +9,9 @@ from typing import Dict, Any, Optional
 import logging
 
 from ..core.auth import get_current_user_id
+from ..core.database import get_supabase_client
 from ..services.kswifi_connect_service import KSWiFiConnectService
+from datetime import datetime
 
 router = APIRouter(prefix="/api/connect", tags=["kswifi-connect"])
 logger = logging.getLogger(__name__)

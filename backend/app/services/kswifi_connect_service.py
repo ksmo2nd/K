@@ -41,6 +41,23 @@ class KSWiFiConnectService:
         try:
             logger.info(f"🔍 CONNECT: Generating profile for session {session_id}")
             
+            # Verify session exists and belongs to user
+            session_response = get_supabase_client().table('internet_sessions')\
+                .select('*')\
+                .eq('id', session_id)\
+                .eq('user_id', user_id)\
+                .execute()
+            
+            if not session_response.data:
+                raise Exception(f"Session {session_id} not found or doesn't belong to user")
+            
+            session_data = session_response.data[0]
+            logger.info(f"🔍 CONNECT: Found session {session_id}, status: {session_data.get('status')}")
+            
+            # Use session data for limits if not provided
+            if data_limit_mb == 1024:  # Default value, use session data
+                data_limit_mb = session_data.get('data_mb', 1024)
+            
             # Generate unique access token
             access_token = f"connect_{secrets.token_hex(24)}"
             
