@@ -230,6 +230,12 @@ async def health_check():
             }
         )
 
+# API alias for health endpoint
+@app.get("/api/health")
+async def api_health_check():
+    """API health check endpoint (alias for /health)"""
+    return await health_check()
+
 @app.get("/debug")
 async def debug_info():
     """Comprehensive debug information for deployment troubleshooting"""

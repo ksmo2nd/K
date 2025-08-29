@@ -182,3 +182,28 @@ async def get_connect_profile_status(
     except Exception as e:
         logger.error(f"❌ STATUS ERROR: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/profiles/{user_id}")
+async def get_user_connect_profiles(
+    user_id: str,
+    current_user_id: str = Depends(get_current_user_id)
+) -> Dict[str, Any]:
+    """Get KSWiFi Connect profiles for specified user (compatibility endpoint)"""
+    try:
+        # Security check - users can only access their own profiles
+        if user_id != current_user_id:
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        profiles = await connect_service.get_user_profiles(current_user_id)
+        
+        return {
+            "success": True,
+            "connect_profiles": profiles,
+            "count": len(profiles)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ GET USER PROFILES ERROR: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))

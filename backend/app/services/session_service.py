@@ -795,8 +795,11 @@ class SessionService:
             
             session = response.data
             
-            if session['status'] != 'available':
-                raise ValueError("Session must be downloaded before activation")
+            if session['status'] not in ['available', 'stored']:
+                if session['status'] == 'active':
+                    raise ValueError("Session is already active")
+                else:
+                    raise ValueError("Session must be downloaded before activation")
             
             # Check if session data is exhausted
             data_remaining = max(0, session.get('data_mb', 0) - session.get('data_used_mb', 0))
