@@ -37,7 +37,7 @@ interface HelpCategory {
 const helpCategories: HelpCategory[] = [
   { id: 'getting-started', name: 'Getting Started', icon: Smartphone, color: 'text-blue-500' },
   { id: 'wifi-data', name: 'WiFi & Data', icon: Wifi, color: 'text-green-500' },
-  { id: 'esim', name: 'eSIM Setup', icon: Download, color: 'text-purple-500' },
+  { id: 'connect', name: 'KSWiFi Connect', icon: Download, color: 'text-purple-500' },
   { id: 'billing', name: 'Billing & Plans', icon: CreditCard, color: 'text-orange-500' },
   { id: 'security', name: 'Security & Privacy', icon: Shield, color: 'text-red-500' },
   { id: 'troubleshooting', name: 'Troubleshooting', icon: Settings, color: 'text-gray-500' },
@@ -55,7 +55,7 @@ const faqData: FAQItem[] = [
     id: '2',
     category: 'getting-started',
     question: 'What is KSWiFi and how does it work?',
-    answer: 'KSWiFi is a modern mobile data management app that lets you purchase data packs, manage eSIM services, and monitor your internet usage in real-time. Our app provides secure WiFi data pack management with cross-platform support for iOS and Android devices.'
+    answer: 'KSWiFi is a modern mobile data management app that lets you purchase data packs, manage KSWiFi Connect profiles, and monitor your internet usage in real-time. Our app provides secure WiFi data pack management with cross-platform support for iOS and Android devices.'
   },
   {
     id: '3',
@@ -84,24 +84,24 @@ const faqData: FAQItem[] = [
     answer: 'Your data usage is displayed prominently on the main dashboard with a visual meter showing current usage vs. total data. You can view detailed usage statistics, remaining data, and usage history in the "My Sessions" section. The app provides real-time updates as you use your data.'
   },
   
-  // eSIM Setup
+  // KSWiFi Connect Setup
   {
     id: '7',
-    category: 'esim',
-    question: 'How do I set up an eSIM?',
-    answer: 'To set up your eSIM: 1) Tap "Setup eSIM" on the dashboard, 2) Generate your QR code, 3) Go to your device Settings > Cellular/Mobile Data, 4) Add Cellular Plan, 5) Scan the QR code provided by KSWiFi, 6) Follow your device\'s setup instructions. Your eSIM will be activated automatically.'
+    category: 'connect',
+    question: 'How do I set up KSWiFi Connect?',
+    answer: 'To set up KSWiFi Connect: 1) Tap "Setup Connect" on the dashboard, 2) Generate your Connect Code, 3) Scan the QR code with your phone camera, 4) Tap "Add" when prompted to install the VPN profile, 5) Enable "KSWiFi Connect" in your VPN settings, 6) Enjoy instant global internet access using your session data!'
   },
   {
     id: '8',
-    category: 'esim',
-    question: 'Which devices support eSIM?',
-    answer: 'eSIM is supported on most modern smartphones including iPhone XS and later, Google Pixel 3 and later, Samsung Galaxy S20 and later, and many other Android devices. Check your device specifications or contact your device manufacturer to confirm eSIM compatibility.'
+    category: 'connect',
+    question: 'Which devices support KSWiFi Connect?',
+    answer: 'KSWiFi Connect works on all modern smartphones including iPhone (iOS 10+) and Android devices (5.0+). It uses VPN technology that is built into every phone, so no additional apps are required. Simply scan the QR code and your phone will automatically install the connection profile.'
   },
   {
     id: '9',
-    category: 'esim',
-    question: 'Can I use multiple eSIMs?',
-    answer: 'Yes! Most modern devices support multiple eSIM profiles. You can have several KSWiFi eSIM profiles installed and switch between them as needed. Each eSIM can have its own data pack and usage tracking.'
+    category: 'connect',
+    question: 'Can I use multiple Connect profiles?',
+    answer: 'Yes! You can have multiple KSWiFi Connect profiles for different sessions and data allowances. Each profile tracks its own usage and limits. You can switch between profiles in your phone\'s VPN settings as needed.'
   },
   
   // Billing & Plans
@@ -153,7 +153,7 @@ const faqData: FAQItem[] = [
     id: '17',
     category: 'security',
     question: 'What information do you collect?',
-    answer: 'We only collect essential information needed to provide our service: your email address, name, data usage statistics, and device information for eSIM provisioning. We never sell your personal data and only use it to improve your KSWiFi experience.'
+    answer: 'We only collect essential information needed to provide our service: your email address, name, data usage statistics, and device information for KSWiFi Connect provisioning. We never sell your personal data and only use it to improve your KSWiFi experience.'
   },
   
   // Troubleshooting
@@ -166,7 +166,7 @@ const faqData: FAQItem[] = [
   {
     id: '19',
     category: 'troubleshooting',
-    question: 'My eSIM QR code won\'t scan',
+    question: 'My KSWiFi Connect QR code won\'t scan',
     answer: 'If your QR code won\'t scan: 1) Ensure your device camera has permission to access the camera, 2) Clean your camera lens, 3) Make sure you\'re in good lighting, 4) Try generating a new QR code from the app, 5) You can also manually enter the activation code if scanning fails.'
   },
   {

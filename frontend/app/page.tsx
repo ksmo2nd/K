@@ -63,16 +63,16 @@ export default function KSWiFiApp() {
 
   // Data state
   const [dataPacks, setDataPacks] = useState<any[]>([])
-  const [esims, setEsims] = useState<any[]>([])
+  const [connectProfiles, setConnectProfiles] = useState<any[]>([])
   const [dataPackStats, setDataPackStats] = useState<any>(null)
   
   // Session state
   const [showSessionSelector, setShowSessionSelector] = useState(false)
   const [sessionsRefreshTrigger, setSessionsRefreshTrigger] = useState(0)
   
-  // eSIM QR popup state
-  const [showESIMPopup, setShowESIMPopup] = useState(false)
-  const [esimData, setESIMData] = useState<any>(null)
+  // KSWiFi Connect QR popup state
+  const [showConnectPopup, setShowConnectPopup] = useState(false)
+  const [connectData, setConnectData] = useState<any>(null)
 
   // Check for URL messages (like password reset success)
   useEffect(() => {
@@ -120,9 +120,9 @@ export default function KSWiFiApp() {
       const userDataPacks = await apiService.getDataPacks()
       setDataPacks(userDataPacks)
 
-      // Load eSIMs
-      const userEsims = await apiService.getESIMs()
-      setEsims(userEsims)
+      // Load Connect Profiles
+      const userConnectProfiles = await apiService.getConnectProfiles()
+      setConnectProfiles(userConnectProfiles)
 
       // Load stats
       const stats = await apiService.getDataPackStats()
@@ -170,7 +170,7 @@ export default function KSWiFiApp() {
       await signOut()
       setCurrentScreen("onboarding")
       setDataPacks([])
-      setEsims([])
+      setConnectProfiles([])
       setDataPackStats(null)
       toast.success("Signed out successfully")
     } catch (error) {
@@ -199,40 +199,40 @@ export default function KSWiFiApp() {
     })
   }
 
-  const handleESIMSetup = async () => {
+  const handleConnectSetup = async () => {
     if (!user) {
-      showNotification("warning", "Sign In Required", "Please sign in to setup eSIM")
+      showNotification("warning", "Sign In Required", "Please sign in to setup KSWiFi Connect")
       return
     }
 
     try {
       // Get user's downloaded sessions
       const sessions = await apiService.getMySessions()
-      console.log('🔍 ESIM SETUP DEBUG: Total sessions:', sessions.length)
-      console.log('🔍 ESIM SETUP DEBUG: Sessions:', sessions.map(s => ({ id: s.id, status: s.status, can_activate: s.can_activate })))
-      
-      // Look for ACTIVE sessions (not can_activate) for eSIM generation
+            console.log('🔍 CONNECT SETUP DEBUG: Total sessions:', sessions.length)
+      console.log('🔍 CONNECT SETUP DEBUG: Sessions:', sessions.map(s => ({ id: s.id, status: s.status, can_activate: s.can_activate })))
+
+      // Look for ACTIVE sessions (not can_activate) for Connect generation
       const activeSessions = sessions.filter(session => session.status === 'active')
-      console.log('🔍 ESIM SETUP DEBUG: Active sessions for eSIM:', activeSessions.length)
+      console.log('🔍 CONNECT SETUP DEBUG: Active sessions for Connect:', activeSessions.length)
 
       if (activeSessions.length === 0) {
-        console.log('🔍 ESIM SETUP DEBUG: No active sessions found')
-        showNotification("info", "No Active Sessions", "Please activate a data pack first, then generate eSIM QR code")
+        console.log('🔍 CONNECT SETUP DEBUG: No active sessions found')
+        showNotification("info", "No Active Sessions", "Please activate a data pack first, then generate Connect Code")
         return
       }
 
-      // Use the first active session for eSIM generation
+      // Use the first active session for Connect generation
       const session = activeSessions[0]
-      console.log('🔍 ESIM SETUP DEBUG: Using active session:', { id: session.id, status: session.status, data_mb: session.data_mb })
-      await handleGenerateESIM(session.id, session.data_mb)
+      console.log('🔍 CONNECT SETUP DEBUG: Using active session:', { id: session.id, status: session.status, data_mb: session.data_mb })
+      await handleGenerateConnect(session.id, session.data_mb)
       
     } catch (error: any) {
-      console.error('Error setting up eSIM:', error)
-      showNotification("warning", "eSIM Setup Failed", error.message || "Failed to setup eSIM")
+      console.error('Error setting up KSWiFi Connect:', error)
+      showNotification("warning", "Connect Setup Failed", error.message || "Failed to setup KSWiFi Connect")
     }
   }
 
-  const handleGenerateESIM = async (sessionId?: string, dataSizeMB?: number) => {
+  const handleGenerateConnect = async (sessionId?: string, dataSizeMB?: number) => {
     try {
       console.log('🔄 Generating Connect Code...', { sessionId, dataSizeMB })
       
@@ -242,21 +242,21 @@ export default function KSWiFiApp() {
       })
       
       // Generate KSWiFi Connect QR code
-      const result = await apiService.generateESIM(sessionId, dataSizeMB)
+      const result = await apiService.generateConnect(sessionId, dataSizeMB)
       
       console.log('✅ Connect Code generated successfully:', result)
-      console.log('🔍 ESIM DEBUG: result.success =', result.success)
-      console.log('🔍 ESIM DEBUG: result keys =', Object.keys(result))
+      console.log('🔍 CONNECT DEBUG: result.success =', result.success)
+      console.log('🔍 CONNECT DEBUG: result keys =', Object.keys(result))
       
       // Dismiss loading toast
       toast.dismiss(loadingToast)
       
       if (result.success) {
-        console.log('🔍 ESIM DEBUG: Setting eSIM data and showing popup')
-        // Store eSIM data and show popup
-        setESIMData(result)
-        setShowESIMPopup(true)
-        console.log('🔍 ESIM DEBUG: showESIMPopup set to true')
+        console.log('🔍 CONNECT DEBUG: Setting Connect data and showing popup')
+        // Store Connect data and show popup
+        setConnectData(result)
+        setShowConnectPopup(true)
+        console.log('🔍 CONNECT DEBUG: showConnectPopup set to true')
         
         toast.success('Connect Code Generated!', {
           description: 'Scan the QR code to activate your KSWiFi Connect profile'
@@ -274,9 +274,9 @@ export default function KSWiFiApp() {
     }
   }
 
-  const closeESIMPopup = () => {
-    setShowESIMPopup(false)
-    setESIMData(null)
+  const closeConnectPopup = () => {
+    setShowConnectPopup(false)
+    setConnectData(null)
   }
 
   const handleDataPackActivation = async () => {
@@ -364,9 +364,9 @@ export default function KSWiFiApp() {
             <Smartphone className="w-10 h-10 text-primary-foreground" />
           </div>
           <h1 className="text-3xl font-bold text-foreground mb-2">KSWiFi</h1>
-          <p className="text-muted-foreground mb-6">Virtual eSIM Data Manager</p>
+          <p className="text-muted-foreground mb-6">KSWiFi Connect - Global Internet Access</p>
           <p className="text-sm text-muted-foreground">
-            Download internet sessions on WiFi, use offline via eSIM
+            Download internet sessions on WiFi, access globally via KSWiFi Connect
           </p>
         </div>
         
@@ -506,7 +506,7 @@ export default function KSWiFiApp() {
               icon={QrCode}
               label="Setup Connect"
               description="Generate Connect Code"
-              onClick={handleESIMSetup}
+              onClick={handleConnectSetup}
               variant="secondary"
             />
           </div>
@@ -578,9 +578,9 @@ export default function KSWiFiApp() {
 
       {/* KSWiFi Connect QR Code Popup */}
       <ConnectQRPopup
-        isOpen={showESIMPopup}
-        onClose={closeESIMPopup}
-        connectData={esimData}
+        isOpen={showConnectPopup}
+        onClose={closeConnectPopup}
+        connectData={connectData}
       />
     </div>
   )

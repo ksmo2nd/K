@@ -54,7 +54,7 @@ export interface DataPack {
   updated_at: string;
 }
 
-export interface ESIM {
+export interface ConnectProfile {
   id: string;
   user_id: string;
   iccid: string;
@@ -71,7 +71,7 @@ export interface ESIM {
   password?: string;
 }
 
-export interface ESIMQRCode {
+export interface ConnectQRCode {
   qr_code_data: string;
   qr_code_image: string;
   activation_code: string;
@@ -352,12 +352,12 @@ class ApiService {
     }
   }
 
-  async startSessionDownload(sessionId: string, esimId?: string): Promise<any> {
+  async startSessionDownload(sessionId: string, connectProfileId?: string): Promise<any> {
     const response = await this.makeBackendRequest<any>('/sessions/download', {
       method: 'POST',
       body: JSON.stringify({
         session_id: sessionId,
-        esim_id: esimId
+        connect_profile_id: connectProfileId
       })
     });
     return response;
@@ -456,17 +456,17 @@ class ApiService {
     return response;
   }
 
-  // eSIM Management - Now using backend API for provider integration
-  async getESIMs(): Promise<ESIM[]> {
+  // Connect Profile Management - Now using backend API for VPN integration
+  async getConnectProfiles(): Promise<ConnectProfile[]> {
     const userId = await this.getCurrentUserId();
-    const response = await this.makeBackendRequest<{ esims: ESIM[]; count: number }>(`/esim/user/${userId}`);
-    return response.esims;
+    const response = await this.makeBackendRequest<{ connect_profiles: ConnectProfile[]; count: number }>(`/connect/profiles/${userId}`);
+    return response.connect_profiles;
   }
 
-  async provisionESIM(bundle_size_mb: number): Promise<any> {
+  async provisionConnectProfile(bundle_size_mb: number): Promise<any> {
     const userId = await this.getCurrentUserId();
     
-    const response = await this.makeBackendRequest<any>('/esim/provision', {
+    const response = await this.makeBackendRequest<any>('/connect/provision', {
       method: 'POST',
       body: JSON.stringify({
         user_id: userId,
@@ -477,34 +477,34 @@ class ApiService {
     return response;
   }
 
-  async activateESIM(esimId: string): Promise<any> {
-    const response = await this.makeBackendRequest<any>(`/esim/${esimId}/activate`, {
+  async activateConnectProfile(connectProfileId: string): Promise<any> {
+    const response = await this.makeBackendRequest<any>(`/connect/profiles/${connectProfileId}/activate`, {
       method: 'POST'
     });
     return response;
   }
 
-  async suspendESIM(esimId: string): Promise<{ detail: string }> {
-    const response = await this.makeBackendRequest<{ detail: string }>(`/esim/${esimId}/suspend`, {
+  async suspendConnectProfile(connectProfileId: string): Promise<{ detail: string }> {
+    const response = await this.makeBackendRequest<{ detail: string }>(`/connect/profiles/${connectProfileId}/suspend`, {
       method: 'POST'
     });
     return response;
   }
 
-  async getESIMUsage(esimId: string): Promise<any> {
-    const response = await this.makeBackendRequest<any>(`/esim/${esimId}/usage`);
+  async getConnectProfileUsage(connectProfileId: string): Promise<any> {
+    const response = await this.makeBackendRequest<any>(`/connect/profiles/${connectProfileId}/usage`);
     return response;
   }
 
-  async getESIMStatus(esimId: string): Promise<any> {
-    const response = await this.makeBackendRequest<any>(`/esims/${esimId}/status`);
+  async getConnectProfileStatus(connectProfileId: string): Promise<any> {
+    const response = await this.makeBackendRequest<any>(`/connect/profiles/${connectProfileId}/status`);
     return response;
   }
 
-  async getESIMQRCode(esimId: string): Promise<any> {
-    console.log('🔍 API: Getting eSIM QR code for ID:', esimId);
-    const response = await this.makeBackendRequest<any>(`/esims/${esimId}/qr-code`);
-    console.log('✅ API: eSIM QR code retrieved', response);
+  async getConnectProfileQRCode(connectProfileId: string): Promise<any> {
+    console.log('🔍 API: Getting Connect Profile QR code for ID:', connectProfileId);
+    const response = await this.makeBackendRequest<any>(`/connect/profiles/${connectProfileId}/qr-code`);
+    console.log('✅ API: Connect Profile QR code retrieved', response);
     return response;
   }
 
@@ -561,10 +561,10 @@ class ApiService {
     return response;
   }
 
-  // eSIM Generation with QR Code
-  async generateESIM(sessionId?: string, dataPackSizeMb: number = 1024): Promise<{
+  // KSWiFi Connect Generation with QR Code
+  async generateConnect(sessionId?: string, dataPackSizeMb: number = 1024): Promise<{
     success: boolean;
-    esim_id: string;
+    connect_id: string;
     session_id?: string;
     activation_code: string;
     qr_code_image: string;
@@ -579,7 +579,7 @@ class ApiService {
     };
     message: string;
   }> {
-    console.log('🔍 API: Generating eSIM QR code', { sessionId, dataPackSizeMb });
+    console.log('🔍 API: Generating KSWiFi Connect QR code', { sessionId, dataPackSizeMb });
     console.log('🔍 API: Calling endpoint /esim/generate-esim');
     
     try {
@@ -593,12 +593,18 @@ class ApiService {
         })
       });
       
-      console.log('✅ API: eSIM QR code generated successfully', response);
+      console.log('✅ API: KSWiFi Connect QR code generated successfully', response);
       return response;
     } catch (error) {
-      console.log('❌ API: eSIM generation failed:', error);
+      console.log('❌ API: KSWiFi Connect generation failed:', error);
       throw error;
     }
+  }
+
+  // Backward compatibility - redirect old eSIM calls to new Connect system
+  async generateESIM(sessionId?: string, dataPackSizeMb: number = 1024): Promise<any> {
+    console.log('🔍 API: Redirecting generateESIM to generateConnect for backward compatibility');
+    return this.generateConnect(sessionId, dataPackSizeMb);
   }
 
   // Health Check

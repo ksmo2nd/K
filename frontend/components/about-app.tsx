@@ -38,8 +38,8 @@ const features = [
   },
   {
     icon: Globe,
-    title: "eSIM Integration",
-    description: "Real eSIM provider integration with instant QR code generation and automatic activation.",
+    title: "KSWiFi Connect",
+    description: "Instant VPN profile generation with QR code setup for global internet access anywhere.",
     color: "text-purple-500"
   },
   {
@@ -74,7 +74,7 @@ export function AboutApp() {
         <div className="max-w-3xl mx-auto">
           <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
             Your ultimate companion for seamless internet connectivity. Download data packs on WiFi, 
-            activate anywhere with eSIM technology, and stay connected wherever life takes you.
+            activate anywhere with KSWiFi Connect, and stay connected wherever life takes you.
           </p>
         </div>
       </div>
@@ -174,9 +174,9 @@ export function AboutApp() {
               <div className="w-12 h-12 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
                 <span className="text-primary font-bold text-lg">2</span>
               </div>
-              <h3 className="font-semibold text-sm md:text-base">Activate eSIM</h3>
+              <h3 className="font-semibold text-sm md:text-base">Activate Connect</h3>
               <p className="text-muted-foreground text-xs md:text-sm">
-                Scan the QR code to activate your eSIM on compatible devices
+                Scan the QR code to activate your KSWiFi Connect profile on any device
               </p>
             </div>
             
