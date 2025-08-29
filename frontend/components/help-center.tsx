@@ -49,13 +49,13 @@ const faqData: FAQItem[] = [
     id: '1',
     category: 'getting-started',
     question: 'How do I get started with KSWiFi?',
-    answer: 'Welcome to KSWiFi! To get started: 1) Create your account by signing up with your email, 2) Choose a data pack that suits your needs, 3) Download your internet session when connected to WiFi, 4) Activate your data pack and start browsing. You can also set up Face ID or Touch ID for quick access to your account.'
+    answer: 'Welcome to KSWiFi! To get started: 1) Create your account by signing up with your email, 2) Choose a data pack that suits your needs, 3) Download your internet session when connected to WiFi, 4) Generate your KSWiFi Connect code, 5) Scan the QR code to install your internet profile, 6) Enjoy global internet access anywhere! You can also set up Face ID or Touch ID for quick access.'
   },
   {
     id: '2',
     category: 'getting-started',
     question: 'What is KSWiFi and how does it work?',
-    answer: 'KSWiFi is a modern mobile data management app that lets you purchase data packs, manage KSWiFi Connect profiles, and monitor your internet usage in real-time. Our app provides secure WiFi data pack management with cross-platform support for iOS and Android devices.'
+    answer: 'KSWiFi is a revolutionary global internet access platform that gives you affordable internet anywhere in the world. Download internet sessions on WiFi, then use KSWiFi Connect to access the internet globally without expensive roaming charges. Our VPN-based system works on any device and provides secure, fast internet access using your pre-purchased data allowances.'
   },
   {
     id: '3',
@@ -69,13 +69,13 @@ const faqData: FAQItem[] = [
     id: '4',
     category: 'wifi-data',
     question: 'How do I download internet sessions?',
-    answer: 'To download internet sessions: 1) Connect to WiFi, 2) Go to dashboard, 3) Tap "Download Session", 4) Choose data size, 5) Wait for download. WiFi required for security.'
+    answer: 'To download internet sessions: 1) Connect to a trusted WiFi network, 2) Go to the dashboard, 3) Tap "Download Session", 4) Choose your data pack size (1GB, 3GB, 5GB, etc.), 5) Wait for the download to complete. Once downloaded, you can generate a KSWiFi Connect code to use this data anywhere in the world!'
   },
   {
     id: '5',
     category: 'wifi-data',
     question: 'Why can\'t I download sessions without WiFi?',
-    answer: 'For security and data integrity reasons, internet sessions can only be downloaded over WiFi connections. This ensures a stable download process and prevents interruptions that could corrupt your data pack. Make sure you\'re connected to a trusted WiFi network before downloading.'
+    answer: 'Internet sessions must be downloaded over WiFi for several important reasons: 1) Security - WiFi provides a more secure environment for downloading sensitive internet data, 2) Stability - WiFi connections are more stable for large downloads, 3) Cost savings - Downloading over WiFi doesn\'t use your mobile data, 4) Speed - WiFi typically provides faster download speeds. Once downloaded, you can use KSWiFi Connect anywhere!'
   },
   {
     id: '6',
@@ -102,6 +102,30 @@ const faqData: FAQItem[] = [
     category: 'connect',
     question: 'Can I use multiple Connect profiles?',
     answer: 'Yes! You can have multiple KSWiFi Connect profiles for different sessions and data allowances. Each profile tracks its own usage and limits. You can switch between profiles in your phone\'s VPN settings as needed.'
+  },
+  {
+    id: '9a',
+    category: 'connect',
+    question: 'What makes KSWiFi Connect different from regular VPNs?',
+    answer: 'KSWiFi Connect is specifically designed for affordable global internet access using your pre-purchased data sessions. Unlike regular VPNs that just hide your location, KSWiFi Connect provides actual internet connectivity anywhere in the world at a fraction of the cost of international roaming or local SIM cards.'
+  },
+  {
+    id: '9b',
+    category: 'connect',
+    question: 'How fast is KSWiFi Connect internet?',
+    answer: 'KSWiFi Connect provides high-speed internet suitable for streaming, social media, video calls, and web browsing. Speed depends on your data pack size and server location, but you can expect smooth performance for TikTok, Instagram, YouTube, WhatsApp, and other popular apps. Perfect for staying connected while traveling!'
+  },
+  {
+    id: '9c',
+    category: 'connect',
+    question: 'Can I use KSWiFi Connect for streaming and video calls?',
+    answer: 'Absolutely! KSWiFi Connect provides full internet access, so you can stream Netflix, YouTube, TikTok, make WhatsApp video calls, FaceTime calls, Zoom meetings, and use any internet-dependent app just like you would with regular WiFi or mobile data. It\'s perfect for staying entertained and connected while traveling.'
+  },
+  {
+    id: '9d',
+    category: 'connect',
+    question: 'Does KSWiFi Connect work in all countries?',
+    answer: 'Yes! KSWiFi Connect works globally in any country where you have basic internet connectivity (even slow hotel WiFi or public WiFi). Once connected, you get full-speed internet access using your data sessions. It\'s perfect for international travel, remote work, or accessing content from anywhere in the world.'
   },
   
   // Billing & Plans

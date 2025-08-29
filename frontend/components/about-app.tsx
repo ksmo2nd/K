@@ -73,8 +73,9 @@ export function AboutApp() {
         
         <div className="max-w-3xl mx-auto">
           <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
-            Your ultimate companion for seamless internet connectivity. Download data packs on WiFi, 
-            activate anywhere with KSWiFi Connect, and stay connected wherever life takes you.
+            Your gateway to affordable global internet access. Download data sessions on WiFi, 
+            then use KSWiFi Connect to access the internet anywhere in the world without expensive 
+            roaming charges. Stream, browse, and stay connected globally at a fraction of traditional costs.
           </p>
         </div>
       </div>
@@ -89,10 +90,11 @@ export function AboutApp() {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
-            At KSWiFi, we believe that staying connected shouldn't be complicated or expensive. 
-            Our mission is to provide you with the most convenient, secure, and affordable way to 
-            access the internet anywhere in the world. Whether you're traveling, working remotely, 
-            or just need reliable backup connectivity, we've got you covered.
+            At KSWiFi, we're revolutionizing global internet access. Our mission is to eliminate expensive 
+            international roaming charges and provide affordable, high-speed internet anywhere in the world. 
+            Through our innovative KSWiFi Connect system, you can download internet sessions on WiFi and 
+            use them globally - perfect for travelers, digital nomads, students, and anyone who needs 
+            reliable internet without breaking the bank.
           </p>
         </CardContent>
       </Card>
@@ -166,7 +168,7 @@ export function AboutApp() {
               </div>
               <h3 className="font-semibold text-sm md:text-base">Download Data Packs</h3>
               <p className="text-muted-foreground text-xs md:text-sm">
-                Connect to WiFi and download your data packs for offline use
+                Connect to WiFi and download internet sessions with your preferred data allowance
               </p>
             </div>
             
@@ -176,7 +178,7 @@ export function AboutApp() {
               </div>
               <h3 className="font-semibold text-sm md:text-base">Activate Connect</h3>
               <p className="text-muted-foreground text-xs md:text-sm">
-                Scan the QR code to activate your KSWiFi Connect profile on any device
+                Generate and scan your Connect QR code to install global internet access on your device
               </p>
             </div>
             
@@ -186,7 +188,7 @@ export function AboutApp() {
               </div>
               <h3 className="font-semibold text-sm md:text-base">Stay Connected</h3>
               <p className="text-muted-foreground text-xs md:text-sm">
-                Enjoy seamless internet connectivity anywhere you go
+                Enjoy high-speed internet anywhere in the world - perfect for streaming, social media, and video calls
               </p>
             </div>
           </div>
